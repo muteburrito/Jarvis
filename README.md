@@ -24,8 +24,7 @@ If you are in VS Code, I would recommend you to have the following extensions in
 - [Jupyter](https://marketplace.visualstudio.com/items?itemName=ms-toolsai.jupyter)
 - [Runme](https://marketplace.visualstudio.com/items?itemName=stateful.runme) (This is neeed to visualize the documents like the [README.md](README.md))
 
-Now that you have prepared your working enviornment, just open the [bot.ipynb](bot.ipynb) and run the Jupyter notebook.
-The vector store creation will take some time, depending on what documents you are using. For the demo we have a [Harry Potter and the Philosophers's Stone](data/HP.pdf) PDF in the data folder
+Note: If the app gives you error regarding `fbgemm.dll" or one of its dependencies` please first install the VCRedist, and if that also does not fix the probelm, simply copy paste the dll given in the Redist folder to C:\Windows\System32 
 
 ## References
 
