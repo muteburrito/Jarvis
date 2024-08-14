@@ -1,0 +1,10 @@
+__pycache__
+
+# Excluding the vector store (its better generated locally)
+vectorstore
+
+# Excluding the virtual env folder
+chatbot
+
+# Excluding the data folder
+data
