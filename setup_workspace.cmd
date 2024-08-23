@@ -61,7 +61,7 @@ del OllamaSetup.exe
 
 :pull_llama3
 echo Pulling Llama 3 model...
-ollama pull llama3
+ollama pull llama3.1
 
 :end
 echo Done.

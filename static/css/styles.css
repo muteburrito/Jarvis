@@ -1,0 +1,220 @@
+body {
+    background-color: #1e1e2f;
+    font-family: 'Roboto', sans-serif;
+}
+
+.container {
+    width: 700px;
+    margin: 0 auto;
+    padding: 20px;
+    background: #2e2e48;
+    border-radius: 8px;
+    box-shadow: 0 0 15px rgba(0, 0, 0, 0.5);
+}
+
+.title {
+    color: #ffffff;
+    font-size: 2rem;
+    margin-bottom: 20px;
+    white-space: nowrap;
+    overflow: hidden;
+    border-right: 4px solid #ff79c6;
+    width: 0;
+    text-align: center;
+    margin: 0 auto;
+    animation: typing 2s steps(15, end) forwards;
+}
+
+@keyframes typing {
+    from { width: 0; }
+    to { width: 15ch; }
+}
+
+.chat-box {
+    height: 500px;
+    overflow-y: auto;
+    padding: 10px;
+    background: #3e3e5e;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    border: none;
+    display: flex;
+    flex-direction: column;
+}
+
+.message {
+    padding: 10px 20px;
+    margin-bottom: 10px;
+    border-radius: 20px;
+    max-width: 75%;
+    word-wrap: break-word;
+    color: #f8f8f2;
+    display: inline-block;
+    clear: both;
+}
+
+.message.user-message {
+    background-color: #007BFF;
+    color: #ffffff;
+    float: right;
+    text-align: right;
+    border-top-right-radius: 20px;
+    border-bottom-right-radius: 0;
+    border-top-left-radius: 20px;
+}
+
+.message.bot-message {
+    background-color: #4A90E2;
+    color: #ffffff;
+    float: left;
+    text-align: left;
+    border-top-right-radius: 20px;
+    border-bottom-left-radius: 0;
+    border-top-left-radius: 20px;
+}
+
+.input-group {
+    padding: 10px;
+    display: flex;
+    align-items: center;
+}
+
+input[type="text"] {
+    flex: 1;
+    padding: 10px;
+    border-radius: 8px;
+    border: 1px solid #44475a;
+    background-color: #2e2e48;
+    color: #f8f8f2;
+    margin-right: 10px;
+}
+
+button {
+    padding: 10px 20px;
+    border-radius: 8px;
+    background: #50fa7b;
+    color: #282a36;
+    border: none;
+    cursor: pointer;
+}
+
+button:hover {
+    background-color: #ff79c6;
+}
+
+/* Styling for attach icon */
+.attach-icon {
+    background-color: transparent;
+    color: #50fa7b;
+    font-size: 20px;
+    cursor: pointer;
+    margin-right: 10px;
+}
+
+.attach-icon:hover {
+    color: #ff79c6;
+}
+
+/* Hide the actual file input element */
+input[type="file"] {
+    display: none;
+}
+
+.file-name {
+    margin-right: 5px;
+    color: #f8f8f2;
+    margin-left: 1px;
+    font-size: 14px;
+}
+
+.button-group {
+    margin-top: 20px;
+    text-align: center;
+}
+
+.button-group button {
+    margin: 5px;
+}
+
+.thinking-dots {
+    font-size: 20px;
+    line-height: 20px;
+    display: inline-block;
+    vertical-align: middle;
+    color: #ffb86c; /* Orange color for the thinking dots */
+}
+
+.thinking-dot {
+    display: inline-block;
+    animation: blink 1s infinite;
+    opacity: 0;
+}
+
+.thinking-dot:nth-child(1) {
+    animation-delay: 0ms;
+}
+
+.thinking-dot:nth-child(2) {
+    animation-delay: 250ms;
+}
+
+.thinking-dot:nth-child(3) {
+    animation-delay: 500ms;
+}
+
+@keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0; }
+}
+
+.notification-bar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    background-color: #ff5555;
+    color: #f8f8f2;
+    text-align: center;
+    padding: 10px 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    z-index: 1000;
+    display: none;
+}
+
+.notification-bar.show {
+    display: block;
+}
+
+/* Code blocks */
+pre {
+    background-color: #44475a;
+    color: #f8f8f2;
+    padding: 10px;
+    border-radius: 8px;
+    overflow-x: auto;
+    margin-bottom: 20px;
+    white-space: pre-wrap;
+}
+
+code {
+    background-color: #44475a;
+    color: #f8f8f2;
+    padding: 3px 5px;
+    border-radius: 4px;
+}
+
+h1, h2, h3, h4, h5, h6 {
+    color: #50fa7b;
+}
+
+blockquote {
+    border-left: 5px solid #bd93f9;
+    margin: 10px 0;
+    padding-left: 10px;
+    color: #f8f8f2;
+}
+
+ul, ol {
+    margin-left: 20px;
+    color: #f8f8f2;
+}

@@ -9,5 +9,6 @@
 # Excluding the data folder
 *data/
 
-# Adding .idea folder as well
-*.idea/
+# Exxcluding binary folders for exe's
+*dist/
+*build/

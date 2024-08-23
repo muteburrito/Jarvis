@@ -24,7 +24,7 @@ If you are in VS Code, I would recommend you to have the following extensions in
 - [Jupyter](https://marketplace.visualstudio.com/items?itemName=ms-toolsai.jupyter)
 - [Runme](https://marketplace.visualstudio.com/items?itemName=stateful.runme) (This is neeed to visualize the documents like the [README.md](README.md))
 
-Note: If the app gives you error regarding `fbgemm.dll" or one of its dependencies` please first install the VCRedist, and if that also does not fix the probelm, simply copy paste the dll given in the Redist folder to C:\Windows\System32 
+Note: If the app gives you error regarding `fbgemm.dll` or one of its dependencies please first install the [VCRedist](Redist\VC_redist.x64.exe), and if that also does not fix the probelm, simply copy paste the dll given in the Redist folder to C:\Windows\System32
 
 ## References
 

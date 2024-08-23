@@ -3,25 +3,9 @@ from langchain_community.document_loaders import PyMuPDFLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_community.vectorstores import FAISS
 from langchain.chains import RetrievalQA
-
-def load_pdf_data(file_path):
-    """
-    Load a PDF document from the specified file path.
-
-    Args:
-    - file_path (str): Path to the PDF document.
-
-    Returns:
-    - Document: Loaded document.
-    """
-    # Creating a PyMuPDFLoader object with file_path
-    loader = PyMuPDFLoader(file_path=file_path)
-    
-    # loading the PDF file
-    docs = loader.load()
-    
-    # returning the loaded document
-    return docs
+from langchain_core.output_parsers import StrOutputParser
+from langchain_core.runnables import RunnablePassthrough
+from langchain import hub
 
 def split_docs(documents, chunk_size=1000, chunk_overlap=20):
     """
@@ -108,27 +92,54 @@ def load_qa_chain(retriever, llm, prompt):
         chain_type_kwargs={'prompt': prompt} # customizing the prompt
     )
 
-def get_response(query, chain):
+def load_qa_chain_v2(vectorstore, llm, prompt): # ToDo: we need to use this new method, but it's not yet implemented.
     """
-    Retrieve response for a given query using the question-answering chain.
+    Create a question-answering chain using the new approach.
 
     Args:
-    - query (str): Question query.
-    - chain (RetrievalQA): Question-answering chain.
+    - vectorstore (FAISS): Vector store retriever.
+    - llm: Language model.
+    - prompt (str): Prompt template.
 
     Returns:
-    - str: Response to the query.
+    - chain: Question-answering chain.
     """
-    # Getting response from chain
-    response = chain.invoke({'query': query})
-    
-    # Retrieve the result and remove any newlines
-    result_text = response['result']
-    
-    # Remove newlines and format the text for better readability
-    formatted_text = result_text.replace('\n', ' ').strip()
-    
-    return formatted_text
+    qa_chain = (
+        {
+            "context": vectorstore,  # Directly use vectorstore retriever
+            "question": RunnablePassthrough(),
+        }
+        | prompt
+        | llm
+        | StrOutputParser()
+    )
+    return qa_chain.invoke(prompt)
+
+
+def get_response(query, chain):
+    """
+    Processes a user query using the provided QA chain and returns the response.
+
+    Args:
+        query (str): The query string from the user.
+        chain (callable): The QA chain function or object used to generate responses. 
+                          It should accept a dictionary with a 'query' key and return a response.
+
+    Returns:
+        dict: A dictionary containing the response to the query. 
+              If the response is a string, it is wrapped in a dictionary with the key 'result'. 
+              In case of an error, returns a dictionary with the key 'result' and a value indicating an error.
+    """
+    try:
+        response = chain({'query': query})
+        # Ensure the response is a dict
+        if isinstance(response, str):
+            response = {'result': response}
+        return response
+    except Exception as e:
+        print(f"Error in get_response: {e}")
+        return {'result': 'Error processing the query'}
+
 
 # Prompt template
 prompt_template = """
