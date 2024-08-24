@@ -26,7 +26,7 @@ jobs:
 
       - name: Run PyInstaller to create EXE
         run: |
-          pyinstaller --onefile --icon=jarvis_logo.ico --noconsole app.py  # You can adjust this command based on your requirements
+          pyinstaller app.spec
         shell: cmd
 
       - name: Create release artifact
