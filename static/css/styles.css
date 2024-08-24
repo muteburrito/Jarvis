@@ -1,10 +1,13 @@
 body {
     background-color: #1e1e2f;
     font-family: 'Roboto', sans-serif;
+    margin: 0;
+    padding: 0;
 }
 
 .container {
-    width: 700px;
+    max-width: 100%;
+    width: 700px;  /* Default size for larger screens */
     margin: 0 auto;
     padding: 20px;
     background: #2e2e48;
@@ -19,15 +22,21 @@ body {
     white-space: nowrap;
     overflow: hidden;
     border-right: 4px solid #ff79c6;
-    width: 0;
+    width: auto; /* Fix the width */
     text-align: center;
     margin: 0 auto;
-    animation: typing 2s steps(15, end) forwards;
+    animation: typing 1s steps(16, end) forwards;
 }
 
+/* Fix for the title being cut off */
 @keyframes typing {
     from { width: 0; }
-    to { width: 15ch; }
+    to { width: 16ch; }
+}
+
+@keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0; }
 }
 
 .chat-box {
@@ -40,6 +49,7 @@ body {
     border: none;
     display: flex;
     flex-direction: column;
+    width: 100%; /* Make it responsive */
 }
 
 .message {
@@ -77,6 +87,7 @@ body {
     padding: 10px;
     display: flex;
     align-items: center;
+    flex-wrap: wrap; /* Adjust for small screens */
 }
 
 input[type="text"] {
@@ -162,11 +173,6 @@ input[type="file"] {
     animation-delay: 500ms;
 }
 
-@keyframes blink {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0; }
-}
-
 .notification-bar {
     position: fixed;
     top: 0;
@@ -179,10 +185,6 @@ input[type="file"] {
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     z-index: 1000;
     display: none;
-}
-
-.notification-bar.show {
-    display: block;
 }
 
 /* Code blocks */
@@ -217,4 +219,59 @@ blockquote {
 ul, ol {
     margin-left: 20px;
     color: #f8f8f2;
+}
+
+/* Responsive styles for smaller screens */
+@media screen and (max-width: 768px) {
+    .container {
+        width: 90%; /* Make container flexible */
+        padding: 10px;
+    }
+
+    .chat-box {
+        height: 350px; /* Reduce height for smaller screens */
+    }
+
+    .title {
+        font-size: 1.5rem; /* Adjust title size for smaller screens */
+        width: auto;
+    }
+
+    .input-group {
+        flex-direction: column; /* Stack input and button on top of each other */
+    }
+
+    input[type="text"] {
+        padding: 8px; /* Adjust padding */
+        margin-right: 0;
+        margin-bottom: 10px;
+        width: 100%; /* Full width on small screens */
+    }
+
+    button {
+        padding: 8px 15px; /* Reduce button size */
+        width: 100%; /* Full width for button on small screens */
+    }
+
+    .message {
+        max-width: 90%;
+    }
+
+    .attach-icon {
+        margin-bottom: 10px; /* Ensure icons stack nicely */
+    }
+}
+
+@media screen and (max-width: 480px) {
+    .container {
+        width: 100%; /* Full width for very small devices */
+    }
+
+    .chat-box {
+        height: 300px; /* Reduce height */
+    }
+
+    .title {
+        font-size: 1.2rem; /* Smaller title */
+    }
 }
