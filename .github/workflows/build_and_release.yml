@@ -4,6 +4,12 @@ on:
   push:
     branches:
       - main
+    paths:
+      - 'app.py'
+      - 'lang_funcs.py'
+      - 'app.spec'
+      - 'templates/**'
+      - 'static/**'
 
 jobs:
   build:
