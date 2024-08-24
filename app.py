@@ -49,22 +49,14 @@ def check_and_install_ollama():
 
 def install_ollama():
     try:
-        # Set the URL to the Ollama setup file from your repository
-        ollama_installer_url = 'https://github.com/muteburrito/pdf-chatbot/raw/main/Redist/OllamaSetup.exe'
-
-        # Download Ollama installer from the repository
-        print("Downloading Ollama installer...")
-        with urllib.request.urlopen(ollama_installer_url) as response, open('OllamaSetup.exe', 'wb') as out_file:
-            out_file.write(response.read())
-
-        # Run the Ollama installer silently
-        print("Installing Ollama...")
+        # Download and run Ollama installer
+        subprocess.run(["powershell", "-Command", 
+                        "Invoke-WebRequest -Uri https://ollama.com/download/OllamaSetup.exe -OutFile OllamaSetup.exe"],
+                        check=True)
         subprocess.run(["OllamaSetup.exe", "/quiet"], check=True)
-
-        # Clean up the installer
-        os.remove("OllamaSetup.exe")
         print("Ollama installed successfully.")
-        
+        # Clean up installer file
+        os.remove("OllamaSetup.exe")
     except Exception as e:
         print(f"Failed to install Ollama: {e}")
         exit(1)
