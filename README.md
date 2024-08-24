@@ -13,7 +13,7 @@ The Bot also uses Ollama for loading the base model in this case Llama2 and chai
 
 ## Installation
 
-Head over to the [Releases Page](https://github.com/muteburrito/Jarvis/releases) and grab the latest successful exe. This exe contains all the required dependancies, and if you don't have them, the server exe will install it for you.
+Head over to the [Releases Page](http://13.201.88.74:8080/job/Jarvis-Pipeline/) and grab the latest successful exe. This exe contains all the required dependancies, and if you don't have them, the server exe will install it for you.
 
 Note- Keep the EXE in a folder, so that the vectorstore and data folder are properly kept in one place.
 
