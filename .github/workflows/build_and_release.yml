@@ -10,6 +10,7 @@ on:
       - 'app.spec'
       - 'templates/**'
       - 'static/**'
+      - '.github/**'
 
 jobs:
   build:
