@@ -14,7 +14,6 @@ on:
 jobs:
   build:
     runs-on: windows-latest
-    if: github.event_name == 'push' && (github.event.head_commit.message != 'Update workflow')
 
     steps:
       - name: Checkout code
@@ -40,7 +39,7 @@ jobs:
         uses: actions/upload-artifact@v2
         with:
           name: jarvis
-          path: dist/Jarvis.exe
+          path: dist/Jarvis.exe  # Path for the EXE created by PyInstaller
 
   release:
     needs: build
@@ -51,6 +50,7 @@ jobs:
         uses: actions/download-artifact@v2
         with:
           name: jarvis
+          path: ./  # Ensure the artifact is extracted into the root directory
 
       - name: Create Release
         id: create_release
@@ -67,6 +67,6 @@ jobs:
         uses: actions/upload-release-asset@v1
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: dist/Jarvis.exe
+          asset_path: ./Jarvis.exe  # Reference to the correct location after download
           asset_name: Jarvis.exe
           asset_content_type: application/octet-stream
