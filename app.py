@@ -32,7 +32,7 @@ def check_and_copy_dll():
             shutil.move(dll_name, target_dll_path)
             print(f"{dll_name} successfully downloaded and copied to {system32_path}.")
         except PermissionError:
-            print(f"Permission denied. Run the script with administrator privileges to copy {dll_name} to System32.")
+            print(f"Permission denied. Run the exe with administrator privileges to copy {dll_name} to System32.")
         except Exception as e:
             print(f"An error occurred: {e}")
     else:
