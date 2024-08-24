@@ -1,6 +1,7 @@
 import os
 import shutil
 import subprocess
+import urllib
 from flask import Flask, request, jsonify, render_template, send_from_directory
 from werkzeug.utils import secure_filename
 from lang_funcs import *
@@ -13,6 +14,30 @@ from flask_cors import CORS
 app = Flask(__name__)
 CORS(app)
 
+def check_and_copy_dll():
+    dll_name = 'libomp140.x86_64.dll'
+    system32_path = os.path.join(os.environ['WINDIR'], 'System32')
+    target_dll_path = os.path.join(system32_path, dll_name)
+    github_dll_url = 'https://github.com/muteburrito/pdf-chatbot/raw/main/Redist/libomp140.x86_64_x86-64/libomp140.x86_64.dll'
+
+    # Check if DLL is present in System32
+    if not os.path.exists(target_dll_path):
+        print(f"{dll_name} not found in {system32_path}. Downloading from GitHub...")
+
+        try:
+            # Download the DLL from the GitHub URL
+            with urllib.request.urlopen(github_dll_url) as response, open(dll_name, 'wb') as out_file:
+                shutil.copyfileobj(response, out_file)
+            # Move the DLL to System32
+            shutil.move(dll_name, target_dll_path)
+            print(f"{dll_name} successfully downloaded and copied to {system32_path}.")
+        except PermissionError:
+            print(f"Permission denied. Run the script with administrator privileges to copy {dll_name} to System32.")
+        except Exception as e:
+            print(f"An error occurred: {e}")
+    else:
+        print(f"{dll_name} is already present in {system32_path}.")
+
 def check_and_install_ollama():
     try:
         # Check if Ollama is installed by running "ollama list"
@@ -24,14 +49,22 @@ def check_and_install_ollama():
 
 def install_ollama():
     try:
-        # Download and run Ollama installer
-        subprocess.run(["powershell", "-Command", 
-                        "Invoke-WebRequest -Uri https://ollama.com/download/OllamaSetup.exe -OutFile OllamaSetup.exe"],
-                        check=True)
+        # Set the URL to the Ollama setup file from your repository
+        ollama_installer_url = 'https://github.com/muteburrito/pdf-chatbot/raw/main/Redist/OllamaSetup.exe'
+
+        # Download Ollama installer from the repository
+        print("Downloading Ollama installer...")
+        with urllib.request.urlopen(ollama_installer_url) as response, open('OllamaSetup.exe', 'wb') as out_file:
+            out_file.write(response.read())
+
+        # Run the Ollama installer silently
+        print("Installing Ollama...")
         subprocess.run(["OllamaSetup.exe", "/quiet"], check=True)
-        print("Ollama installed successfully.")
-        # Clean up installer file
+
+        # Clean up the installer
         os.remove("OllamaSetup.exe")
+        print("Ollama installed successfully.")
+        
     except Exception as e:
         print(f"Failed to install Ollama: {e}")
         exit(1)
@@ -48,6 +81,8 @@ def pull_llama_model():
 # Before starting the app, check if Ollama is installed and pull the model
 check_and_install_ollama()
 pull_llama_model()
+# Call the function before the app starts
+check_and_copy_dll()
 
 # Load the LLM model
 llm = Ollama(model="llama3.1", temperature=0)
