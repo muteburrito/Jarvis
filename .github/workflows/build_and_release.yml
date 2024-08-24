@@ -10,6 +10,7 @@ on:
       - 'app.spec'
       - 'templates/**'
       - 'static/**'
+      - '.github/**'
 
 jobs:
   build:
@@ -17,10 +18,10 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v2  # Correct version
 
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v2  # Correct version
         with:
           python-version: '3.11'
 
