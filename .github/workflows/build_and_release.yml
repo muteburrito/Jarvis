@@ -3,7 +3,7 @@ name: Build and Publish EXE
 on:
   push:
     branches:
-      - main  # You can specify the branch where the workflow will trigger on pushes
+      - main 
 
 jobs:
   build:
@@ -16,7 +16,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v2
         with:
-          python-version: '3.11'  # Make sure to match your Python version
+          python-version: '3.11'
 
       - name: Install dependencies
         run: |
@@ -33,7 +33,7 @@ jobs:
         uses: actions/upload-artifact@v2
         with:
           name: jarvis
-          path: dist/jarvis.exe  # Adjust the path if needed to match the output of PyInstaller
+          path: dist/jarvis.exe
 
   release:
     needs: build
@@ -61,6 +61,6 @@ jobs:
         uses: actions/upload-release-asset@v1
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: dist/app.exe  # Path to your EXE
+          asset_path: dist/jarvis.exe
           asset_name: jarvis.exe
           asset_content_type: application/octet-stream
