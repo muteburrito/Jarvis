@@ -10,18 +10,18 @@ on:
       - 'app.spec'
       - 'templates/**'
       - 'static/**'
-      - '.github/**'
 
 jobs:
   build:
     runs-on: windows-latest
+    if: github.event_name == 'push' && (github.event.head_commit.message != 'Update workflow')
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v2
 
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v2
         with:
           python-version: '3.11'
 
@@ -45,7 +45,6 @@ jobs:
   release:
     needs: build
     runs-on: windows-latest
-    if: github.event_name == 'push'
 
     steps:
       - name: Download build artifact
@@ -57,7 +56,7 @@ jobs:
         id: create_release
         uses: actions/create-release@v1
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.PERSONAL_GITHUB_TOKEN }}
         with:
           tag_name: v1.0.${{ github.run_number }}
           release_name: "Jarvis Server EXE Build #${{ github.run_number }}"
