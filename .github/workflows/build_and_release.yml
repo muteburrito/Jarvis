@@ -32,8 +32,8 @@ jobs:
       - name: Create release artifact
         uses: actions/upload-artifact@v2
         with:
-          name: jarvis-exe
-          path: dist/app.exe  # Adjust the path if needed to match the output of PyInstaller
+          name: jarvis
+          path: dist/jarvis.exe  # Adjust the path if needed to match the output of PyInstaller
 
   release:
     needs: build
@@ -44,7 +44,7 @@ jobs:
       - name: Download build artifact
         uses: actions/download-artifact@v2
         with:
-          name: jarvis-exe
+          name: jarvis
 
       - name: Create Release
         id: create_release
