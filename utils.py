@@ -28,6 +28,15 @@ def install_ollama():
         print(f"Failed to install Ollama: {e}")
         exit(1)
 
+def pull_llama_model():
+    try:
+        # Pull the Llama 3.1 model using Ollama
+        subprocess.run(["ollama", "pull", "llama3.1"], check=True)
+        print("Llama 3.1 model pulled successfully.")
+    except subprocess.CalledProcessError:
+        print("Failed to pull Llama 3.1 model.")
+        exit(1)
+
 def check_and_copy_dll():
     dll_name = 'libomp140.x86_64.dll'
     system32_path = os.path.join(os.environ['WINDIR'], 'System32')

@@ -19,6 +19,7 @@ uploaded_files = []
 
 # Initialize the models and environment
 check_and_install_ollama()
+pull_llama_model()
 check_and_copy_dll()
 
 llm = Ollama(model="llama3.1", temperature=0)
@@ -60,19 +61,33 @@ def list_files():
 
 @app.route('/upload', methods=['POST'])
 def upload_file():
+    # Ensure the upload folder (data) exists
     os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+
+    # Check if 'file' is part of the request
     if 'file' not in request.files:
         return jsonify({'error': 'No file part'}), 400
-    files = request.files.getlist('file')
+
+    files = request.files.getlist('file')  # Multiple files can be uploaded
     if not files or files[0].filename == '':
         return jsonify({'error': 'No selected file'}), 400
-    documents = load_and_process_documents(files, app.config['UPLOAD_FOLDER'], ALLOWED_EXTENSIONS)
+
     for file in files:
         if file and allowed_file(file.filename, ALLOWED_EXTENSIONS):
+            # Secure the filename
             filename = secure_filename(file.filename)
+
+            # Define the file path
+            file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+
+            # Save the file to the specified folder
+            file.save(file_path)
+
+            # Append the filename to the uploaded_files list
             if filename not in uploaded_files:
                 uploaded_files.append(filename)
-    return jsonify({'message': 'Files uploaded and processed successfully!', 'uploaded_files': uploaded_files})
+
+    return jsonify({'message': 'Files uploaded and saved successfully!', 'uploaded_files': uploaded_files})
 
 @app.route('/process-data', methods=['POST'])
 def process_data():
