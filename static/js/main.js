@@ -8,26 +8,28 @@ $(document).ready(function() {
         }
     });
 
+    // Load chat history if it exists in localStorage
+    if (localStorage.getItem('chatHistory')) {
+        $('#messages').html(localStorage.getItem('chatHistory'));
+        $('.chat-box').scrollTop($('.chat-box')[0].scrollHeight);  // Scroll to the bottom
+    }
+
+    // Function to clear chat history
+    $('#clearChatHistoryButton').click(function() {
+        localStorage.removeItem('chatHistory');
+        $('#messages').empty(); // Clear the messages from the UI as well
+    });
+
     // Function to render markdown safely
     function renderMarkdown(markdownText) {
         return marked.parse(markdownText);
     }
 
-    // Clear files from sidebar
-    $('#clearFilesButton').click(function() {
-        // Clear uploaded files and reset sidebar
-        $.ajax({
-            url: '/clear',
-            type: 'POST',
-            success: function() {
-                $('#fileList').empty(); // Clear sidebar list
-                showNotification('Documents cleared successfully', 'success');
-            },
-            error: function() {
-                showNotification('Error clearing documents', 'error');
-            }
-        });
-    });
+    // We will use this to save chat history
+    function updateChatHistory() {
+        var chatHistory = $('#messages').html();
+        localStorage.setItem('chatHistory', chatHistory);
+    }
 
     $('#sendButton').click(function() {
         sendMessage();
@@ -39,11 +41,18 @@ $(document).ready(function() {
         }
     });
 
-    // Automatically upload the file once selected
+    // Automatically upload the files once selected
     $('#fileInput').change(function() {
-        var file = $('#fileInput')[0].files[0];
-        if (file) {
-            uploadFile(file); // Trigger file upload immediately
+        var files = $('#fileInput')[0].files; // Get the selected files
+        if (files.length > 0) {
+            for (var i = 0; i < files.length; i++) {
+                var file = files[i];
+                if (file.type === "application/pdf") {
+                    uploadFile(file); // Upload each selected file
+                } else {
+                    alert("Only PDF files are allowed."); // Handle non-PDF files
+                }
+            }
         }
     });
 
@@ -112,25 +121,94 @@ $(document).ready(function() {
             data: formData,
             processData: false,
             contentType: false,
-            beforeSend: function() {
-                // Optionally show loading indicator
-            },
             success: function(response) {
-                // Optionally update the sidebar with the new file
-                updateUploadedFilesList(file.name); // Call function to update file list
-                showNotification('Documents uploaded successfully', 'success');
+                if (response.uploaded_files) {
+                    var fileList = $('#fileList');
+                    fileList.empty();  // Clear existing list
+                    response.uploaded_files.forEach(function(file) {
+                        fileList.append('<li>' + file + '</li>');  // Add new files
+                    });
+                }
             },
-            error: function() {
-                console.error('Error uploading file.');
+            error: function(error) {
+                console.error('Error uploading files:', error);
             }
         });
     }
 
-    // Function to update the uploaded files list in the sidebar
-    function updateUploadedFilesList(fileName) {
-        var uploadedFilesList = $('.sidebar ul');
-        uploadedFilesList.append('<li>' + fileName + '</li>');
+    // Fetch the list of uploaded files on page load
+    fetchUploadedFiles();
+
+    function fetchUploadedFiles() {
+        $.ajax({
+            url: '/list-files',
+            type: 'GET',
+            success: function(response) {
+                if (response.uploaded_files) {
+                    var fileList = $('#fileList');
+                    fileList.empty();  // Clear existing list
+                    response.uploaded_files.forEach(function(file) {
+                        fileList.append('<li>' + file + '</li>');  // Add new files
+                    });
+                }
+            },
+            error: function(error) {
+                console.error('Error fetching file list:', error);
+            }
+        });
     }
+
+    // Process data button logic
+    $('#processDataButton').click(function() {
+        // Show the loading spinner
+        $('#loading').show();
+
+        $.ajax({
+            url: '/process-data', // Backend endpoint to process the data and create vector store
+            type: 'POST',
+            success: function(response) {
+                // Hide the loading spinner
+                $('#loading').hide();
+                
+                showNotification('Data processed successfully, vector store created!', 'success');
+            },
+            error: function() {
+                // Hide the loading spinner even if there's an error
+                $('#loading').hide();
+
+                showNotification('Error processing data.', 'error');
+            }
+        });
+    });
+
+    // Clear vector store button logic
+    $('#clearVectorStoreButton').click(function() {
+        $.ajax({
+            url: '/clear-vector-store', // Backend endpoint to clear the vector store
+            type: 'POST',
+            success: function(response) {
+                showNotification('Vector store cleared successfully!', 'success');
+            },
+            error: function() {
+                showNotification('Error clearing vector store.', 'error');
+            }
+        });
+    });
+
+    // Clear files button logic
+    $('#clearFilesButton').click(function() {
+        $.ajax({
+            url: '/clear-docs',
+            type: 'POST',
+            success: function(response) {
+                $('#fileList').empty(); // Clear the file list in the sidebar
+                showNotification('Documents cleared successfully!', 'success');
+            },
+            error: function() {
+                showNotification('Error clearing documents.', 'error');
+            }
+        });
+    });
 
     $('#sendButton').click(function() {
         sendMessage();
@@ -142,6 +220,8 @@ $(document).ready(function() {
             $('#messages').append('<div class="message user-message">' + userInput + '</div>');
             $('#userInput').val('');
             
+            updateChatHistory(); //Save User's message
+
             // Disable the button but do not change its inner HTML (so the icon stays intact)
             $('#sendButton').prop('disabled', true);
             $('#sendButton i').removeClass('fa-paper-plane').addClass('fa-spinner fa-spin'); // Change the icon to a spinner
@@ -165,6 +245,9 @@ $(document).ready(function() {
                     
                     $('#messages').append('<div class="message bot-message">' + markdownResponse + '</div>');
                     
+                    // Save chat history after bot response is added
+                    updateChatHistory();
+
                     // Re-enable the button and restore the paper-plane icon
                     $('#sendButton').prop('disabled', false);
                     $('#sendButton i').removeClass('fa-spinner fa-spin').addClass('fa-paper-plane');

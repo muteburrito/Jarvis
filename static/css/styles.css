@@ -33,27 +33,84 @@ body {
     flex-grow: 1;
     overflow-y: auto;
     margin-bottom: 20px;
+    white-space: nowrap; /* Prevent long file names from wrapping */
+    word-wrap: break-word; /* Allow breaking long file names */
+    overflow-wrap: anywhere; /* Ensure long words or links break correctly */
 }
 
 .sidebar ul li {
     color: #f8f8f2;
     margin-bottom: 10px;
+    text-overflow: ellipsis; /* Add ellipsis (...) for overflowed content */
+    overflow: hidden;
+    white-space: nowrap; /* Prevent text wrapping */
 }
 
 .sidebar button {
     padding: 10px;
     border-radius: 8px;
-    background-color: #ff5555;
     color: #f8f8f2;
     border: none;
     cursor: pointer;
     width: 100%; /* Full width inside the sidebar */
-    margin-top: 20px;
+    margin-top: 10px; /* Adjust margin to create space between buttons */
     box-sizing: border-box;
 }
 
 .sidebar button:hover {
     background-color: #ff79c6;
+}
+
+#loading {
+    color: #f8f8f2;
+    font-size: 16px;
+    text-align: center;
+    margin-bottom: 10px;
+}
+
+.fa-spinner {
+    margin-right: 10px;
+}
+
+#processDataButton {
+    background-color: #50fa7b;
+    color: #1e1e2f; /* Green button for Process Data */
+}
+
+#processDataButton:hover {
+    background-color: #28a745; /* Darker green on hover */
+}
+
+#clearVectorStoreButton {
+    background-color: #f0ad4e;
+    color: #1e1e2f; /* Orange button for Clear Vector Store */
+}
+
+#clearVectorStoreButton:hover {
+    background-color: #ec971f; /* Darker orange on hover */
+}
+
+#clearFilesButton {
+    background-color: #ff5555;
+}
+
+#clearFilesButton:hover {
+    background-color: #ff79c6;
+}
+
+#clearChatHistoryButton {
+    margin-top: 15px;
+    padding: 10px;
+    width: 100%;
+    background-color: #ffc107;
+    color: #000;
+    border: none;
+    cursor: pointer;
+    border-radius: 8px;
+}
+
+#clearChatHistoryButton:hover {
+    background-color: #e0a800;
 }
 
 /* Main content will take up the remaining space */
@@ -65,6 +122,11 @@ body {
     box-sizing: border-box;
     justify-content: space-between;
     height: 100vh;
+}
+
+/* Title wrapper added */
+.title-wrapper {
+    margin-bottom: 1px;
 }
 
 .title {
@@ -93,12 +155,13 @@ body {
 .chat-box {
     flex-grow: 1; /* Take up the remaining vertical space */
     overflow-y: auto;
-    padding: 10px;
+    padding: 40px;
     background: #3e3e5e;
     border-radius: 8px;
     margin-bottom: 20px;
     display: flex;
     flex-direction: column;
+    padding: 20px;
 }
 
 .message {
