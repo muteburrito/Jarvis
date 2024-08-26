@@ -8,9 +8,10 @@ a = Analysis(
     datas=[                   # List of data files to include (e.g., templates, static files)
         ('templates', 'templates'),
         ('static', 'static'),
-        ('lang_funcs.py', '.')  # Your custom module
+        ('lang_funcs.py', '.'),  # lang_chain.py
+        ('utils.py', '.') # utils.py
     ],
-    hiddenimports=[],         # Any modules that PyInstaller might miss during analysis
+    hiddenimports=['utils'],         # Any modules that PyInstaller might miss during analysis
     hookspath=[],             # Paths to custom hook files, if any
     runtime_hooks=[],         # Hooks that modify the application at runtime, usually empty
     excludes=[],              # Any modules you explicitly want to exclude from the build
