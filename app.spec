@@ -11,7 +11,7 @@ a = Analysis(
         ('lang_funcs.py', '.'),  # lang_chain.py
         ('utils.py', '.') # utils.py
     ],
-    hiddenimports=['utils'],         # Any modules that PyInstaller might miss during analysis
+    hiddenimports=['utils', 'lang_funcs'],         # Any modules that PyInstaller might miss during analysis
     hookspath=[],             # Paths to custom hook files, if any
     runtime_hooks=[],         # Hooks that modify the application at runtime, usually empty
     excludes=[],              # Any modules you explicitly want to exclude from the build
