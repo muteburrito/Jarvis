@@ -44,6 +44,7 @@ def ask():
     if not query:
         return jsonify({'error': 'No query provided'}), 400
     try:
+        # Process the query with chat history retained
         response = get_response(query, chain)
         result = response if isinstance(response, str) else response.get('result', 'No result found')
         return jsonify({'response': str(result)})
@@ -104,7 +105,7 @@ def process_data():
         return jsonify({'error': 'No files to process'}), 400
 
     # Load and process documents directly from the file paths
-    documents = load_and_process_documents(files, data_directory, ALLOWED_EXTENSIONS)
+    documents = load_pdf_data_if_allowed(files, ALLOWED_EXTENSIONS, data_directory)
 
     if not documents:
         return jsonify({'error': 'No valid documents found to process'}), 400

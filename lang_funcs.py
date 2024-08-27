@@ -1,165 +1,100 @@
 from langchain_huggingface import HuggingFaceEmbeddings
-from langchain_community.document_loaders import PyMuPDFLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_community.vectorstores import FAISS
 from langchain.chains import RetrievalQA
-from langchain_core.output_parsers import StrOutputParser
-from langchain_core.runnables import RunnablePassthrough
-from langchain import hub
+from langchain.chains import RetrievalQA
+from langchain_core.prompts import PromptTemplate
+from langchain_community.document_loaders import PyPDFLoader # This is needed in utils.py
+
+# Global to track conversation context
+chat_history = []
+
+def initialize_chain(documents=None, embed_model=None, llm=None):
+    vectorstore = create_embeddings(documents, embed_model) if documents else None
+    return create_qa_chain(vectorstore, llm)
+
+def create_qa_chain(vectorstore=None, llm=None):
+    prompt = PromptTemplate.from_template(template)
+
+    if vectorstore:
+        # Create a retriever from the vectorstore and build a QA chain
+        retriever = vectorstore.as_retriever()
+        return load_qa_chain(retriever, llm, prompt)
+    else:
+        # General chat mode without context
+        def general_chat(inputs):
+            query = inputs['query']
+            prompt_text = prompt.format(context="", question=query)
+            return llm.invoke(prompt_text)
+        
+        return general_chat
 
 def split_docs(documents, chunk_size=1000, chunk_overlap=20):
-    """
-    Split the documents into smaller chunks.
-
-    Args:
-    - documents (list): List of documents to split.
-    - chunk_size (int, optional): Size of each chunk (default: 1000).
-    - chunk_overlap (int, optional): Overlap between chunks (default: 20).
-
-    Returns:
-    - list: List of document chunks.
-    """
-    # Initializing the RecursiveCharacterTextSplitter with
-    # chunk_size and chunk_overlap
-    text_splitter = RecursiveCharacterTextSplitter(
-        chunk_size=chunk_size,
-        chunk_overlap=chunk_overlap
-    )
-    
-    # Splitting the documents into chunks
-    chunks = text_splitter.split_documents(documents=documents)
-    
-    # returning the document chunks
-    return chunks
+    text_splitter = RecursiveCharacterTextSplitter(chunk_size=chunk_size, chunk_overlap=chunk_overlap)
+    return text_splitter.split_documents(documents=documents)
 
 def load_embedding_model(model_path, normalize_embedding=True):
-    """
-    Load a text embedding model.
-
-    Args:
-    - model_path (str): Path to the embedding model.
-    - normalize_embedding (bool, optional): Whether to normalize embeddings (default: True).
-
-    Returns:
-    - HuggingFaceEmbeddings: Text embedding model.
-    """
     return HuggingFaceEmbeddings(
         model_name=model_path,
-        model_kwargs={'device':'cpu'}, # here we will run the model with CPU only
-        encode_kwargs = {
-            'normalize_embeddings': normalize_embedding # keep True to compute cosine similarity
-        }
+        model_kwargs={'device':'cpu'},
+        encode_kwargs = {'normalize_embeddings': normalize_embedding}
     )
 
-def create_embeddings(chunks, embedding_model, storing_path="vectorstore"):
-    """
-    Create embeddings for document chunks.
-
-    Args:
-    - chunks (list): List of document chunks.
-    - embedding_model (HuggingFaceEmbeddings): Text embedding model.
-    - storing_path (str, optional): Path to store the embeddings (default: "vectorstore").
-
-    Returns:
-    - FAISS: Vector store containing embeddings.
-    """
-    # Creating the embeddings using FAISS
-    vectorstore = FAISS.from_documents(chunks, embedding_model)
+def create_embeddings(documents, embedding_model, storing_path="vectorstore"):
+    text_chunks = []
     
-    # Saving the model in current directory
+    for doc in documents:
+        if 'text' in doc and doc['text']:
+            text_chunks.extend(split_docs([{"text": doc['text']}]))  # Text embedding
+
+    # Create text embeddings
+    text_vectors = embedding_model.embed_documents([chunk.page_content for chunk in text_chunks])
+
+    # Create FAISS vectorstore
+    vectorstore = FAISS.from_embeddings(text_vectors, text_chunks)
     vectorstore.save_local(storing_path)
-    
-    # returning the vectorstore
+
     return vectorstore
 
 def load_qa_chain(retriever, llm, prompt):
-    """
-    Create a question-answering chain.
-
-    Args:
-    - retriever (FAISS): Vector store retriever.
-    - llm: Language model.
-    - prompt (str): Prompt template.
-
-    Returns:
-    - RetrievalQA: Question-answering chain.
-    """
     return RetrievalQA.from_chain_type(
         llm=llm,
-        retriever=retriever, # here we are using the vectorstore as a retriever
+        retriever=retriever,
         chain_type="stuff",
-        return_source_documents=True, # including source documents in output
-        chain_type_kwargs={'prompt': prompt} # customizing the prompt
+        return_source_documents=True,
+        chain_type_kwargs={'prompt': prompt}
     )
 
-def load_qa_chain_v2(vectorstore, llm, prompt): # ToDo: we need to use this new method, but it's not yet implemented.
-    """
-    Create a question-answering chain using the new approach.
-
-    Args:
-    - vectorstore (FAISS): Vector store retriever.
-    - llm: Language model.
-    - prompt (str): Prompt template.
-
-    Returns:
-    - chain: Question-answering chain.
-    """
-    qa_chain = (
-        {
-            "context": vectorstore,  # Directly use vectorstore retriever
-            "question": RunnablePassthrough(),
-        }
-        | prompt
-        | llm
-        | StrOutputParser()
-    )
-    return qa_chain.invoke(prompt)
-
-
-def get_response(query, chain):
-    """
-    Processes a user query using the provided QA chain and returns the response.
-
-    Args:
-        query (str): The query string from the user.
-        chain (callable): The QA chain function or object used to generate responses. 
-                          It should accept a dictionary with a 'query' key and return a response.
-
-    Returns:
-        dict: A dictionary containing the response to the query. 
-              If the response is a string, it is wrapped in a dictionary with the key 'result'. 
-              In case of an error, returns a dictionary with the key 'result' and a value indicating an error.
-    """
+def get_response(query, chain, history_limit=10):
+    global chat_history
+    if query.lower() in ['forget everything', 'forget that']:
+        chat_history = []  # Reset history
+        formatted_prompt = {"query": f"User: {query}"}
+    else:
+        context = "\n".join(chat_history[-history_limit:])  # Keep only the last N interactions
+        formatted_prompt = {"query": f"{context}\nUser: {query}"}
+    
     try:
-        response = chain({'query': query})
-        # Ensure the response is a dict
+        response = chain(formatted_prompt)
+        
         if isinstance(response, str):
-            response = {'result': response}
-        return response
+            result = response
+        else:
+            result = response.get('result', 'No result found')
+
+        chat_history.append(f"User: {query}\nAI: {result}")
+        
+        return {'result': result}
+    
     except Exception as e:
-        print(f"Error in get_response: {e}")
-        return {'result': 'Error processing the query'}
-
-
-# Prompt template
-prompt_template = """
-### System:
-You are an AI Assistant that follows instructions extremely well. \
-Help as much as you can.
-
-### User:
-{prompt}
-
-### Response:
-
-"""
+        return {'result': f'Error processing the query: {e}'}
 
 # Template string for system responses
 template = """
 ### System:
-You are a respectful and honest assistant. You have to answer the user's \
-questions using only the context provided to you. If you don't know the answer, \
-just say you don't know. Don't try to make up an answer. Also try to give reference for your answer.
+You are a respectful and honest assistant. Answer the user's \
+questions using only the provided context. If you don't know the answer, \
+just say you don't know. Provide references where possible.
 
 ### Context:
 {context}
