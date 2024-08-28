@@ -50,20 +50,24 @@ def download_and_copy_dll(url, target_path):
     except Exception as e:
         print(f"An error occurred: {e}")
 
-def load_pdf_data_if_allowed(filename, allowed_extensions, upload_folder):
-    if allowed_file(filename, allowed_extensions):
-        file_path = os.path.join(upload_folder, filename)
-        return load_pdf_data(file_path)
-    return []
+def allowed_file(filename, allowed_extensions):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in allowed_extensions
 
 def load_pdf_data(file_path):
     try:
-        loader = PyPDFLoader(file_path=file_path)  # Reverting to PyPDFLoader
+        loader = PyPDFLoader(file_path=file_path)
         docs = loader.load()
         return docs
     except Exception as e:
         print(f"Error loading PDF {file_path}: {e}")
         return []
 
-def allowed_file(filename, allowed_extensions):
-    return '.' in filename and filename.rsplit('.', 1)[1].lower() in allowed_extensions
+def load_and_process_documents(file_paths, upload_folder, allowed_extensions):
+    documents = []
+    for file_path in file_paths:
+        if allowed_file(file_path, allowed_extensions):
+            full_file_path = os.path.join(upload_folder, file_path)
+            if file_path.endswith('.pdf'):
+                docs = load_pdf_data(full_file_path)
+            documents.extend(docs)
+    return split_docs(documents)

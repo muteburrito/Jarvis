@@ -105,7 +105,7 @@ def process_data():
         return jsonify({'error': 'No files to process'}), 400
 
     # Load and process documents directly from the file paths
-    documents = load_pdf_data_if_allowed(files, ALLOWED_EXTENSIONS, data_directory)
+    documents = load_and_process_documents(files, data_directory, ALLOWED_EXTENSIONS)
 
     if not documents:
         return jsonify({'error': 'No valid documents found to process'}), 400

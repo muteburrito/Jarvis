@@ -30,8 +30,16 @@ def create_qa_chain(vectorstore=None, llm=None):
         return general_chat
 
 def split_docs(documents, chunk_size=1000, chunk_overlap=20):
-    text_splitter = RecursiveCharacterTextSplitter(chunk_size=chunk_size, chunk_overlap=chunk_overlap)
-    return text_splitter.split_documents(documents=documents)
+    text_splitter = RecursiveCharacterTextSplitter(
+        chunk_size=chunk_size,
+        chunk_overlap=chunk_overlap
+    )
+    
+    # Splitting the documents into chunks
+    chunks = text_splitter.split_documents(documents=documents)
+    
+    # returning the document chunks
+    return chunks
 
 def load_embedding_model(model_path, normalize_embedding=True):
     return HuggingFaceEmbeddings(
@@ -40,20 +48,13 @@ def load_embedding_model(model_path, normalize_embedding=True):
         encode_kwargs = {'normalize_embeddings': normalize_embedding}
     )
 
-def create_embeddings(documents, embedding_model, storing_path="vectorstore"):
-    text_chunks = []
+def create_embeddings(chunks, embedding_model, storing_path="vectorstore"):
+    vectorstore = FAISS.from_documents(chunks, embedding_model)
     
-    for doc in documents:
-        if 'text' in doc and doc['text']:
-            text_chunks.extend(split_docs([{"text": doc['text']}]))  # Text embedding
-
-    # Create text embeddings
-    text_vectors = embedding_model.embed_documents([chunk.page_content for chunk in text_chunks])
-
-    # Create FAISS vectorstore
-    vectorstore = FAISS.from_embeddings(text_vectors, text_chunks)
+    # Saving the model in current directory
     vectorstore.save_local(storing_path)
-
+    
+    # returning the vectorstore
     return vectorstore
 
 def load_qa_chain(retriever, llm, prompt):
@@ -67,9 +68,9 @@ def load_qa_chain(retriever, llm, prompt):
 
 def get_response(query, chain, history_limit=10):
     global chat_history
-    if query.lower() in ['forget everything', 'forget that']:
+    if 'forget everything' in query.lower() or 'forget that' in query.lower():
         chat_history = []  # Reset history
-        formatted_prompt = {"query": f"User: {query}"}
+        formatted_prompt = {"query": f"User: Hello!"}
     else:
         context = "\n".join(chat_history[-history_limit:])  # Keep only the last N interactions
         formatted_prompt = {"query": f"{context}\nUser: {query}"}
