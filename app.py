@@ -1,6 +1,8 @@
 import os
+import pyttsx3
+from gtts import gTTS 
 import shutil
-from flask import Flask, request, jsonify, render_template
+from flask import Flask, request, jsonify, render_template, send_file
 from werkzeug.utils import secure_filename
 from flask_cors import CORS
 from utils import *
@@ -9,6 +11,9 @@ from langchain_community.llms import Ollama
 # Flask app setup
 app = Flask(__name__)
 CORS(app)
+
+# Initialize pyttsx3 TTS engine
+tts_engine = pyttsx3.init()
 
 UPLOAD_FOLDER = 'data'
 ALLOWED_EXTENSIONS = {'pdf'}
@@ -49,6 +54,33 @@ def ask():
         result = response if isinstance(response, str) else response.get('result', 'No result found')
         return jsonify({'response': str(result)})
     except Exception as e:
+        return jsonify({'error': 'Error processing request'}), 500
+
+@app.route('/ask-voice', methods=['POST'])
+def ask_voice():
+    data = request.json
+    query = data.get('query')
+    if not query:
+        return jsonify({'error': 'No query provided'}), 400
+
+    try:
+        response = get_response(query, chain)  # Process the query with the language model
+        result = response.get('result', 'No result found')
+
+        # Ensure the 'data' directory exists
+        if not os.path.exists(app.config['UPLOAD_FOLDER']):
+            os.makedirs(app.config['UPLOAD_FOLDER'])
+
+        # Use text-to-speech (TTS) library to generate an audio file
+        tts = gTTS(text=result, lang='en')
+        audio_file_path = os.path.join(app.config['UPLOAD_FOLDER'], 'response.mp3')
+        tts.save(audio_file_path)
+
+        # Serve the generated audio file
+        return send_file(audio_file_path, mimetype='audio/mpeg')
+
+    except Exception as e:
+        print(f"Error processing request: {e}")  # Log the error
         return jsonify({'error': 'Error processing request'}), 500
 
 @app.route('/list-files', methods=['GET'])
