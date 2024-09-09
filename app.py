@@ -1,6 +1,7 @@
 import os
 import pyttsx3
 from gtts import gTTS 
+import threading
 import shutil
 from flask import Flask, request, jsonify, render_template, send_file
 from werkzeug.utils import secure_filename
@@ -67,17 +68,23 @@ def ask_voice():
         response = get_response(query, chain)  # Process the query with the language model
         result = response.get('result', 'No result found')
 
-        # Ensure the 'data' directory exists
-        if not os.path.exists(app.config['UPLOAD_FOLDER']):
-            os.makedirs(app.config['UPLOAD_FOLDER'])
+        # Function to run the TTS in a separate thread
+        def speak_text(text):
+            # Configure pyttsx3 for Jarvis-like voice settings (optional)
+            voices = tts_engine.getProperty('voices')
+            tts_engine.setProperty('voice', voices[1].id)  # Change to another voice index if needed
+            tts_engine.setProperty('rate', 190)  # Set the rate of speech
 
-        # Use text-to-speech (TTS) library to generate an audio file
-        tts = gTTS(text=result, lang='en')
-        audio_file_path = os.path.join(app.config['UPLOAD_FOLDER'], 'response.mp3')
-        tts.save(audio_file_path)
+            # Speak the result directly (without saving to file)
+            tts_engine.say(text)
+            tts_engine.runAndWait()
 
-        # Serve the generated audio file
-        return send_file(audio_file_path, mimetype='audio/mpeg')
+        # Start the TTS in a separate thread so that it doesn't block
+        tts_thread = threading.Thread(target=speak_text, args=(result,))
+        tts_thread.start()
+
+        # Return the response immediately
+        return jsonify({'message': 'Response spoken successfully!'}), 200
 
     except Exception as e:
         print(f"Error processing request: {e}")  # Log the error
