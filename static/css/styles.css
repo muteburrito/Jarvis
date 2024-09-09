@@ -296,6 +296,23 @@ button#sendButton {
     justify-content: center;
 }
 
+button#voiceButton {
+    margin-left: 5px;
+}
+
+.speak-btn {
+    background-color: transparent;  /* Transparent background */
+    border: none;                   /* Remove button border */
+    cursor: pointer;                /* Show hand cursor on hover */
+    font-size: 1.2em;               /* Adjust icon size */
+    color: black;                   /* Make the icon black */
+    padding: 0;                     /* Remove padding */
+}
+
+.speak-btn:hover {
+    color: #555;                    /* Optional: Change color on hover */
+}
+
 button#sendButton:hover {
     background-color: #ff79c6;
 }

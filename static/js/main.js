@@ -35,6 +35,29 @@ $(document).ready(function() {
         sendMessage();
     });
 
+        // Voice Input Functionality
+        $('#voiceButton').click(function() {
+            const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+            recognition.lang = 'en-US';
+            recognition.start();
+    
+            recognition.onresult = function(event) {
+                const voiceQuery = event.results[0][0].transcript;
+                $('#userInput').val(voiceQuery);  // Set the recognized speech as input
+                sendMessage();  // Automatically send the voice query
+            };
+    
+            recognition.onerror = function(event) {
+                alert('Voice recognition error: ' + event.error);
+            };
+        });
+    
+        // Function to speak the bot's response
+        function speakResponse(text) {
+            const speech = new SpeechSynthesisUtterance(text);
+            window.speechSynthesis.speak(speech);
+        }
+
     $('#userInput').keypress(function(e) {
         if (e.which == 13) {
             sendMessage();
@@ -243,7 +266,8 @@ $(document).ready(function() {
                     // Safely parse the response using marked
                     var markdownResponse = renderMarkdown(response.response); // Parse Markdown response
                     
-                    $('#messages').append('<div class="message bot-message">' + markdownResponse + '</div>');
+                    // Append the bot response with a "Speak" button
+                    $('#messages').append('<div class="message bot-message">' + markdownResponse + '<button class="btn btn-secondary speak-btn">🔊</button></div>');
                     
                     // Save chat history after bot response is added
                     updateChatHistory();
@@ -268,4 +292,11 @@ $(document).ready(function() {
             });
         }
     }
+
+    // Delegate the event for dynamically added speak buttons
+    $(document).on('click', '.speak-btn', function() {
+        const responseText = $(this).prev().text();  // Get the previous text node (the bot response)
+        speakResponse(responseText);
+    });
+    
 });

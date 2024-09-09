@@ -13,7 +13,17 @@ if exist "__pycache__" (
     rmdir /s /q __pycache__
 )
 
+if exist "vectorstore" (
+    echo "Cleaning old vectorstore"
+    rmdir /s /q vectorstore
+)
+
+if exist "data" (
+    echo "Cleaning old data dir"
+    rmdir /s /q data
+)
+
 echo "Activating venv..."
 call chatbot\Scripts\activate
-echo "Starting Assistant..."
-python assistant.py
+echo "Starting App..."
+flask run --reload
