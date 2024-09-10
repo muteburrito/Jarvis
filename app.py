@@ -8,7 +8,6 @@ from flask_cors import CORS
 from utils import *
 from langchain_community.llms import Ollama
 
-
 # Flask app setup
 app = Flask(__name__)
 CORS(app)
@@ -50,12 +49,11 @@ def ask():
     if not query:
         return jsonify({'error': 'No query provided'}), 400
     try:
-        # Process the query with chat history retained
         response = get_response(query, chain)
         result = response if isinstance(response, str) else response.get('result', 'No result found')
         return jsonify({'response': str(result)})
     except Exception as e:
-        return jsonify({'error': 'Error processing request'}), 500
+        return jsonify({'error': f'Error processing request: {e}'}), 500
     
 @app.route('/speak-response', methods=['POST'])
 def speak_response():
@@ -68,9 +66,7 @@ def speak_response():
         tts = gTTS(text=response_text, lang='en')
         audio_file_path = os.path.join(app.config['UPLOAD_FOLDER'], 'response.mp3')
         tts.save(audio_file_path)
-
         return send_file(audio_file_path, mimetype='audio/mpeg')
-
     except Exception as e:
         return jsonify({'error': f'Error processing request: {e}'}), 500
 
@@ -85,29 +81,19 @@ def list_files():
 
 @app.route('/upload', methods=['POST'])
 def upload_file():
-    # Ensure the upload folder (data) exists
     os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
-
-    # Check if 'file' is part of the request
     if 'file' not in request.files:
         return jsonify({'error': 'No file part'}), 400
 
-    files = request.files.getlist('file')  # Multiple files can be uploaded
+    files = request.files.getlist('file')
     if not files or files[0].filename == '':
         return jsonify({'error': 'No selected file'}), 400
 
     for file in files:
         if file and allowed_file(file.filename, ALLOWED_EXTENSIONS):
-            # Secure the filename
             filename = secure_filename(file.filename)
-
-            # Define the file path
             file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-
-            # Save the file to the specified folder
             file.save(file_path)
-
-            # Append the filename to the uploaded_files list
             if filename not in uploaded_files:
                 uploaded_files.append(filename)
 
@@ -121,19 +107,16 @@ def process_data():
     if not os.path.exists(data_directory):
         return jsonify({'error': 'Data directory does not exist'}), 400
     
-    # Get all PDF files in the data directory
     files = [f for f in os.listdir(data_directory) if allowed_file(f, ALLOWED_EXTENSIONS)]
     
     if not files:
         return jsonify({'error': 'No files to process'}), 400
 
-    # Load and process documents directly from the file paths
     documents = load_and_process_documents(files, data_directory, ALLOWED_EXTENSIONS)
 
     if not documents:
         return jsonify({'error': 'No valid documents found to process'}), 400
 
-    # Initialize the chain with the processed documents
     chain = initialize_chain(documents, embed_model=embed, llm=llm)
     
     return jsonify({'message': 'Vector store created successfully!'})

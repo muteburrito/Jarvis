@@ -2,22 +2,22 @@ $(document).ready(function() {
 
     // Set marked.js options
     marked.setOptions({
-        breaks: true,  // Convert line breaks to <br> tags
+        breaks: true,
         highlight: function (code, lang) {
-            return hljs.highlightAuto(code).value;  // Use highlight.js for code highlighting
+            return hljs.highlightAuto(code).value;
         }
     });
 
     // Load chat history if it exists in localStorage
     if (localStorage.getItem('chatHistory')) {
         $('#messages').html(localStorage.getItem('chatHistory'));
-        $('.chat-box').scrollTop($('.chat-box')[0].scrollHeight);  // Scroll to the bottom
+        $('.chat-box').scrollTop($('.chat-box')[0].scrollHeight);
     }
 
     // Function to clear chat history
     $('#clearChatHistoryButton').click(function() {
         localStorage.removeItem('chatHistory');
-        $('#messages').empty(); // Clear the messages from the UI as well
+        $('#messages').empty();
     });
 
     // Function to render markdown safely
@@ -25,7 +25,7 @@ $(document).ready(function() {
         return marked.parse(markdownText);
     }
 
-    // We will use this to save chat history
+    // Save chat history
     function updateChatHistory() {
         var chatHistory = $('#messages').html();
         localStorage.setItem('chatHistory', chatHistory);
@@ -35,28 +35,28 @@ $(document).ready(function() {
         sendMessage();
     });
 
-        // Voice Input Functionality
-        $('#voiceButton').click(function() {
-            const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
-            recognition.lang = 'en-US';
-            recognition.start();
-    
-            recognition.onresult = function(event) {
-                const voiceQuery = event.results[0][0].transcript;
-                $('#userInput').val(voiceQuery);  // Set the recognized speech as input
-                sendMessage();  // Automatically send the voice query
-            };
-    
-            recognition.onerror = function(event) {
-                alert('Voice recognition error: ' + event.error);
-            };
-        });
-    
-        // Function to speak the bot's response
-        function speakResponse(text) {
-            const speech = new SpeechSynthesisUtterance(text);
-            window.speechSynthesis.speak(speech);
-        }
+    // Voice Input Functionality
+    $('#voiceButton').click(function() {
+        const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+        recognition.lang = 'en-US';
+        recognition.start();
+
+        recognition.onresult = function(event) {
+            const voiceQuery = event.results[0][0].transcript;
+            $('#userInput').val(voiceQuery);
+            sendMessage();
+        };
+
+        recognition.onerror = function(event) {
+            alert('Voice recognition error: ' + event.error);
+        };
+    });
+
+    // Function to speak the bot's response
+    function speakResponse(text) {
+        const speech = new SpeechSynthesisUtterance(text);
+        window.speechSynthesis.speak(speech);
+    }
 
     $('#userInput').keypress(function(e) {
         if (e.which == 13) {
@@ -66,20 +66,20 @@ $(document).ready(function() {
 
     // Automatically upload the files once selected
     $('#fileInput').change(function() {
-        var files = $('#fileInput')[0].files; // Get the selected files
+        var files = $('#fileInput')[0].files;
         if (files.length > 0) {
             for (var i = 0; i < files.length; i++) {
                 var file = files[i];
                 if (file.type === "application/pdf") {
-                    uploadFile(file); // Upload each selected file
+                    uploadFile(file);
                 } else {
-                    alert("Only PDF files are allowed."); // Handle non-PDF files
+                    alert("Only PDF files are allowed.");
                 }
             }
         }
     });
 
-    startTyping(); // Start the typing animation immediately on page load
+    startTyping();
 
     // Set interval for backspace and re-typing every 60 seconds
     setInterval(function() {
@@ -89,51 +89,43 @@ $(document).ready(function() {
     function startTyping() {
         $('.title').css('width', '0');
         setTimeout(function() {
-            $('.title').addClass('typing'); // Add typing class to animate
+            $('.title').addClass('typing');
             setTimeout(function() {
-                // Hide the cursor after typing finishes
                 $('.title').css('border-right', 'none');
-            }, 2500); // Adjust this timeout to match the typing duration
-        }, 200); // Small delay to start animation
+            }, 2500);
+        }, 200);
     }
 
-    // Function for backspace and ReType
     function backspaceAndRetype() {
-        $('.title').css('border-right', '4px solid #ff79c6'); // Show cursor again
-        $('.title').css('width', '15ch'); // Ensure it's fully visible
-        $('.title').removeClass('typing').css('animation', 'backspace 2s steps(15, end) forwards'); // Backspace animation
+        $('.title').css('border-right', '4px solid #ff79c6');
+        $('.title').css('width', '15ch');
+        $('.title').removeClass('typing').css('animation', 'backspace 2s steps(15, end) forwards');
         
         setTimeout(function() {
             $('.title').css('animation', 'typing 1s steps(15, end) forwards').addClass('typing');
             setTimeout(function() {
-                // Hide the cursor after retyping finishes
                 $('.title').css('border-right', 'none');
-            }, 2500); // Adjust this timeout to match the typing duration
-        }, 2000); // Delay to allow backspacing to finish
+            }, 2500);
+        }, 2000);
     }
 
-    // Function to show notifications
     function showNotification(message, type) {
         var notificationBar = $('.notification-bar');
-        notificationBar.text(message); // Set the message text
+        notificationBar.text(message);
 
-        // Add the appropriate type class (success, error)
         if (type === 'success') {
             notificationBar.removeClass('error').addClass('success');
         } else if (type === 'error') {
             notificationBar.removeClass('success').addClass('error');
         }
 
-        // Show the notification by adding the "show" class
         notificationBar.addClass('show');
 
-        // Hide the notification after 3 seconds
         setTimeout(function() {
             notificationBar.removeClass('show');
-        }, 3000); // You can adjust the time as needed
+        }, 3000);
     }
 
-    // Function to handle file upload
     function uploadFile(file) {
         var formData = new FormData();
         formData.append('file', file);
@@ -147,9 +139,9 @@ $(document).ready(function() {
             success: function(response) {
                 if (response.uploaded_files) {
                     var fileList = $('#fileList');
-                    fileList.empty();  // Clear existing list
+                    fileList.empty();
                     response.uploaded_files.forEach(function(file) {
-                        fileList.append('<li>' + file + '</li>');  // Add new files
+                        fileList.append('<li>' + file + '</li>');
                     });
                 }
             },
@@ -159,7 +151,6 @@ $(document).ready(function() {
         });
     }
 
-    // Fetch the list of uploaded files on page load
     fetchUploadedFiles();
 
     function fetchUploadedFiles() {
@@ -169,9 +160,9 @@ $(document).ready(function() {
             success: function(response) {
                 if (response.uploaded_files) {
                     var fileList = $('#fileList');
-                    fileList.empty();  // Clear existing list
+                    fileList.empty();
                     response.uploaded_files.forEach(function(file) {
-                        fileList.append('<li>' + file + '</li>');  // Add new files
+                        fileList.append('<li>' + file + '</li>');
                     });
                 }
             },
@@ -181,33 +172,26 @@ $(document).ready(function() {
         });
     }
 
-    // Process data button logic
     $('#processDataButton').click(function() {
-        // Show the loading spinner
         $('#loading').show();
 
         $.ajax({
-            url: '/process-data', // Backend endpoint to process the data and create vector store
+            url: '/process-data',
             type: 'POST',
             success: function(response) {
-                // Hide the loading spinner
                 $('#loading').hide();
-                
                 showNotification('Data processed successfully, vector store created!', 'success');
             },
             error: function() {
-                // Hide the loading spinner even if there's an error
                 $('#loading').hide();
-
                 showNotification('Error processing data.', 'error');
             }
         });
     });
 
-    // Clear vector store button logic
     $('#clearVectorStoreButton').click(function() {
         $.ajax({
-            url: '/clear-vector-store', // Backend endpoint to clear the vector store
+            url: '/clear-vector-store',
             type: 'POST',
             success: function(response) {
                 showNotification('Vector store cleared successfully!', 'success');
@@ -218,13 +202,12 @@ $(document).ready(function() {
         });
     });
 
-    // Clear files button logic
     $('#clearFilesButton').click(function() {
         $.ajax({
             url: '/clear-docs',
             type: 'POST',
             success: function(response) {
-                $('#fileList').empty(); // Clear the file list in the sidebar
+                $('#fileList').empty();
                 showNotification('Documents cleared successfully!', 'success');
             },
             error: function() {
@@ -233,23 +216,17 @@ $(document).ready(function() {
         });
     });
 
-    $('#sendButton').click(function() {
-        sendMessage();
-    });
-
     function sendMessage() {
         var userInput = $('#userInput').val();
         if (userInput) {
             $('#messages').append('<div class="message user-message">' + userInput + '</div>');
             $('#userInput').val('');
             
-            updateChatHistory(); //Save User's message
+            updateChatHistory();
 
-            // Disable the button but do not change its inner HTML (so the icon stays intact)
             $('#sendButton').prop('disabled', true);
-            $('#sendButton i').removeClass('fa-paper-plane').addClass('fa-spinner fa-spin'); // Change the icon to a spinner
+            $('#sendButton i').removeClass('fa-paper-plane').addClass('fa-spinner fa-spin');
     
-            // Add three-dot animation
             $('#messages').append('<div class="message bot-message thinking-dots"><span class="thinking-dot">.</span><span class="thinking-dot">.</span><span class="thinking-dot">.</span></div>');
     
             $.ajax({
@@ -258,32 +235,25 @@ $(document).ready(function() {
                 contentType: 'application/json',
                 data: JSON.stringify({ query: userInput }),
                 success: function(response) {
-                    // Remove the three-dot animation when response is received
                     $('.thinking-dots').remove();
                     
                     console.log(response.response);
 
-                    // Safely parse the response using marked
-                    var markdownResponse = renderMarkdown(response.response); // Parse Markdown response
+                    var markdownResponse = renderMarkdown(response.response);
                     
-                    // Append the bot response with a "Speak" button
                     $('#messages').append('<div class="message bot-message">' + markdownResponse + '<button class="btn btn-secondary speak-btn">🔊</button></div>');
                     
-                    // Save chat history after bot response is added
                     updateChatHistory();
 
-                    // Re-enable the button and restore the paper-plane icon
                     $('#sendButton').prop('disabled', false);
                     $('#sendButton i').removeClass('fa-spinner fa-spin').addClass('fa-paper-plane');
     
                     $('.chat-box').scrollTop($('.chat-box')[0].scrollHeight);
                 },
                 error: function() {
-                    // Handle error and remove the animation
                     $('.thinking-dots').remove();
                     $('#messages').append('<div class="message bot-message">Error getting response.</div>');
                     
-                    // Re-enable the button and restore the paper-plane icon
                     $('#sendButton').prop('disabled', false);
                     $('#sendButton i').removeClass('fa-spinner fa-spin').addClass('fa-paper-plane');
     
@@ -293,10 +263,8 @@ $(document).ready(function() {
         }
     }
 
-    // Delegate the event for dynamically added speak buttons
     $(document).on('click', '.speak-btn', function() {
-        const responseText = $(this).prev().text();  // Get the previous text node (the bot response)
+        const responseText = $(this).prev().text();
         speakResponse(responseText);
     });
-    
 });

@@ -56,8 +56,7 @@ def allowed_file(filename, allowed_extensions):
 def load_pdf_data(file_path):
     try:
         loader = PyPDFLoader(file_path=file_path)
-        docs = loader.load()
-        return docs
+        return loader.load()
     except Exception as e:
         print(f"Error loading PDF {file_path}: {e}")
         return []
