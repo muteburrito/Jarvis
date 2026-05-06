@@ -1,0 +1,3 @@
+#!/bin/bash
+# Create symlink so `jarvis` works from any terminal
+ln -sf /usr/local/bin/jarvis /usr/local/bin/jarvis 2>/dev/null || true

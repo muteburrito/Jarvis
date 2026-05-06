@@ -1,0 +1,782 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jarvis</title>
+    <script src="https://cdn.tailwindcss.com?plugins=typography"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+        }
+    </script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3/dist/cdn.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/dompurify/dist/purify.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@11.11.1/styles/github-dark.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/highlight.js@11.11.1/lib/common.min.js"></script>
+    <link rel="stylesheet" href="/static/css/app.css">
+</head>
+<body x-data="chatApp()"
+      class="bg-slate-900 text-slate-200 h-screen flex flex-col overflow-hidden">
+
+    <!-- Navbar -->
+    <nav class="jarvis-topbar flex items-center justify-between px-4 py-2 shrink-0">
+        <div class="flex items-center gap-3">
+            <button @click="sidebarOpen = !sidebarOpen" class="p-2 rounded-lg hover:bg-slate-700 text-slate-300 hover:text-slate-100">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+                </svg>
+            </button>
+            <div class="flex items-center gap-2">
+                <svg class="w-6 h-6 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/>
+                </svg>
+                <h1 class="text-sm font-semibold text-slate-100" x-text="appConfig.app_name || 'Jarvis'">Jarvis</h1>
+            </div>
+        </div>
+        <div class="flex items-center gap-1">
+            <button @click="exportConversation()"
+                    :disabled="messages.length === 0"
+                    class="p-2 rounded-lg hover:bg-slate-700 text-slate-400 hover:text-slate-200 disabled:opacity-40 disabled:cursor-not-allowed transition-colors" title="Export conversation">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m4 8H5a2 2 0 01-2-2V7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v10a2 2 0 01-2 2z"/>
+                </svg>
+            </button>
+            <a x-show="hasSupportContact()" x-cloak :href="supportHref()"
+               class="p-2 rounded-lg hover:bg-slate-700 text-slate-400 hover:text-slate-200 transition-colors" title="Contact support">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+                </svg>
+            </a>
+            <button @click="showRoadmap = true" class="p-2 rounded-lg hover:bg-slate-700 text-slate-400 hover:text-slate-200 transition-colors" title="Upcoming features">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"/>
+                </svg>
+            </button>
+            <button @click="showHelp = true" class="p-2 rounded-lg hover:bg-slate-700 text-slate-400 hover:text-slate-200 transition-colors" title="Help">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+            </button>
+        </div>
+    </nav>
+
+    <!-- Update banner -->
+    <div x-show="updateInfo?.update_available && !updateDismissed" x-cloak
+         class="bg-blue-700 text-white px-4 py-2 flex items-center justify-between text-sm shrink-0">
+        <span>
+            <strong><span x-text="appConfig.app_name || 'Jarvis'">Jarvis</span> <span x-text="updateInfo?.latest"></span></strong> is available
+            <span class="text-blue-100">-</span> you have <span x-text="updateInfo?.current"></span>.
+        </span>
+        <div class="flex items-center gap-3">
+            <button x-show="updateInfo?.installer_url" @click="applyUpdate()" :disabled="updateApplying"
+                    class="bg-white text-blue-700 font-medium px-3 py-1 rounded hover:bg-blue-50 disabled:opacity-60 disabled:cursor-not-allowed transition-colors">
+                <span x-show="!updateApplying">Install now</span>
+                <span x-show="updateApplying">Restarting...</span>
+            </button>
+            <button @click="openNotesModal(updateInfo?.latest, updateInfo?.latest_notes)"
+                    class="underline hover:no-underline opacity-80 hover:opacity-100">What's new</button>
+            <button @click="updateDismissed = true" class="opacity-70 hover:opacity-100 text-lg leading-none">&times;</button>
+        </div>
+    </div>
+
+    <!-- Main layout -->
+    <div class="flex flex-1 overflow-hidden">
+
+        <!-- Sidebar -->
+        <aside x-show="sidebarOpen" x-transition:enter="transition ease-out duration-200"
+               x-transition:enter-start="-translate-x-full" x-transition:enter-end="translate-x-0"
+               x-transition:leave="transition ease-in duration-150"
+               x-transition:leave-start="translate-x-0" x-transition:leave-end="-translate-x-full"
+               class="jarvis-sidebar w-80 flex flex-col shrink-0 fixed lg:relative z-10 h-[calc(100vh-2.75rem)] lg:h-auto top-[2.75rem] lg:top-0 left-0">
+
+            <!-- Chat history header -->
+            <div class="p-4">
+                <button @click="newChat()"
+                        :disabled="isStreaming"
+                        class="mb-5 flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-medium text-slate-200 hover:bg-slate-700/80 disabled:opacity-50 transition-colors">
+                    <svg class="h-4 w-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v14m-7-7h14"/>
+                    </svg>
+                    <span>New chat</span>
+                </button>
+                <div class="flex items-center justify-between mb-3">
+                    <h2 class="text-xs font-medium text-slate-500">Chats</h2>
+                </div>
+            </div>
+
+            <!-- Chat history list -->
+            <div class="flex-1 overflow-y-auto px-2 pb-4">
+                <template x-if="chatSessions.length === 0">
+                    <p class="px-3 py-4 text-sm text-slate-500">No chats yet</p>
+                </template>
+                <template x-for="chat in chatSessions" :key="chat.id">
+                    <div class="group mb-1.5 flex items-center gap-2 rounded-xl px-2.5 py-2.5 transition-colors"
+                         :class="activeChatID === chat.id ? 'bg-slate-700/90 text-slate-100 shadow-sm ring-1 ring-blue-400/10' : 'text-slate-400 hover:bg-slate-700/50 hover:text-slate-200'">
+                        <button @click="openChat(chat.id)"
+                                :disabled="isStreaming"
+                                class="min-w-0 flex-1 text-left disabled:cursor-not-allowed disabled:opacity-60">
+                            <div class="flex items-start gap-2">
+                                <svg class="mt-0.5 h-4 w-4 shrink-0 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M21 12c0 4.418-4.03 8-9 8a9.77 9.77 0 01-4-.8L3 20l1.3-3.2A7.56 7.56 0 013 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
+                                </svg>
+                                <div class="min-w-0">
+                                    <p class="truncate text-sm font-medium" x-text="chatTitle(chat)"></p>
+                                    <p class="mt-0.5 truncate text-xs text-slate-500">
+                                        <span x-text="chat.message_count + ' messages'"></span>
+                                        <span x-show="chatTimestamp(chat)" x-text="' , ' + chatTimestamp(chat)"></span>
+                                    </p>
+                                </div>
+                            </div>
+                        </button>
+                        <button @click="deleteChat(chat.id)"
+                                :disabled="isStreaming"
+                                class="p-1 rounded text-slate-500 opacity-0 transition-opacity hover:bg-red-950/50 hover:text-red-300 group-hover:opacity-100 shrink-0">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                            </svg>
+                        </button>
+                    </div>
+                </template>
+            </div>
+
+            <!-- Sidebar footer: version watermark -->
+            <div class="px-4 py-3 shrink-0">
+                <span class="text-xs text-slate-500"><span x-text="appConfig.app_name || 'Jarvis'">Jarvis</span> <span x-text="updateInfo?.current || 'dev'"></span></span>
+            </div>
+
+        </aside>
+
+        <!-- Sidebar overlay on mobile -->
+        <div x-show="sidebarOpen" @click="sidebarOpen = false"
+             class="fixed inset-0 bg-black/50 z-[5] lg:hidden"
+             x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100"
+             x-transition:leave="transition ease-in duration-150" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0">
+        </div>
+
+        <!-- Chat area -->
+        <main class="flex-1 flex flex-col min-w-0 bg-slate-900">
+
+            <div class="jarvis-chat-header flex h-11 shrink-0 items-center justify-between px-6">
+                <div class="min-w-0">
+                    <p class="truncate text-sm font-semibold text-slate-200" x-text="currentChatTitle()"></p>
+                </div>
+                <button @click="showDocumentsPanel = true; loadDocuments()"
+                        class="inline-flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-xs text-slate-400 hover:bg-slate-800 hover:text-slate-100">
+                    <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h10M4 18h7"/>
+                    </svg>
+                    <span x-text="documents.length + ' indexed'"></span>
+                </button>
+            </div>
+
+            <!-- Messages -->
+            <div x-ref="messagesContainer" class="jarvis-messages flex-1 overflow-y-auto px-4 py-8 space-y-7">
+
+                <!-- Welcome message -->
+                <template x-if="messages.length === 0">
+                    <div class="mx-auto flex h-full max-w-3xl flex-col items-center justify-center text-center">
+                        <svg class="w-12 h-12 text-slate-600 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/>
+                        </svg>
+                        <h2 class="text-xl font-semibold text-slate-200 mb-2">What are we working on?</h2>
+                        <p class="text-slate-500 max-w-md text-sm">Attach files or folders, ask about indexed code, or start a local research thread.</p>
+                    </div>
+                </template>
+
+                <!-- Message bubbles -->
+                <template x-for="(msg, idx) in messages" :key="idx">
+                    <div x-show="msg.content || msg.role === 'user' || (msg.progress && msg.progress.length > 0)" class="jarvis-message-row" :class="msg.role === 'user' ? 'jarvis-message-user' : 'jarvis-message-assistant'">
+                        <div :class="msg.role === 'user'
+                            ? 'chat-bubble user-bubble rounded-2xl px-4 py-3'
+                            : 'chat-bubble assistant-bubble px-2 sm:px-4 py-3'">
+
+                            <!-- User message -->
+                            <template x-if="msg.role === 'user'">
+                                <div>
+                                    <template x-if="msg.attachments && msg.attachments.length > 0">
+                                        <div class="message-image-grid mb-3">
+                                            <template x-for="attachment in msg.attachments" :key="attachment.name + (attachment.previewUrl || '')">
+                                                <div class="message-image-card">
+                                                    <template x-if="attachment.previewUrl">
+                                                        <img :src="attachment.previewUrl" :alt="attachment.name" class="message-image-preview">
+                                                    </template>
+                                                    <template x-if="!attachment.previewUrl">
+                                                        <div class="message-image-fallback">
+                                                            <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                                                            </svg>
+                                                        </div>
+                                                    </template>
+                                                    <div class="message-image-meta">
+                                                        <span class="truncate" x-text="attachment.name"></span>
+                                                        <span x-text="formatBytes(attachment.size)"></span>
+                                                    </div>
+                                                </div>
+                                            </template>
+                                        </div>
+                                    </template>
+                                    <div class="chat-message prose prose-sm prose-invert max-w-none prose-p:my-1 prose-pre:my-2 user-message"
+                                         x-html="renderMarkdown(msg.content)"></div>
+                                </div>
+                            </template>
+
+                            <!-- Assistant message -->
+                            <template x-if="msg.role === 'assistant'">
+                                <div>
+                                    <template x-if="msg.progress && msg.progress.length > 0">
+                                        <div class="research-progress mb-3 rounded-xl border border-slate-700 bg-slate-900/70 p-3">
+                                            <div class="mb-2 flex items-center gap-2 text-xs font-medium text-purple-300">
+                                                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                                                </svg>
+                                                <span>Research progress</span>
+                                            </div>
+                                            <div class="space-y-1.5">
+                                                <template x-for="(event, progressIdx) in msg.progress.slice(-6)" :key="progressIdx + event.step + event.detail">
+                                                    <div class="research-progress-item flex items-start gap-2 text-xs">
+                                                        <span class="mt-1 h-2 w-2 shrink-0 rounded-full"
+                                                              :class="event.status === 'done' ? 'bg-emerald-400' : event.status === 'failed' ? 'bg-red-400' : 'bg-purple-400 animate-pulse'"></span>
+                                                        <div class="min-w-0">
+                                                            <span class="font-medium text-slate-300" x-text="progressLabel(event.step)"></span>
+                                                            <span class="text-slate-500">:</span>
+                                                            <span class="text-slate-400" x-text="event.detail"></span>
+                                                        </div>
+                                                    </div>
+                                                </template>
+                                            </div>
+                                        </div>
+                                    </template>
+
+                                    <div x-show="msg.content"
+                                         class="chat-message prose prose-sm prose-invert max-w-none prose-p:my-1 prose-headings:my-2 prose-pre:my-2 prose-ul:my-1 prose-ol:my-1"
+                                         x-html="renderMarkdown(msg.content)"></div>
+
+                                    <!-- Sources -->
+                                    <template x-if="msg.sources && msg.sources.length > 0">
+                                        <div class="mt-3 pt-2 border-t border-slate-700">
+                                            <p class="text-xs text-slate-400 mb-1">Sources:</p>
+                                            <div class="flex flex-wrap gap-1">
+                                                <template x-for="src in msg.sources" :key="src.index + src.filename + (src.page || '')">
+                                                    <button @click="openSourcePreview(src)"
+                                                            class="inline-flex items-center gap-1 text-xs bg-slate-700 text-slate-400 hover:text-slate-100 hover:bg-slate-600 rounded-full px-2 py-0.5 transition-colors"
+                                                            :title="'Preview source [' + src.index + ']'">
+                                                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                                                        </svg>
+                                                        <span x-text="'[' + src.index + '] ' + sourceLabel(src)"></span>
+                                                    </button>
+                                                </template>
+                                            </div>
+                                        </div>
+                                    </template>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+                </template>
+
+                <!-- Typing indicator -->
+                <div x-show="isStreaming && messages.length > 0 && messages[messages.length-1].content === ''" class="flex justify-start">
+                    <div class="bg-slate-800 border border-slate-700 rounded-2xl rounded-bl-md px-4 py-3 shadow-sm">
+                        <div class="typing-indicator">
+                            <span></span><span></span><span></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Input area -->
+            <div class="jarvis-composer-wrap shrink-0 px-4 pb-4 pt-3">
+                <div class="mx-auto max-w-4xl">
+                    <input type="file" x-ref="fileInput" @change="uploadFiles($refs.fileInput.files)" class="hidden"
+                           multiple>
+                    <input type="file" x-ref="folderInput" @change="uploadFiles($refs.folderInput.files)" class="hidden"
+                           webkitdirectory directory multiple>
+
+                    <div class="mb-2 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                        <div x-show="isUploading" class="min-w-0 flex-1">
+                            <div class="flex justify-between text-xs text-slate-400 mb-1">
+                                <span class="truncate" x-text="uploadingName">Uploading...</span>
+                                <span x-text="uploadProgress + '%'"></span>
+                            </div>
+                            <div class="w-full bg-slate-700 rounded-full h-1.5">
+                                <div class="bg-blue-600 h-1.5 rounded-full transition-all duration-300"
+                                     :style="'width: ' + uploadProgress + '%'"></div>
+                            </div>
+                        </div>
+                        <select @change="applyPromptTemplate(promptTemplates[$event.target.value]); $event.target.value = ''"
+                                :disabled="isStreaming"
+                                class="w-full sm:w-56 rounded-lg border border-slate-600 bg-slate-900 text-slate-300 px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:opacity-50">
+                            <option value="">Prompt templates</option>
+                            <template x-for="(template, index) in promptTemplates" :key="template.name">
+                                <option :value="index" x-text="template.name"></option>
+                            </template>
+                        </select>
+                    </div>
+
+                    <div x-show="codePanelOpen" x-cloak class="mb-2 rounded-xl border border-slate-700 bg-slate-900/95 p-3 shadow-lg">
+                        <div class="mb-2 flex items-center justify-between gap-3">
+                            <div class="min-w-0">
+                                <div class="flex items-center gap-2">
+                                    <span class="text-xs font-medium text-slate-200">Code snippet</span>
+                                    <span x-show="codeSnippet.trim()"
+                                          class="rounded-full border border-slate-700 bg-slate-800 px-2 py-0.5 text-[11px] text-slate-400">
+                                        <span x-text="detectedCodeLanguage()"></span>
+                                        <span x-text="', ' + codeSnippetLineCount() + ' lines'"></span>
+                                    </span>
+                                </div>
+                                <p class="mt-1 text-[11px] text-slate-500">URLs here stay as code and are not fetched.</p>
+                            </div>
+                            <div class="flex items-center gap-2 shrink-0">
+                                <button x-show="codeSnippet.trim()"
+                                        @click="codeSnippet = ''"
+                                        class="text-xs text-slate-500 hover:text-slate-300">Clear</button>
+                                <button @click="codePanelOpen = false"
+                                        class="rounded-lg p-1.5 text-slate-500 hover:bg-slate-800 hover:text-slate-200"
+                                        title="Collapse code snippet">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14"/>
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                        <textarea x-model="codeSnippet"
+                                  rows="4"
+                                  placeholder="Paste code here"
+                                  class="code-snippet-editor w-full resize-none rounded-lg border border-slate-700 bg-slate-950 text-slate-100 px-3 py-2 font-mono text-xs leading-5 focus:outline-none focus:ring-1 focus:ring-blue-500 placeholder-slate-600"></textarea>
+                    </div>
+
+                    <div x-show="imageAttachments.length > 0" x-cloak class="image-preview-tray mb-2">
+                        <template x-for="attachment in imageAttachments" :key="attachment.id">
+                            <div class="image-preview-chip">
+                                <img :src="attachment.previewUrl" :alt="attachment.name" class="image-preview-thumb">
+                                <div class="min-w-0 flex-1">
+                                    <p class="truncate text-xs font-medium text-slate-200" x-text="attachment.name"></p>
+                                    <p class="text-[11px] text-slate-500" x-text="formatBytes(attachment.size)"></p>
+                                </div>
+                                <button @click="removeImageAttachment(attachment.id)"
+                                        class="rounded-md p-1 text-slate-500 hover:bg-slate-700 hover:text-slate-200"
+                                        title="Remove image">
+                                    <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                                    </svg>
+                                </button>
+                            </div>
+                        </template>
+                    </div>
+
+                    <div class="jarvis-composer flex items-end gap-2">
+                        <button @click="$refs.fileInput.click()"
+                                :disabled="isStreaming || isUploading"
+                                class="composer-icon-button disabled:opacity-50 disabled:cursor-not-allowed"
+                                title="Attach files">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21.44 11.05l-8.49 8.49a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/>
+                            </svg>
+                        </button>
+                        <button @click="$refs.folderInput.click()"
+                                :disabled="isStreaming || isUploading"
+                                class="composer-icon-button disabled:opacity-50 disabled:cursor-not-allowed"
+                                title="Attach folder">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V7z"/>
+                            </svg>
+                        </button>
+                        <button @click="codePanelOpen = !codePanelOpen"
+                                :disabled="isStreaming"
+                                class="composer-icon-button relative font-medium"
+                                :class="codePanelOpen || codeSnippet.trim() ? 'is-active' : ''"
+                                title="Add code snippet">
+                            <span class="block w-5 h-5 text-center font-mono text-sm leading-5">{}</span>
+                            <span x-show="codeSnippet.trim()"
+                                  class="absolute -right-1 -top-1 h-3 w-3 rounded-full border-2 border-slate-800 bg-emerald-300"></span>
+                        </button>
+                        <div class="flex-1 relative">
+                            <textarea x-ref="chatInput" x-model="input"
+                                @keydown.enter="if(!$event.shiftKey){$event.preventDefault(); sendMessage()}"
+                                @paste="handleChatPaste($event)"
+                                @dragover.prevent
+                                @drop="handleChatDrop($event)"
+                                :disabled="isStreaming"
+                                rows="1"
+                                :placeholder="researchMode ? 'Ask a research question...' : 'Ask a question about your documents...'"
+                                class="composer-input w-full resize-none text-sm disabled:opacity-50"
+                                @input="autoResize($el)"
+                                style="max-height: 120px; overflow-y: auto;">
+                            </textarea>
+                        </div>
+                        <button @click="researchMode = !researchMode"
+                                :title="researchMode ? 'Research mode ON (click to disable)' : 'Enable research mode (searches the web)'"
+                                class="composer-icon-button"
+                                :class="researchMode ? 'is-research' : ''">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                            </svg>
+                        </button>
+                        <button @click="sendMessage()"
+                                :disabled="isStreaming || (!input.trim() && !codeSnippet.trim() && imageAttachments.length === 0)"
+                                class="composer-send-button disabled:opacity-50 disabled:cursor-not-allowed"
+                                :class="researchMode ? 'is-research' : ''">
+                            <svg x-show="!isStreaming" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/>
+                            </svg>
+                            <svg x-show="isStreaming" class="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                            </svg>
+                        </button>
+                    </div>
+                    <p class="text-xs mt-2 text-center" :class="researchMode ? 'text-purple-400' : 'text-slate-500'">
+                        <span x-show="researchMode">Research mode: will search the web and fetch articles before answering</span>
+                        <span x-show="!researchMode && !codeSnippet.trim() && imageAttachments.length === 0">Press Enter to send, Shift+Enter for new line. Paste an image to attach it.</span>
+                        <span x-show="!researchMode && codeSnippet.trim()">
+                            Code snippet attached as <span x-text="detectedCodeLanguage()"></span>. Press Enter to send.
+                        </span>
+                        <span x-show="!researchMode && !codeSnippet.trim() && imageAttachments.length > 0">
+                            Image attached. Press Enter to send.
+                        </span>
+                    </p>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Toast notifications -->
+    <div x-show="toast.show" x-transition
+         class="fixed bottom-6 right-6 z-50 px-4 py-3 rounded-xl shadow-lg text-sm font-medium"
+         :class="toast.type === 'error' ? 'bg-red-500 text-white' : 'bg-emerald-500 text-white'">
+        <span x-text="toast.message"></span>
+    </div>
+
+    <!-- Updating overlay -->
+    <div x-show="updateApplying" x-cloak
+         class="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-slate-900/95 backdrop-blur-sm">
+        <svg class="w-12 h-12 text-blue-400 animate-spin mb-6" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+        </svg>
+        <h2 class="text-xl font-semibold text-slate-100 mb-2">Installing update...</h2>
+        <p class="text-slate-400 text-sm"><span x-text="appConfig.app_name || 'Jarvis'">Jarvis</span> will restart automatically when done.</p>
+    </div>
+
+    <!-- Release notes modal -->
+    <div x-show="notesModal.show" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0"
+         x-transition:enter-end="opacity-100" x-transition:leave="transition ease-in duration-150"
+         x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0"
+         class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60" @click.self="notesModal.show = false">
+        <div class="bg-slate-800 border border-slate-700 rounded-2xl shadow-2xl w-full max-w-2xl max-h-[80vh] overflow-y-auto"
+             @keydown.escape.window="notesModal.show = false">
+            <div class="flex items-center justify-between p-5 border-b border-slate-700 sticky top-0 bg-slate-800 rounded-t-2xl">
+                <h2 class="text-lg font-semibold text-slate-100"><span x-text="appConfig.app_name || 'Jarvis'">Jarvis</span> <span x-text="notesModal.tag"></span></h2>
+                <button @click="notesModal.show = false" class="p-1.5 rounded-lg hover:bg-slate-700 text-slate-400 hover:text-slate-200">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                </button>
+            </div>
+            <div class="p-5 text-sm text-slate-300">
+                <template x-if="notesModal.content">
+                    <div class="prose prose-sm prose-invert max-w-none" x-html="renderMarkdown(notesModal.content)"></div>
+                </template>
+                <template x-if="!notesModal.content">
+                    <p class="text-slate-500 text-center py-8">No release notes available.</p>
+                </template>
+            </div>
+        </div>
+    </div>
+
+    <!-- Source preview modal -->
+    <div x-show="sourceModal.show" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0"
+         x-transition:enter-end="opacity-100" x-transition:leave="transition ease-in duration-150"
+         x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0"
+         class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60" @click.self="sourceModal.show = false">
+        <div class="bg-slate-800 border border-slate-700 rounded-2xl shadow-2xl w-full max-w-3xl max-h-[80vh] overflow-hidden flex flex-col"
+             @keydown.escape.window="sourceModal.show = false">
+            <div class="flex items-start justify-between gap-4 p-5 border-b border-slate-700 bg-slate-800">
+                <div class="min-w-0">
+                    <h2 class="text-lg font-semibold text-slate-100">Source <span x-text="'[' + (sourceModal.source?.index || '') + ']'"></span></h2>
+                    <p class="text-xs text-slate-400 mt-1 truncate" x-text="sourceLabel(sourceModal.source)"></p>
+                    <p class="text-xs text-slate-500 mt-1" x-show="sourceModal.source?.score">Similarity <span x-text="sourceModal.source?.score"></span></p>
+                </div>
+                <button @click="sourceModal.show = false" class="p-1.5 rounded-lg hover:bg-slate-700 text-slate-400 hover:text-slate-200 shrink-0">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                </button>
+            </div>
+            <div class="p-5 overflow-y-auto">
+                <pre class="whitespace-pre-wrap text-sm leading-6 text-slate-200 bg-slate-900 border border-slate-700 rounded-xl p-4" x-text="sourceModal.source?.excerpt || 'No excerpt available.'"></pre>
+            </div>
+        </div>
+    </div>
+
+    <!-- Indexed files modal -->
+    <div x-show="showDocumentsPanel" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0"
+         x-transition:enter-end="opacity-100" x-transition:leave="transition ease-in duration-150"
+         x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0"
+         class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60" @click.self="showDocumentsPanel = false">
+        <div class="bg-slate-800 border border-slate-700 rounded-2xl shadow-2xl w-full max-w-3xl max-h-[80vh] overflow-hidden flex flex-col"
+             @keydown.escape.window="showDocumentsPanel = false">
+            <div class="flex items-start justify-between gap-4 p-5 border-b border-slate-700 bg-slate-800">
+                <div>
+                    <h2 class="text-lg font-semibold text-slate-100">Indexed files</h2>
+                    <p class="text-xs text-slate-400 mt-1">
+                        <span x-text="documents.length"></span>
+                        <span> items available to retrieval</span>
+                    </p>
+                </div>
+                <div class="flex items-center gap-2">
+                    <button x-show="documents.length > 0"
+                            @click="clearAll()"
+                            :disabled="isClearing"
+                            class="rounded-lg border border-red-900/60 bg-red-950/30 px-3 py-1.5 text-xs text-red-300 hover:bg-red-950/60 disabled:opacity-50">
+                        <span x-show="!isClearing">Clear all</span>
+                        <span x-show="isClearing">Clearing</span>
+                    </button>
+                    <button @click="showDocumentsPanel = false" class="p-1.5 rounded-lg hover:bg-slate-700 text-slate-400 hover:text-slate-200 shrink-0">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+            <div class="overflow-y-auto p-4">
+                <template x-if="documents.length === 0">
+                    <div class="py-10 text-center text-sm text-slate-500">No files indexed yet</div>
+                </template>
+                <template x-for="doc in documents" :key="doc.id">
+                    <div class="group flex items-center justify-between gap-3 rounded-lg border border-slate-700/70 bg-slate-900/40 p-3 mb-2">
+                        <div class="flex min-w-0 items-center gap-3">
+                            <svg class="h-5 w-5 shrink-0 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                            </svg>
+                            <div class="min-w-0">
+                                <p class="truncate text-sm font-medium text-slate-200" x-text="doc.filename"></p>
+                                <p class="truncate text-xs text-slate-500">
+                                    <span x-text="doc.chunk_count + ' chunks'"></span>
+                                    <span x-show="doc.file_path" x-text="' , ' + doc.file_path"></span>
+                                </p>
+                            </div>
+                        </div>
+                        <button @click="deleteDocument(doc.id)"
+                                class="rounded-lg p-2 text-slate-500 hover:bg-red-950/40 hover:text-red-300">
+                            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                            </svg>
+                        </button>
+                    </div>
+                </template>
+            </div>
+        </div>
+    </div>
+
+    <!-- Roadmap modal -->
+    <div x-show="showRoadmap" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0"
+         x-transition:enter-end="opacity-100" x-transition:leave="transition ease-in duration-150"
+         x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0"
+         class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60" @click.self="showRoadmap = false">
+        <div class="bg-slate-800 border border-slate-700 rounded-2xl shadow-2xl w-full max-w-2xl max-h-[80vh] overflow-y-auto"
+             @keydown.escape.window="showRoadmap = false">
+            <div class="flex items-center justify-between p-5 border-b border-slate-700 sticky top-0 bg-slate-800 rounded-t-2xl">
+                <div>
+                    <h2 class="text-lg font-semibold text-slate-100">Upcoming Features</h2>
+                    <p class="text-xs text-slate-400 mt-0.5">What's being built next for <span x-text="appConfig.app_name || 'Jarvis'">Jarvis</span></p>
+                </div>
+                <button @click="showRoadmap = false" class="p-1.5 rounded-lg hover:bg-slate-700 text-slate-400 hover:text-slate-200">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                </button>
+            </div>
+            <div class="p-5 space-y-6 text-sm">
+                <div>
+                    <h3 class="mb-3 text-sm font-semibold text-purple-300">Phase 3 - Power Features</h3>
+                    <div class="space-y-2">
+                        <div class="rounded-lg bg-slate-700/40 p-3">
+                            <p class="font-medium text-slate-200">Scheduled folder re-indexing</p>
+                            <p class="mt-0.5 text-xs text-slate-400">Watch folders for file changes and re-index modified or new files in the background.</p>
+                        </div>
+                        <div class="rounded-lg bg-slate-700/40 p-3">
+                            <p class="font-medium text-slate-200">Multiple named workspaces</p>
+                            <p class="mt-0.5 text-xs text-slate-400">Save and switch between document sets, each with its own index and chat history.</p>
+                        </div>
+                        <div class="rounded-lg bg-slate-700/40 p-3">
+                            <p class="font-medium text-slate-200">Vector compression research</p>
+                            <p class="mt-0.5 text-xs text-slate-400">Evaluate TurboQuant-style vector compression to reduce local vector-store memory use.</p>
+                        </div>
+                        <div class="rounded-lg bg-slate-700/40 p-3">
+                            <p class="font-medium text-slate-200">Codebase map</p>
+                            <p class="mt-0.5 text-xs text-slate-400">Build a repo map with files, symbols, imports, modules, and tests.</p>
+                        </div>
+                        <div class="rounded-lg bg-slate-700/40 p-3">
+                            <p class="font-medium text-slate-200">Context picker</p>
+                            <p class="mt-0.5 text-xs text-slate-400">Pin files, folders, symbols, diffs, terminal output, URLs, and documents into the next task.</p>
+                        </div>
+                        <div class="rounded-lg bg-slate-700/40 p-3">
+                            <p class="font-medium text-slate-200">Code-aware retrieval</p>
+                            <p class="mt-0.5 text-xs text-slate-400">Add code chunking, symbol metadata, exact identifier search, dependency boosting, and reranking.</p>
+                        </div>
+                        <div class="rounded-lg bg-slate-700/40 p-3">
+                            <p class="font-medium text-slate-200">Model role profiles</p>
+                            <p class="mt-0.5 text-xs text-slate-400">Split model config by role: chat, edit, apply, autocomplete, embedding, reranker, and vision.</p>
+                        </div>
+                        <div class="rounded-lg bg-slate-700/40 p-3">
+                            <p class="font-medium text-slate-200">Frontend modularization</p>
+                            <p class="mt-0.5 text-xs text-slate-400">Split the large Alpine app and template into smaller maintainable modules or partials.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <h3 class="mb-3 text-sm font-semibold text-orange-300">Phase 4 - Local Coding Agent</h3>
+                    <div class="space-y-2">
+                        <div class="rounded-lg bg-slate-700/40 p-3">
+                            <p class="font-medium text-slate-200">Agent tool loop</p>
+                            <p class="mt-0.5 text-xs text-slate-400">Let the model search files, inspect symbols, summarize files, fetch URLs, and ask for approval mid-task.</p>
+                        </div>
+                        <div class="rounded-lg bg-slate-700/40 p-3">
+                            <p class="font-medium text-slate-200">Safe local command runner</p>
+                            <p class="mt-0.5 text-xs text-slate-400">Run approved commands with working directory controls, timeouts, and captured output.</p>
+                        </div>
+                        <div class="rounded-lg bg-slate-700/40 p-3">
+                            <p class="font-medium text-slate-200">Patch generation and apply flow</p>
+                            <p class="mt-0.5 text-xs text-slate-400">Generate diffs, preview changes, apply approved patches, and discard per file.</p>
+                        </div>
+                        <div class="rounded-lg bg-slate-700/40 p-3">
+                            <p class="font-medium text-slate-200">Test and fix loop</p>
+                            <p class="mt-0.5 text-xs text-slate-400">Run tests, parse failures, update patches, and repeat within bounded iterations.</p>
+                        </div>
+                        <div class="rounded-lg bg-slate-700/40 p-3">
+                            <p class="font-medium text-slate-200">Git worktree and branch support</p>
+                            <p class="mt-0.5 text-xs text-slate-400">Use isolated branches or worktrees per task so multiple sessions do not overwrite each other.</p>
+                        </div>
+                        <div class="rounded-lg bg-slate-700/40 p-3">
+                            <p class="font-medium text-slate-200">Code review mode</p>
+                            <p class="mt-0.5 text-xs text-slate-400">Review a diff or branch and produce findings with severity, file, line, risk, and test gaps.</p>
+                        </div>
+                        <div class="rounded-lg bg-slate-700/40 p-3">
+                            <p class="font-medium text-slate-200">GitHub issue and pull request flow</p>
+                            <p class="mt-0.5 text-xs text-slate-400">Create tasks from issues, push branches, and draft pull requests with summaries and tests.</p>
+                        </div>
+                        <div class="rounded-lg bg-slate-700/40 p-3">
+                            <p class="font-medium text-slate-200">Skills and project rules</p>
+                            <p class="mt-0.5 text-xs text-slate-400">Load reusable local skills and repo instructions only when they are relevant.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="pt-2 border-t border-slate-700 text-xs text-slate-500">
+                    <p>Future work stays local-first and keeps user approval at the center.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Help modal -->
+    <div x-show="showHelp" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0"
+         x-transition:enter-end="opacity-100" x-transition:leave="transition ease-in duration-150"
+         x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0"
+         class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60" @click.self="showHelp = false">
+        <div class="bg-slate-800 border border-slate-700 rounded-2xl shadow-2xl w-full max-w-2xl max-h-[80vh] overflow-y-auto"
+             @keydown.escape.window="showHelp = false">
+            <div class="flex items-center justify-between p-5 border-b border-slate-700 sticky top-0 bg-slate-800 rounded-t-2xl">
+                <h2 class="text-lg font-semibold text-slate-100">How to use <span x-text="appConfig.app_name || 'Jarvis'">Jarvis</span></h2>
+                <button @click="showHelp = false" class="p-1.5 rounded-lg hover:bg-slate-700 text-slate-400 hover:text-slate-200">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                </button>
+            </div>
+            <div class="p-5 space-y-6 text-sm text-slate-300">
+
+                <div>
+                    <h3 class="text-base font-semibold text-slate-100 mb-2">Getting started</h3>
+                    <p class="mb-2"><span x-text="appConfig.app_name || 'Jarvis'">Jarvis</span> lets you chat with your documents using a local AI. Everything runs on your machine. No data is sent to the cloud.</p>
+                    <p>You can also use it as a general-purpose assistant without uploading anything.</p>
+                </div>
+
+                <div>
+                    <h3 class="text-base font-semibold text-blue-400 mb-2">1. Upload a document</h3>
+                    <p class="mb-1">Use the buttons beside the chat input to add context:</p>
+                    <ul class="list-disc list-inside space-y-1 text-slate-400 ml-2">
+                        <li><strong class="text-slate-300">Paper clip</strong> selects files such as PDF, DOCX, XLSX, PPTX, images, or code files</li>
+                        <li><strong class="text-slate-300">Folder</strong> selects and indexes files from a local folder</li>
+                        <li><strong class="text-slate-300">Braces</strong> opens the code snippet box for code that should stay inline with your question</li>
+                        <li><strong class="text-slate-300">URLs in normal chat</strong> are fetched and indexed automatically</li>
+                    </ul>
+                </div>
+
+                <div>
+                    <h3 class="text-base font-semibold text-blue-400 mb-2">2. Ask questions</h3>
+                    <p class="mb-1">Type your question in the chat input and press Enter. The AI will:</p>
+                    <ul class="list-disc list-inside space-y-1 text-slate-400 ml-2">
+                        <li>Search your indexed documents for relevant content</li>
+                        <li>Answer based on what it finds, with source citations</li>
+                        <li>If no documents are loaded, it works as a general assistant</li>
+                    </ul>
+                </div>
+
+                <div>
+                    <h3 class="text-base font-semibold text-blue-400 mb-2">Model selection</h3>
+                    <p class="mb-1"><span x-text="appConfig.app_name || 'Jarvis'">Jarvis</span> chooses a small local Gemma model when <strong class="text-slate-300">CHAT_MODEL</strong> is not set:</p>
+                    <ul class="list-disc list-inside space-y-1 text-slate-400 ml-2">
+                        <li><strong class="text-slate-300">gemma4:e2b</strong> for very low-end machines</li>
+                        <li><strong class="text-slate-300">gemma4:e4b</strong> for everyone else</li>
+                    </ul>
+                    <p class="mt-2 text-slate-500">The 26b model is opt-in only. Set CHAT_MODEL before starting Jarvis if you want qwen2.5-coder:14b, gemma4:26b, or another local model.</p>
+                </div>
+
+                <div>
+                    <h3 class="text-base font-semibold text-purple-400 mb-2">3. Research mode</h3>
+                    <p class="mb-2">Click the <strong class="text-slate-200">magnifying glass</strong> button next to the chat input. It turns purple when active.</p>
+                    <p class="mb-1">In research mode, <span x-text="appConfig.app_name || 'Jarvis'">Jarvis</span> will:</p>
+                    <ul class="list-disc list-inside space-y-1 text-slate-400 ml-2">
+                        <li>Generate search queries from your question</li>
+                        <li>Search the web using DuckDuckGo</li>
+                        <li>Fetch and read the top articles</li>
+                        <li>Answer with citations and links to the sources</li>
+                    </ul>
+                    <p class="mt-2 text-slate-500">No API key needed. Fetched articles are saved locally so follow-up questions are instant.</p>
+                </div>
+
+                <div>
+                    <h3 class="text-base font-semibold text-blue-400 mb-2">4. Manage documents</h3>
+                    <ul class="list-disc list-inside space-y-1 text-slate-400 ml-2">
+                        <li>Click the indexed count in the chat header to view indexed documents</li>
+                        <li>Hover over a document and click the trash icon to remove it</li>
+                        <li>Use <strong class="text-slate-300">Clear all</strong> in the indexed files panel to remove everything</li>
+                    </ul>
+                </div>
+
+                <div>
+                    <h3 class="text-base font-semibold text-blue-400 mb-2">Tips</h3>
+                    <ul class="list-disc list-inside space-y-1 text-slate-400 ml-2">
+                        <li>Paste a URL directly in chat and the AI will auto-fetch it before answering</li>
+                        <li>Paste code into the code snippet box when URLs should not be fetched</li>
+                        <li>The AI adapts to your region automatically (currency, date format, etc.)</li>
+                        <li>Use <strong class="text-slate-300">Shift+Enter</strong> for a new line without sending</li>
+                        <li>Images in PDFs are described by a vision model and become searchable</li>
+                        <li>Supported files: documents, images, and any text-like source or config file. Binary files are skipped or rejected</li>
+                    </ul>
+                </div>
+
+                <div class="pt-2 border-t border-slate-700 text-xs text-slate-500 flex items-center justify-between">
+                    <p><span x-text="appConfig.app_name || 'Jarvis'">Jarvis</span> runs entirely on your machine using Ollama. Your documents and conversations never leave your computer.</p>
+                    <a x-show="hasSupportContact()" x-cloak :href="supportHref()"
+                       class="shrink-0 ml-4 text-blue-400 hover:text-blue-300 underline hover:no-underline whitespace-nowrap">Contact support</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/js/modules/ui.js"></script>
+    <script src="/static/js/modules/chats.js"></script>
+    <script src="/static/js/modules/messages.js"></script>
+    <script src="/static/js/modules/system.js"></script>
+    <script src="/static/js/modules/documents.js"></script>
+    <script src="/static/js/modules/updates.js"></script>
+    <script src="/static/js/app.js"></script>
+</body>
+</html>
