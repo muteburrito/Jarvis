@@ -54,6 +54,14 @@ go build -o server.exe ./cmd/server/
 
 Open [http://localhost:8080](http://localhost:8080) in your browser.
 
+To build the desktop shell:
+
+```bash
+go build -tags "desktop,production" -o jarvis-desktop.exe ./cmd/desktop/
+```
+
+The desktop app uses Wails with the same embedded frontend and Go backend. It is the primary end-user app. The browser server remains available for development and fallback use.
+
 ## Release Versioning
 
 Jarvis uses semantic versioning for release tags: `vMAJOR.MINOR.PATCH`, for example `v1.4.2`. The GitHub updater only runs on proper semver builds, so release tags should always use this format.
@@ -65,7 +73,7 @@ Jarvis uses semantic versioning for release tags: `vMAJOR.MINOR.PATCH`, for exam
 When creating a release, build with the same version baked into the binary:
 
 ```bash
-go build -ldflags="-X main.Version=v1.4.2" -o jarvis.exe ./cmd/server/
+go build -tags "desktop,production" -ldflags="-X main.Version=v1.4.2" -o jarvis.exe ./cmd/desktop/
 ```
 
 ## Configuration
@@ -102,8 +110,10 @@ CHAT_MODEL=gemma4:31b PORT=3000 ./server.exe
 ## Project Structure
 
 ```
-cmd/server/main.go            Entry point, wires everything together
+cmd/server/main.go            Browser/server entry point
+cmd/desktop/main.go           Wails desktop entry point
 internal/
+  app/runtime.go               Shared application bootstrap for server and desktop modes
   config/config.go             Environment-based configuration
   ollama/client.go             Ollama API wrapper (chat, embeddings, vision)
   websearch/
@@ -254,7 +264,16 @@ CHAT_MODEL=gemma4:26b ./server.exe
 This repo includes `.github/workflows/ci.yml` for personal GitHub repositories.
 
 - Pushes and pull requests run `go build`, `go test`, and `go vet` with Go module dependencies.
+- A Windows GitHub-hosted runner also compiles the Wails desktop target.
 - Semver tags such as `v1.2.0` run GoReleaser using `.goreleaser.github.yaml`.
-- Tagged releases also build the Windows NSIS installer and upload it to the GitHub Release.
+- Tagged releases also build the Windows NSIS installer from the desktop binary and upload it to the GitHub Release.
 - Release builds bake the GitHub repository into the binary so the in-app updater can check GitHub Releases.
 - Jobs use standard GitHub-hosted runners, `ubuntu-latest` and `windows-latest`, which are free and unlimited for public repositories.
+
+## Desktop App
+
+Jarvis includes a Wails desktop target in `cmd/desktop`. It is the primary installed app and runs the same Go runtime as the browser server.
+
+Use `wails build` for a full Wails production build, or use `go build -tags "desktop,production" ./cmd/desktop` for a quick local compile. Running `go build ./cmd/desktop` without those tags creates a binary that shows Wails' build-tags error dialog.
+
+Desktop mode starts a hidden loopback API server on `127.0.0.1` and injects that API base into the frontend. This keeps the browser and desktop UI shared while preserving token-by-token streaming in the desktop app.

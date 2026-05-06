@@ -75,6 +75,10 @@ func New(deps Dependencies) *Server {
 	return s
 }
 
+func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	s.router.ServeHTTP(w, r)
+}
+
 func (s *Server) handleIndex(w http.ResponseWriter, r *http.Request) {
 	data, err := fs.ReadFile(s.webFS, "templates/index.html")
 	if err != nil {

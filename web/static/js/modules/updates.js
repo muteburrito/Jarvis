@@ -1,7 +1,7 @@
 window.jarvisUpdates = {
         async loadUpdateStatus() {
             try {
-                const resp = await fetch('/api/v1/update');
+                const resp = await fetch(this.apiURL('/api/v1/update'));
                 if (resp.ok) {
                     this.updateInfo = await resp.json();
                 }
@@ -12,7 +12,7 @@ window.jarvisUpdates = {
             if (this.updateApplying) return;
             this.updateApplying = true;
             try {
-                const resp = await fetch('/api/v1/update/apply', { method: 'POST' });
+                const resp = await fetch(this.apiURL('/api/v1/update/apply'), { method: 'POST' });
                 if (!resp.ok) {
                     const err = await resp.json();
                     throw new Error(err.error || 'Update failed');
@@ -30,7 +30,7 @@ window.jarvisUpdates = {
 
         waitForRestart() {
             const poll = () => {
-                fetch('/api/v1/health')
+                fetch(this.apiURL('/api/v1/health'))
                     .then(r => { if (r.ok) window.location.reload(); else setTimeout(poll, 1500); })
                     .catch(() => setTimeout(poll, 1500));
             };

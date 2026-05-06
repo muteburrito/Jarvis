@@ -106,6 +106,11 @@ function chatApp() {
                 this.copyCodeBlock(button);
             });
         },
+
+        apiURL(path) {
+            const apiBase = window.jarvisApiBase || '';
+            return apiBase + path;
+        },
     },
         window.jarvisUi,
         window.jarvisChats,

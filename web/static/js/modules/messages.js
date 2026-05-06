@@ -48,7 +48,7 @@ window.jarvisMessages = {
                     this.showToast(`Indexed ${uploadedImages.length} pasted image${uploadedImages.length === 1 ? '' : 's'}`);
                 }
                 const serverQuery = this.buildServerQuery(query, uploadedImages);
-                const response = await fetch('/api/v1/chat', {
+                const response = await fetch(this.apiURL('/api/v1/chat'), {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({

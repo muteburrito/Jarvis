@@ -24,7 +24,7 @@ window.jarvisChats = {
 
         async loadChats() {
             try {
-                const resp = await fetch('/api/v1/chats');
+                const resp = await fetch(this.apiURL('/api/v1/chats'));
                 if (!resp.ok) {
                     this.loadLegacyChat();
                     return;
@@ -50,7 +50,7 @@ window.jarvisChats = {
         async newChat(showToast = true) {
             await this.saveActiveChat();
             try {
-                const resp = await fetch('/api/v1/chats', {
+                const resp = await fetch(this.apiURL('/api/v1/chats'), {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ title: 'New chat' })
@@ -77,7 +77,7 @@ window.jarvisChats = {
                 await this.saveActiveChat();
             }
             try {
-                const resp = await fetch(`/api/v1/chats/${id}`);
+                const resp = await fetch(this.apiURL(`/api/v1/chats/${id}`));
                 if (!resp.ok) throw new Error('Chat not found');
                 const session = await resp.json();
                 this.activeChatID = session.id;
@@ -91,7 +91,7 @@ window.jarvisChats = {
         async deleteChat(id) {
             if (!id || this.isStreaming) return;
             try {
-                const resp = await fetch(`/api/v1/chats/${id}`, { method: 'DELETE' });
+                const resp = await fetch(this.apiURL(`/api/v1/chats/${id}`), { method: 'DELETE' });
                 if (!resp.ok) throw new Error('Delete failed');
                 await this.refreshChatList();
                 if (this.activeChatID === id) {
@@ -108,7 +108,7 @@ window.jarvisChats = {
 
         async refreshChatList() {
             try {
-                const resp = await fetch('/api/v1/chats');
+                const resp = await fetch(this.apiURL('/api/v1/chats'));
                 if (resp.ok) this.chatSessions = await resp.json();
             } catch {}
         },
@@ -118,7 +118,7 @@ window.jarvisChats = {
             const firstUser = this.messages.find(message => message.role === 'user' && message.content);
             const title = firstUser ? firstUser.content : 'New chat';
             try {
-                await fetch(`/api/v1/chats/${this.activeChatID}`, {
+                await fetch(this.apiURL(`/api/v1/chats/${this.activeChatID}`), {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({

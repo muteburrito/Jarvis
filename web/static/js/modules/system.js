@@ -1,7 +1,7 @@
 window.jarvisSystem = {
         async loadSystemInfo() {
             try {
-                const resp = await fetch('/api/v1/health');
+                const resp = await fetch(this.apiURL('/api/v1/health'));
                 if (resp.ok) {
                     this.systemInfo = await resp.json();
                 }
@@ -10,7 +10,7 @@ window.jarvisSystem = {
 
         async loadAppConfig() {
             try {
-                const resp = await fetch('/api/v1/config');
+                const resp = await fetch(this.apiURL('/api/v1/config'));
                 if (resp.ok) {
                     this.appConfig = { ...this.appConfig, ...await resp.json() };
                     document.title = this.appConfig.app_name || 'Jarvis';
@@ -33,7 +33,7 @@ window.jarvisSystem = {
 
         async loadHardwareStatus() {
             try {
-                const resp = await fetch('/api/v1/system');
+                const resp = await fetch(this.apiURL('/api/v1/system'));
                 if (resp.ok) {
                     this.hwStatus = await resp.json();
                 }

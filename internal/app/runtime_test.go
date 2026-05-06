@@ -1,4 +1,4 @@
-package main
+package app
 
 import (
 	"testing"
@@ -24,7 +24,11 @@ func TestSelectChatModel(t *testing.T) {
 		},
 		{
 			name: "very low VRAM uses tiny model",
-			hw:   system.HardwareInfo{TotalRAMMB: 16000, GPUTotalMB: 6000, GPUDetected: true},
+			hw: system.HardwareInfo{
+				TotalRAMMB:  16000,
+				GPUTotalMB:  6000,
+				GPUDetected: true,
+			},
 			want: "gemma4:e2b",
 		},
 		{
@@ -34,7 +38,10 @@ func TestSelectChatModel(t *testing.T) {
 		},
 		{
 			name: "large GPU uses light model by default",
-			hw:   system.HardwareInfo{TotalRAMMB: 16000, GPUTotalMB: 20000},
+			hw: system.HardwareInfo{
+				TotalRAMMB: 16000,
+				GPUTotalMB: 20000,
+			},
 			want: "gemma4:e4b",
 		},
 	}

@@ -1,9 +1,9 @@
 project_name: jarvis
 
 builds:
-  - id: jarvis
+  - id: jarvis-server
     main: ./cmd/server
-    binary: jarvis
+    binary: jarvis-server
     env:
       - CGO_ENABLED=0
     goos:

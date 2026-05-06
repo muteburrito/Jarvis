@@ -11,12 +11,13 @@ See [ROADMAP.md](ROADMAP.md) for planned features.
 ```bash
 go build ./cmd/server/
 go run ./cmd/server/
+go build -tags "desktop,production" ./cmd/desktop/
 ```
 
 To build with a version baked in:
 
 ```bash
-go build -ldflags="-X main.Version=v1.2.3" -o jarvis.exe ./cmd/server/
+go build -tags "desktop,production" -ldflags="-X main.Version=v1.2.3" -o jarvis.exe ./cmd/desktop/
 ```
 
 The server starts on port 8080 by default. Ollama must be running locally.
@@ -53,7 +54,8 @@ The GitHub updater only runs on proper semver builds. When creating a release, b
 
 ## Architecture
 
-- `cmd/server/main.go` is the entry point. It wires all components and declares `var Version = "dev"` which GoReleaser overwrites via ldflags.
+- `cmd/server/main.go` is the browser/server entry point. `cmd/desktop/main.go` is the Wails desktop entry point. Both use `internal/app/runtime.go` for shared startup wiring. Each command declares `var Version = "dev"` which release builds overwrite via ldflags.
+- `internal/app/` initializes config, Ollama, required models, vector store, document processor, RAG chain, research mode, task/chat stores, updater, and the shared HTTP server.
 - `internal/config/` loads settings from environment variables. Key fields: `OllamaURL`, `OllamaKeepAlive`, `ChatModel`, `EmbeddingModel`, `VisionModel`, `GitHubRepo`, `GitHubToken`, `AppName`, `SupportEmail`, `SupportSubject`, and `SupportURL`.
 - `internal/ollama/` wraps the Ollama Go client for embeddings, chat streaming, and image description.
 - `internal/document/` handles file loading (PDF, DOCX, XLSX, PPTX, images, code, and unknown text-like files), URL fetching, text chunking, and the processing pipeline. Images are described by the vision model before embedding. `web.go` handles HTML-to-text extraction for fetched URLs using `golang.org/x/net/html`.
@@ -70,6 +72,7 @@ The GitHub updater only runs on proper semver builds. When creating a release, b
 ## Release Pipeline
 
 - `.github/workflows/ci.yml` builds/tests/vets on push and pull request, runs GoReleaser on semver tags with `.goreleaser.github.yaml`, and uploads the Windows NSIS installer to the GitHub Release.
+- The workflow also builds `cmd/desktop` on `windows-latest` to catch Wails regressions on the free GitHub-hosted runner tier. Tagged Windows installers package the desktop binary as `jarvis.exe`; `cmd/server` remains a development and fallback target.
 - GitHub Actions jobs must use standard GitHub-hosted runners such as `ubuntu-latest` and `windows-latest` so public repositories stay on the free runner tier.
 
 ## Key Design Decisions
@@ -97,6 +100,8 @@ The GitHub updater only runs on proper semver builds. When creating a release, b
 - The `web/` folder is embedded via `go:embed`. No external files are needed to run the exe.
 - Research mode uses DuckDuckGo HTML scraping (no API key). The LLM generates 2-3 search queries, results are fetched and indexed, then the RAG chain answers with a research-specific prompt emphasising source citations. Research progress must be sent as structured SSE progress events, not markdown status text mixed into the answer.
 - Prompt templates are client-side.
+- The Wails desktop target starts a hidden loopback API server on `127.0.0.1` and injects that API base into the frontend. Keep this path for streaming endpoints because Wails' asset server can buffer response-body streaming on Windows.
+- Build the Wails desktop target with `wails build` or `go build -tags "desktop,production" ./cmd/desktop`. A plain `go build ./cmd/desktop` binary shows Wails' missing build-tags error dialog.
 - The auto-updater no-ops on `dev` builds. It only runs when `Version` is a proper semver string baked in at build time.
 - Installer downloads use the `browser_download_url` from the latest GitHub Release asset. On Windows, Jarvis prefers an `.exe` asset whose name contains `setup`.
 

@@ -1,7 +1,7 @@
 window.jarvisDocuments = {
         async loadDocuments() {
             try {
-                const resp = await fetch('/api/v1/documents');
+                const resp = await fetch(this.apiURL('/api/v1/documents'));
                 if (resp.ok) {
                     this.documents = await resp.json();
                 }
@@ -38,7 +38,7 @@ window.jarvisDocuments = {
                         }
                     });
                     xhr.addEventListener('error', () => reject(new Error('Network error')));
-                    xhr.open('POST', '/api/v1/upload');
+                    xhr.open('POST', this.apiURL('/api/v1/upload'));
                     xhr.send(formData);
                 });
 
@@ -100,7 +100,9 @@ window.jarvisDocuments = {
 
         async deleteDocument(id) {
             try {
-                const resp = await fetch(`/api/v1/documents/${id}`, { method: 'DELETE' });
+                const resp = await fetch(this.apiURL(`/api/v1/documents/${id}`), {
+                    method: 'DELETE'
+                });
                 if (resp.ok) {
                     this.showToast('Document removed');
                     await this.loadDocuments();
@@ -117,7 +119,9 @@ window.jarvisDocuments = {
             if (!confirm('Clear all documents and embeddings? This cannot be undone.')) return;
             this.isClearing = true;
             try {
-                const resp = await fetch('/api/v1/documents', { method: 'DELETE' });
+                const resp = await fetch(this.apiURL('/api/v1/documents'), {
+                    method: 'DELETE'
+                });
                 if (resp.ok) {
                     this.documents = [];
                     this.showToast('All documents and embeddings cleared');
