@@ -31,7 +31,7 @@ func Load() *Config {
 	return &Config{
 		Port:            envInt("PORT", 8080),
 		OllamaURL:       envStr("OLLAMA_URL", "http://localhost:11434"),
-		OllamaKeepAlive: envDuration("OLLAMA_KEEP_ALIVE", 30*time.Second),
+		OllamaKeepAlive: envDuration("OLLAMA_KEEP_ALIVE", 120*time.Second),
 		ChatModel:       envStr("CHAT_MODEL", "gemma4:e4b"),
 		EmbeddingModel:  envStr("EMBEDDING_MODEL", "nomic-embed-text"),
 		VisionModel:     envStr("VISION_MODEL", "llava"),
@@ -44,7 +44,7 @@ func Load() *Config {
 		GitHubRepo:      envStr("GITHUB_REPO", envStr("GITHUB_REPOSITORY", "")),
 		GitHubToken:     envStr("GITHUB_TOKEN", ""),
 		AppName:         envStr("APP_NAME", "Jarvis"),
-		SupportEmail:    envStr("SUPPORT_EMAIL", ""),
+		SupportEmail:    envStr("SUPPORT_EMAIL", "kulkarnichinmay65@gmail.com"),
 		SupportSubject:  envStr("SUPPORT_SUBJECT", "Jarvis Support"),
 		SupportURL:      envStr("SUPPORT_URL", ""),
 	}
