@@ -188,6 +188,14 @@
                 <!-- Message bubbles -->
                 <template x-for="(msg, idx) in messages" :key="idx">
                     <div x-show="msg.content || msg.role === 'user' || (msg.progress && msg.progress.length > 0)" class="jarvis-message-row" :class="msg.role === 'user' ? 'jarvis-message-user' : 'jarvis-message-assistant'">
+                        <button @click="setReplyTo(msg, idx)"
+                                class="message-reply-button"
+                                :class="msg.role === 'user' ? 'order-first mr-2' : 'order-last ml-2'"
+                                :title="'Reply to this ' + msg.role + ' message'">
+                            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 14l-4-4 4-4M5 10h11a4 4 0 010 8h-1"/>
+                            </svg>
+                        </button>
                         <div :class="msg.role === 'user'
                             ? 'chat-bubble user-bubble rounded-2xl px-4 py-3'
                             : 'chat-bubble assistant-bubble px-2 sm:px-4 py-3'">
@@ -195,6 +203,19 @@
                             <!-- User message -->
                             <template x-if="msg.role === 'user'">
                                 <div>
+                                    <template x-if="msg.replyTo">
+                                        <div class="message-context-card mb-2">
+                                            <span class="message-context-label" x-text="'Replying to ' + msg.replyTo.role"></span>
+                                            <p x-text="msg.replyTo.excerpt || messageExcerpt(msg.replyTo.content)"></p>
+                                        </div>
+                                    </template>
+                                    <template x-if="msg.focusedDocuments && msg.focusedDocuments.length > 0">
+                                        <div class="message-focus-row mb-2">
+                                            <template x-for="doc in msg.focusedDocuments" :key="doc.id">
+                                                <span class="message-focus-chip" x-text="'@' + doc.filename"></span>
+                                            </template>
+                                        </div>
+                                    </template>
                                     <template x-if="msg.attachments && msg.attachments.length > 0">
                                         <div class="message-image-grid mb-3">
                                             <template x-for="attachment in msg.attachments" :key="attachment.name + (attachment.previewUrl || '')">
@@ -367,6 +388,31 @@
                         </template>
                     </div>
 
+                    <div x-show="replyTo" x-cloak class="reply-preview mb-2">
+                        <div class="min-w-0">
+                            <p class="reply-preview-label" x-text="'Replying to ' + (replyTo?.role || 'message')"></p>
+                            <p class="reply-preview-text" x-text="replyTo?.excerpt || ''"></p>
+                        </div>
+                        <button @click="clearReplyTo()" class="reply-preview-close" title="Cancel reply">
+                            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                            </svg>
+                        </button>
+                    </div>
+
+                    <div x-show="Array.isArray(focusedDocuments) && focusedDocuments.length > 0" x-cloak class="focus-preview mb-2">
+                        <template x-for="doc in focusedDocuments" :key="doc.id">
+                            <span class="focus-chip">
+                                <span class="truncate" x-text="'@' + doc.filename"></span>
+                                <button @click="removeFocusDocument(doc.id)" title="Remove focused file">
+                                    <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                                    </svg>
+                                </button>
+                            </span>
+                        </template>
+                    </div>
+
                     <div class="jarvis-composer flex items-end gap-2">
                         <button @click="$refs.fileInput.click()"
                                 :disabled="isStreaming || isUploading"
@@ -394,8 +440,23 @@
                                   class="absolute -right-1 -top-1 h-3 w-3 rounded-full border-2 border-slate-800 bg-emerald-300"></span>
                         </button>
                         <div class="flex-1 relative">
+                            <div x-show="mentionOpen && mentionSuggestions().length > 0" x-cloak class="mention-popover">
+                                <template x-for="doc in mentionSuggestions()" :key="doc.id">
+                                    <button @mousedown.prevent="selectMentionDocument(doc)" type="button" class="mention-option">
+                                        <svg class="h-4 w-4 shrink-0 text-blue-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                                        </svg>
+                                        <span class="min-w-0">
+                                            <span class="block truncate text-sm text-slate-100" x-text="doc.filename"></span>
+                                            <span class="block truncate text-[11px] text-slate-500" x-text="doc.file_path || 'Indexed file'"></span>
+                                        </span>
+                                    </button>
+                                </template>
+                            </div>
                             <textarea x-ref="chatInput" x-model="input"
                                 @keydown.enter="if(!$event.shiftKey){$event.preventDefault(); sendMessage()}"
+                                @keyup="updateMentionState()"
+                                @click="updateMentionState()"
                                 @paste="handleChatPaste($event)"
                                 @dragover.prevent
                                 @drop="handleChatDrop($event)"
@@ -403,7 +464,7 @@
                                 rows="1"
                                 :placeholder="researchMode ? 'Ask a research question...' : 'Ask a question about your documents...'"
                                 class="composer-input w-full resize-none text-sm disabled:opacity-50"
-                                @input="autoResize($el)"
+                                @input="autoResize($el); updateMentionState()"
                                 style="max-height: 120px; overflow-y: auto;">
                             </textarea>
                         </div>
@@ -416,6 +477,7 @@
                             </svg>
                         </button>
                         <button @click="sendMessage()"
+                                type="button"
                                 :disabled="isStreaming || (!input.trim() && !codeSnippet.trim() && imageAttachments.length === 0)"
                                 class="composer-send-button disabled:opacity-50 disabled:cursor-not-allowed"
                                 :class="researchMode ? 'is-research' : ''">

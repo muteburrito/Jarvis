@@ -33,6 +33,20 @@ window.jarvisUi = {
             return text.split(/\r\n|\r|\n/).length;
         },
 
+        formatBytes(size) {
+            const bytes = Number(size) || 0;
+            if (bytes <= 0) return '0 B';
+
+            const units = ['B', 'KB', 'MB', 'GB'];
+            const unitIndex = Math.min(
+                Math.floor(Math.log(bytes) / Math.log(1024)),
+                units.length - 1
+            );
+            const value = bytes / Math.pow(1024, unitIndex);
+            const precision = unitIndex === 0 || value >= 10 ? 0 : 1;
+            return `${value.toFixed(precision)} ${units[unitIndex]}`;
+        },
+
         detectCodeLanguage(code) {
             const text = code || '';
             const trimmed = text.trim();

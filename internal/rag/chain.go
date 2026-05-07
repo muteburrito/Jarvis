@@ -3,6 +3,7 @@ package rag
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	ollamaapi "github.com/ollama/ollama/api"
 
@@ -27,10 +28,18 @@ func NewChain(ollamaClient *ollama.Client, store *vectorstore.Store, cfg *config
 }
 
 type QueryOptions struct {
-	ResearchMode bool
-	Locale       string
-	Timezone     string
-	ChatModel    string
+	ResearchMode     bool
+	Locale           string
+	Timezone         string
+	ChatModel        string
+	FocusDocumentIDs []string
+	FocusFiles       []string
+	ReplyTo          *ReplyContext
+}
+
+type ReplyContext struct {
+	Role    string
+	Content string
 }
 
 type QueryResult struct {
@@ -54,7 +63,7 @@ func (c *Chain) Query(ctx context.Context, question string, history []ollamaapi.
 			return nil, fmt.Errorf("no embedding returned for question")
 		}
 
-		results := c.store.HybridSearch(embeddings[0], question, c.cfg.TopK)
+		results := c.searchRelevantEntries(embeddings[0], question, opts)
 		ragContext := buildContext(results)
 		sources = buildSourceList(results)
 
@@ -70,6 +79,12 @@ func (c *Chain) Query(ctx context.Context, question string, history []ollamaapi.
 	if opts.Locale != "" || opts.Timezone != "" {
 		localeCtx := buildLocaleContext(opts.Locale, opts.Timezone)
 		systemContent += "\n\n" + localeCtx
+	}
+	if focusCtx := buildFocusContext(opts.FocusFiles); focusCtx != "" {
+		systemContent += "\n\n" + focusCtx
+	}
+	if replyCtx := buildReplyContext(opts.ReplyTo); replyCtx != "" {
+		systemContent += "\n\n" + replyCtx
 	}
 	if repoCtx := c.repoContext(question); repoCtx != "" {
 		systemContent += "\n\n" + repoCtx
@@ -91,6 +106,67 @@ func (c *Chain) Query(ctx context.Context, question string, history []ollamaapi.
 	}
 
 	return &QueryResult{Sources: sources}, nil
+}
+
+func (c *Chain) searchRelevantEntries(query []float32, question string, opts *QueryOptions) []vectorstore.SearchResult {
+	if len(opts.FocusDocumentIDs) == 0 {
+		return c.store.HybridSearch(query, question, c.cfg.TopK)
+	}
+
+	results := c.store.HybridSearchByDocumentIDs(query, question, c.cfg.TopK, opts.FocusDocumentIDs)
+	if len(results) > 0 {
+		return results
+	}
+	return c.store.HybridSearch(query, question, c.cfg.TopK)
+}
+
+func buildFocusContext(files []string) string {
+	files = compactStrings(files, 12)
+	if len(files) == 0 {
+		return ""
+	}
+	return "The user explicitly focused these indexed files for this turn: " +
+		strings.Join(files, ", ") +
+		". Prioritize retrieved evidence from those files when it is relevant."
+}
+
+func buildReplyContext(reply *ReplyContext) string {
+	if reply == nil {
+		return ""
+	}
+	content := strings.TrimSpace(reply.Content)
+	if content == "" {
+		return ""
+	}
+	role := strings.TrimSpace(reply.Role)
+	if role == "" {
+		role = "message"
+	}
+	if len(content) > 1200 {
+		content = content[:1200] + "..."
+	}
+	return fmt.Sprintf(
+		"The user is replying to this previous %s message:\n\n%s\n\nUse it as local conversation context for the next answer.",
+		role,
+		content,
+	)
+}
+
+func compactStrings(values []string, limit int) []string {
+	seen := make(map[string]bool, len(values))
+	out := make([]string, 0, len(values))
+	for _, value := range values {
+		value = strings.TrimSpace(value)
+		if value == "" || seen[value] {
+			continue
+		}
+		seen[value] = true
+		out = append(out, value)
+		if limit > 0 && len(out) >= limit {
+			break
+		}
+	}
+	return out
 }
 
 func (c *Chain) ListModels(ctx context.Context) ([]string, error) {

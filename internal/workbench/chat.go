@@ -21,10 +21,13 @@ type ChatSession struct {
 }
 
 type ChatMessage struct {
-	Role     string              `json:"role"`
-	Content  string              `json:"content"`
-	Sources  []map[string]string `json:"sources,omitempty"`
-	Progress []ProgressSnapshot  `json:"progress,omitempty"`
+	Role             string              `json:"role"`
+	Content          string              `json:"content"`
+	Sources          []map[string]string `json:"sources,omitempty"`
+	Progress         []ProgressSnapshot  `json:"progress,omitempty"`
+	Attachments      []AttachmentInfo    `json:"attachments,omitempty"`
+	ReplyTo          *ReplyInfo          `json:"replyTo,omitempty"`
+	FocusedDocuments []FocusedDocument   `json:"focusedDocuments,omitempty"`
 }
 
 type ProgressSnapshot struct {
@@ -32,6 +35,25 @@ type ProgressSnapshot struct {
 	Detail string `json:"detail"`
 	Status string `json:"status"`
 	URL    string `json:"url,omitempty"`
+}
+
+type AttachmentInfo struct {
+	Name string `json:"name"`
+	Type string `json:"type"`
+	Size int64  `json:"size"`
+}
+
+type ReplyInfo struct {
+	Index   int    `json:"index,omitempty"`
+	Role    string `json:"role"`
+	Content string `json:"content"`
+	Excerpt string `json:"excerpt,omitempty"`
+}
+
+type FocusedDocument struct {
+	ID       string `json:"id"`
+	Filename string `json:"filename"`
+	FilePath string `json:"file_path,omitempty"`
 }
 
 type ChatSummary struct {

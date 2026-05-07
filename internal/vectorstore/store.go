@@ -60,7 +60,7 @@ func (s *Store) Search(query []float32, topK int) []SearchResult {
 		return nil
 	}
 
-	return s.searchLocked(query, topK)
+	return searchEntries(query, topK, s.entries)
 }
 
 func (s *Store) HybridSearch(query []float32, queryText string, topK int) []SearchResult {
@@ -71,17 +71,56 @@ func (s *Store) HybridSearch(query []float32, queryText string, topK int) []Sear
 		return nil
 	}
 
+	return hybridSearchEntries(query, queryText, topK, s.entries)
+}
+
+func (s *Store) HybridSearchByDocumentIDs(query []float32, queryText string, topK int, documentIDs []string) []SearchResult {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	if len(s.entries) == 0 || len(documentIDs) == 0 {
+		return nil
+	}
+
+	allowed := make(map[string]bool, len(documentIDs))
+	for _, id := range documentIDs {
+		if id != "" {
+			allowed[id] = true
+		}
+	}
+	if len(allowed) == 0 {
+		return nil
+	}
+
+	entries := make([]Entry, 0)
+	for _, entry := range s.entries {
+		if allowed[entry.DocumentID] {
+			entries = append(entries, entry)
+		}
+	}
+	if len(entries) == 0 {
+		return nil
+	}
+
+	return hybridSearchEntries(query, queryText, topK, entries)
+}
+
+func hybridSearchEntries(query []float32, queryText string, topK int, entries []Entry) []SearchResult {
+	if len(entries) == 0 {
+		return nil
+	}
+
 	queryTerms := tokenize(queryText)
 	if len(queryTerms) == 0 {
-		return s.searchLocked(query, topK)
+		return searchEntries(query, topK, entries)
 	}
 
 	normalizedQuery := NormalizeVector(query)
-	docTokens := make([][]string, len(s.entries))
+	docTokens := make([][]string, len(entries))
 	docFreq := make(map[string]int)
 	totalDocLength := 0
 
-	for i, entry := range s.entries {
+	for i, entry := range entries {
 		tokens := tokenize(entry.Content)
 		docTokens[i] = tokens
 		totalDocLength += len(tokens)
@@ -95,28 +134,28 @@ func (s *Store) HybridSearch(query []float32, queryText string, topK int) []Sear
 		}
 	}
 
-	avgDocLength := float64(totalDocLength) / float64(len(s.entries))
+	avgDocLength := float64(totalDocLength) / float64(len(entries))
 	if avgDocLength <= 0 {
 		avgDocLength = 1
 	}
 
-	results := make([]SearchResult, len(s.entries))
-	vectorScores := make([]float64, len(s.entries))
-	bm25Scores := make([]float64, len(s.entries))
+	results := make([]SearchResult, len(entries))
+	vectorScores := make([]float64, len(entries))
+	bm25Scores := make([]float64, len(entries))
 	var maxBM25 float64
 
-	for i, entry := range s.entries {
+	for i, entry := range entries {
 		vectorScore := float64(DotProduct(normalizedQuery, NormalizeVector(entry.Embedding)))
 		vectorScores[i] = vectorScore
 
-		bm25Score := bm25(queryTerms, docTokens[i], docFreq, len(s.entries), avgDocLength)
+		bm25Score := bm25(queryTerms, docTokens[i], docFreq, len(entries), avgDocLength)
 		bm25Scores[i] = bm25Score
 		if bm25Score > maxBM25 {
 			maxBM25 = bm25Score
 		}
 	}
 
-	for i, entry := range s.entries {
+	for i, entry := range entries {
 		vectorPart := (vectorScores[i] + 1) / 2
 		if vectorPart < 0 {
 			vectorPart = 0
@@ -144,10 +183,14 @@ func (s *Store) HybridSearch(query []float32, queryText string, topK int) []Sear
 	return results[:topK]
 }
 
-func (s *Store) searchLocked(query []float32, topK int) []SearchResult {
+func searchEntries(query []float32, topK int, entries []Entry) []SearchResult {
+	if len(entries) == 0 {
+		return nil
+	}
+
 	normalized := NormalizeVector(query)
-	results := make([]SearchResult, len(s.entries))
-	for i, e := range s.entries {
+	results := make([]SearchResult, len(entries))
+	for i, e := range entries {
 		results[i] = SearchResult{
 			Entry: e,
 			Score: DotProduct(normalized, NormalizeVector(e.Embedding)),

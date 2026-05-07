@@ -18,6 +18,10 @@ function chatApp() {
         codePanelOpen: false,
         codeSnippet: '',
         imageAttachments: [],
+        replyTo: null,
+        focusedDocuments: [],
+        mentionQuery: '',
+        mentionOpen: false,
         systemInfo: null,
         hwStatus: null,
         appConfig: {

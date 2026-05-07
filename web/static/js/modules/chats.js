@@ -128,6 +128,8 @@ window.jarvisChats = {
                             content: message.content || '',
                             sources: message.sources || [],
                             progress: message.progress || [],
+                            replyTo: message.replyTo || null,
+                            focusedDocuments: message.focusedDocuments || [],
                             attachments: (message.attachments || []).map(attachment => ({
                                 name: attachment.name || 'image',
                                 type: attachment.type || 'image',

@@ -15,14 +15,17 @@ import (
 )
 
 type chatRequest struct {
-	Query       string              `json:"query"`
-	CodeSnippet string              `json:"code_snippet"`
-	CodeLang    string              `json:"code_language"`
-	History     []ollamaapi.Message `json:"history"`
-	Research    bool                `json:"research"`
-	Locale      string              `json:"locale"`
-	Timezone    string              `json:"timezone"`
-	Model       string              `json:"model"`
+	Query            string              `json:"query"`
+	CodeSnippet      string              `json:"code_snippet"`
+	CodeLang         string              `json:"code_language"`
+	History          []ollamaapi.Message `json:"history"`
+	Research         bool                `json:"research"`
+	Locale           string              `json:"locale"`
+	Timezone         string              `json:"timezone"`
+	Model            string              `json:"model"`
+	FocusDocumentIDs []string            `json:"focus_document_ids"`
+	FocusFiles       []string            `json:"focus_files"`
+	ReplyTo          *rag.ReplyContext   `json:"reply_to"`
 }
 
 type sseEvent struct {
@@ -122,11 +125,15 @@ func (s *Server) handleChat(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	focusIDs, focusFiles := s.resolveFocusedDocuments(req.FocusDocumentIDs, req.FocusFiles)
 	queryOpts := &rag.QueryOptions{
-		ResearchMode: req.Research,
-		Locale:       req.Locale,
-		Timezone:     req.Timezone,
-		ChatModel:    chatModel,
+		ResearchMode:     req.Research,
+		Locale:           req.Locale,
+		Timezone:         req.Timezone,
+		ChatModel:        chatModel,
+		FocusDocumentIDs: focusIDs,
+		FocusFiles:       focusFiles,
+		ReplyTo:          req.ReplyTo,
 	}
 	result, err := s.chain.Query(r.Context(), effectiveQuery, req.History, onToken, queryOpts)
 	if err != nil {
@@ -144,6 +151,56 @@ func (s *Server) handleChat(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "data: %s\n\n", data)
 	flusher.Flush()
 }
+
+func (s *Server) resolveFocusedDocuments(ids []string, names []string) ([]string, []string) {
+	docs := s.store.ListDocuments()
+	idSet := make(map[string]bool, len(ids))
+	for _, id := range ids {
+		id = strings.TrimSpace(id)
+		if id != "" {
+			idSet[id] = true
+		}
+	}
+
+	nameSet := make(map[string]bool, len(names))
+	for _, name := range names {
+		name = strings.ToLower(strings.TrimSpace(name))
+		if name != "" {
+			nameSet[name] = true
+		}
+	}
+
+	focusIDs := make([]string, 0)
+	focusFiles := make([]string, 0)
+	for _, doc := range docs {
+		filename := strings.TrimSpace(doc.Filename)
+		filePath := strings.TrimSpace(doc.FilePath)
+		lowerFilename := strings.ToLower(filename)
+		lowerPath := strings.ToLower(filePath)
+
+		matched := idSet[doc.ID]
+		if !matched && len(nameSet) > 0 {
+			for name := range nameSet {
+				if name == lowerFilename || name == lowerPath || strings.Contains(lowerFilename, name) {
+					matched = true
+					break
+				}
+			}
+		}
+		if !matched {
+			continue
+		}
+
+		focusIDs = append(focusIDs, doc.ID)
+		if filename != "" {
+			focusFiles = append(focusFiles, filename)
+		} else if filePath != "" {
+			focusFiles = append(focusFiles, filePath)
+		}
+	}
+	return focusIDs, focusFiles
+}
+
 func extractURLs(text string) []string {
 	matches := urlPattern.FindAllString(text, -1)
 	var urls []string

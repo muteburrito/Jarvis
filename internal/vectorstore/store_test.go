@@ -49,3 +49,29 @@ func TestHybridSearchFallsBackToVectorSearchForEmptyText(t *testing.T) {
 		t.Fatalf("expected vector match first, got %q", results[0].ID)
 	}
 }
+
+func TestHybridSearchByDocumentIDsLimitsResults(t *testing.T) {
+	store := New(2)
+	store.Add([]Entry{
+		{
+			ID:         "first",
+			DocumentID: "doc-a",
+			Content:    "payment retry policy",
+			Embedding:  []float32{1, 0},
+		},
+		{
+			ID:         "second",
+			DocumentID: "doc-b",
+			Content:    "payment retry policy",
+			Embedding:  []float32{1, 0},
+		},
+	})
+
+	results := store.HybridSearchByDocumentIDs([]float32{1, 0}, "payment", 5, []string{"doc-b"})
+	if len(results) != 1 {
+		t.Fatalf("expected 1 result, got %d", len(results))
+	}
+	if results[0].DocumentID != "doc-b" {
+		t.Fatalf("expected doc-b result, got %q", results[0].DocumentID)
+	}
+}
