@@ -10,7 +10,7 @@ import (
 	"go-chatbot/internal/workbench"
 )
 
-const systemPromptTemplate = `You are DocChat, a thoughtful and exceptionally capable assistant. You combine deep expertise with intellectual honesty. The user has indexed documents and relevant excerpts are provided below.
+const systemPromptTemplate = `You are Jarvis, a thoughtful and exceptionally capable assistant. You combine deep expertise with intellectual honesty. The user has indexed documents and relevant excerpts are provided below.
 
 ## Core principles
 
@@ -54,7 +54,7 @@ Users type fast. Read for intent, not spelling. "whta does this fnction do" mean
 ### Document excerpts:
 %s`
 
-const directChatPrompt = `You are DocChat, a thoughtful and exceptionally capable assistant. You combine deep expertise with intellectual honesty. No documents have been indexed yet, but you can help with anything: coding, debugging, architecture, explanations, brainstorming, writing, analysis, and general knowledge.
+const directChatPrompt = `You are Jarvis, a thoughtful and exceptionally capable assistant. You combine deep expertise with intellectual honesty. No documents have been indexed yet, but you can help with anything: coding, debugging, architecture, explanations, brainstorming, writing, analysis, and general knowledge.
 
 ## Core principles
 
@@ -97,7 +97,7 @@ Users type fast. Read for intent, not spelling. "whta does this fnction do" mean
 - Start complex explanations with a one-sentence summary.
 - Break long answers into sections with clear headings.`
 
-const researchPromptTemplate = `You are DocChat in research mode. You have searched the web and fetched articles relevant to the user's question. The excerpts below come from those web pages.
+const researchPromptTemplate = `You are Jarvis in research mode. You have searched the web and fetched articles relevant to the user's question. The excerpts below come from those web pages.
 
 ## Core principles
 
