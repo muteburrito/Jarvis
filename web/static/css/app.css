@@ -2,6 +2,19 @@ body {
     background: #111111;
 }
 
+:root {
+    --jarvis-bg: #111111;
+    --jarvis-panel: #18181b;
+    --jarvis-panel-2: #202020;
+    --jarvis-surface: #262626;
+    --jarvis-surface-2: #2f2f2f;
+    --jarvis-border: rgba(82, 82, 91, 0.72);
+    --jarvis-border-soft: rgba(63, 63, 70, 0.72);
+    --jarvis-text: #f4f4f5;
+    --jarvis-muted: #a1a1aa;
+    --jarvis-faint: #71717a;
+}
+
 .jarvis-topbar {
     height: 44px;
     border-bottom: 1px solid rgba(63, 63, 70, 0.7);
@@ -273,6 +286,60 @@ body {
 .message-queue-item button:hover {
     color: #fafafa;
     background: rgba(63, 63, 70, 0.92);
+}
+
+.message-queue-actions {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    flex-shrink: 0;
+}
+
+.message-queue-actions button:disabled {
+    cursor: not-allowed;
+    opacity: 0.35;
+}
+
+.message-queue-editor {
+    display: grid;
+    gap: 7px;
+}
+
+.queue-edit-input {
+    width: 100%;
+    resize: vertical;
+    min-height: 58px;
+    max-height: 140px;
+    border: 1px solid var(--jarvis-border);
+    border-radius: 10px;
+    background: #111111;
+    color: var(--jarvis-text);
+    padding: 8px 10px;
+    font-size: 13px;
+    line-height: 1.4;
+    outline: none;
+}
+
+.queue-edit-input:focus {
+    border-color: rgba(212, 212, 216, 0.72);
+    box-shadow: 0 0 0 3px rgba(212, 212, 216, 0.08);
+}
+
+.message-queue-editor-actions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.message-queue-editor-actions button {
+    width: auto;
+    height: 28px;
+    padding: 0 9px;
+    border: 1px solid var(--jarvis-border-soft);
+    background: var(--jarvis-surface);
+    color: #e4e4e7;
+    font-size: 12px;
+    font-weight: 600;
 }
 
 .focus-chip,
@@ -1002,4 +1069,141 @@ body {
 textarea {
     scrollbar-width: thin;
     scrollbar-color: #475569 transparent;
+}
+
+/* Neutral Codex-like theme overrides for legacy Tailwind utility classes. */
+.bg-slate-950,
+.bg-slate-900,
+.bg-slate-900\/40,
+.bg-slate-900\/70,
+.bg-slate-900\/95 {
+    background-color: var(--jarvis-bg) !important;
+}
+
+.bg-slate-800,
+.bg-slate-800\/40,
+.bg-slate-800\/70 {
+    background-color: var(--jarvis-panel) !important;
+}
+
+.bg-slate-700,
+.bg-slate-700\/40,
+.bg-slate-700\/50,
+.bg-slate-700\/80,
+.bg-slate-700\/90 {
+    background-color: var(--jarvis-surface) !important;
+}
+
+.hover\:bg-slate-800:hover,
+.hover\:bg-slate-700:hover,
+.hover\:bg-slate-700\/40:hover,
+.hover\:bg-slate-700\/50:hover,
+.hover\:bg-slate-700\/80:hover,
+.hover\:bg-slate-600:hover {
+    background-color: var(--jarvis-surface-2) !important;
+}
+
+[class*="bg-blue-"],
+[class*="bg-purple-"],
+[class*="bg-emerald-"] {
+    background-color: var(--jarvis-surface-2) !important;
+}
+
+[class*="text-blue-"],
+[class*="text-purple-"],
+[class*="text-emerald-"],
+[class*="text-cyan-"] {
+    color: #d4d4d8 !important;
+}
+
+[class*="border-blue-"],
+[class*="border-purple-"],
+[class*="border-emerald-"] {
+    border-color: var(--jarvis-border) !important;
+}
+
+.border-slate-700,
+.border-slate-700\/70,
+.border-slate-600 {
+    border-color: var(--jarvis-border-soft) !important;
+}
+
+.text-slate-100,
+.text-slate-200 {
+    color: var(--jarvis-text) !important;
+}
+
+.text-slate-300,
+.text-slate-400 {
+    color: var(--jarvis-muted) !important;
+}
+
+.text-slate-500,
+.text-slate-600 {
+    color: var(--jarvis-faint) !important;
+}
+
+.focus\:ring-blue-500:focus {
+    --tw-ring-color: rgba(212, 212, 216, 0.28) !important;
+}
+
+.jarvis-sidebar {
+    background: var(--jarvis-panel);
+}
+
+.composer-icon-button.is-active,
+.composer-icon-button.is-research,
+.composer-send-button.is-research,
+.code-copy-button:hover,
+.code-copy-button.is-copied {
+    background: var(--jarvis-surface-2) !important;
+    color: var(--jarvis-text) !important;
+}
+
+.focus-chip,
+.message-focus-chip,
+.repo-language-chip,
+.repo-symbol-kind,
+.workspace-count-pill,
+.workspace-count-pill.is-files,
+.workspace-count-pill.is-symbols,
+.workbench-event-type {
+    border-color: var(--jarvis-border-soft) !important;
+    background: var(--jarvis-surface) !important;
+    color: #d4d4d8 !important;
+}
+
+.reply-preview,
+.message-context-card,
+.image-preview-chip,
+.message-image-card,
+.mention-popover,
+.workbench-shell,
+.workbench-map-panel,
+.workbench-stat,
+.repo-file-list,
+.repo-symbol-list,
+.workbench-empty-state,
+.research-progress {
+    border-color: var(--jarvis-border-soft) !important;
+    background: var(--jarvis-panel) !important;
+}
+
+.workbench-header,
+.workbench-stats-grid,
+.workbench-body {
+    background: var(--jarvis-panel) !important;
+}
+
+.repo-file-row:hover,
+.repo-symbol-row:hover,
+.workbench-secondary-button:hover,
+.workbench-close-button:hover,
+.mention-option:hover,
+.mention-option:focus-visible {
+    background: var(--jarvis-surface) !important;
+}
+
+.chat-message.prose li::marker {
+    color: #d4d4d8;
 }
