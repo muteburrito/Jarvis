@@ -11,7 +11,7 @@ The key product bets:
 - **Local-first and open-source**: run with Ollama or other local model servers first. Cloud models can be optional later, but never required.
 - **Workspace, not only chat**: keep the browser and desktop UI shared, but evolve Jarvis into a workbench with files, tasks, workspace maps, diffs, terminals, tests, and review output.
 - **Trust through visibility**: every agent action should be visible, interruptible, and reversible. Show plans, file reads, commands, patches, test output, retrieval traces, and final diffs.
-- **Small models with good context**: use retrieval, repo maps, symbols, BM25, reranking, and compact task state so local models can perform well without huge memory needs.
+- **Small models with good context**: use retrieval, workspace maps, symbols, BM25, reranking, and compact task state so local models can perform well without huge memory needs.
 - **Human-in-the-loop by default**: proposed edits are reviewed before apply. Commands require allowlists or approval until the user changes policy.
 
 ## Research Notes
@@ -21,7 +21,7 @@ Recent coding-agent tools point toward a few patterns worth copying:
 - OpenAI Codex focuses on delegated engineering tasks, parallel agent runs, cloud sandboxes, code review, pull requests, skills, and automations.
 - OpenHands shows that an open, model-agnostic coding agent needs a clear task loop, sandboxed runtime, tool calling, GitHub integration, and reusable skills.
 - Continue.dev is strong at IDE-style roles: chat, edit, apply, autocomplete, embeddings, and reranking. Jarvis should adopt the role separation even if it stays web-based.
-- Aider is a useful reference for git-aware editing, repo maps, focused multi-file patches, automatic test runs, and commit-message generation.
+- Aider is a useful reference for git-aware editing, workspace maps, focused multi-file patches, automatic test runs, and commit-message generation.
 - Localforge is a good UI reference for local tasks, visual diffs, model switching, task tracking, and expert/review modes.
 
 ## Phase 3 - Power Features
