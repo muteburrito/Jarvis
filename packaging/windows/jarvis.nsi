@@ -39,6 +39,7 @@ Section "Install"
 
   SetOutPath "$INSTDIR"
   File "jarvis.exe"
+  File "bootstrap-ollama.ps1"
 
   ; Start Menu shortcut
   CreateDirectory "$SMPROGRAMS\Jarvis"
@@ -63,6 +64,12 @@ Section "Install"
   ; Save install dir for future reference
   WriteRegStr HKCU "Software\Jarvis" "InstallDir" "$INSTDIR"
 
+  ; Manual installs bootstrap Ollama and Jarvis models. Silent auto-updates skip this.
+  IfSilent skip_ollama_bootstrap 0
+    DetailPrint "Checking Ollama and required Jarvis models..."
+    nsExec::ExecToLog 'powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$INSTDIR\bootstrap-ollama.ps1"'
+  skip_ollama_bootstrap:
+
   ; If this was a silent auto-update (launched by the running app), restart Jarvis automatically.
   ; The /S flag is intended for automated installs, not manual installs.
   IfSilent 0 done
@@ -72,6 +79,7 @@ SectionEnd
 
 Section "Uninstall"
   Delete "$INSTDIR\jarvis.exe"
+  Delete "$INSTDIR\bootstrap-ollama.ps1"
   Delete "$INSTDIR\Uninstall.exe"
   RMDir "$INSTDIR"
 
