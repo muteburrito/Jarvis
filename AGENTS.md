@@ -68,9 +68,11 @@ The GitHub updater only runs on proper semver builds. When creating a release, b
 - `internal/workbench/` contains the Codex-style memory layer: chat sessions, watched folders, workspace maps, symbol indexes, local git diff summaries, task messages, traces, and edit history persisted as JSON under the data directory. Workspace maps include regular documents, PDFs, images, spreadsheets, presentations, data files, source files, and code symbols.
 - `internal/workbench/projects.go` owns persisted project metadata. A project is a local folder root with active state and a reserved per-project vector-store path. The current vector store is still global, but future agent work should move retrieval into project-scoped stores.
 - `internal/workbench/diff.go` owns the read-only local git diff summary used by the Workbench. Keep it project-scoped, timeout-bound, and safe for binary or large files.
+- `internal/workbench/tools.go` owns read-only active-project tools: search files, read safe text previews, and summarize metadata, symbols, imports, and excerpts. Keep paths confined to the active project root.
+- `internal/workbench/commands.go` owns the safe command runner. Keep it shell-free, allowlisted, approval-gated, timeout-bound, and output-capped.
 - `web/` contains the single-page frontend (HTML template, JS, CSS). Keep Alpine app state and initialization in `web/static/js/app.js`, with feature behavior in focused files under `web/static/js/modules/`. Embedded into the binary via `go:embed` in `web/embed.go`, so the exe is self-contained.
 - `web/static/js/modules/messages.js` composes focused chat modules: `message_composer.js`, `message_streaming.js`, `message_queue.js`, `message_context.js`, `message_attachments.js`, and `message_actions.js`.
-- `web/static/js/modules/workbench.js` owns Workbench activity, workspace-map, project, and local diff review UI behavior.
+- `web/static/js/modules/workbench.js` owns Workbench activity, workspace-map, project, local diff review, and read-only project tool UI behavior.
 - `packaging/windows/jarvis.nsi` is the NSIS installer script. Per-user install to `%LOCALAPPDATA%\Programs\Jarvis`, no UAC. Accepts `/S` for silent install. Manual installs run `packaging/windows/bootstrap-ollama.ps1`; silent auto-updates skip the bootstrap.
 - `packaging/windows/bootstrap-ollama.ps1` checks for Ollama, installs it if missing, waits for the local API, and pulls `nomic-embed-text`, `gemma4:e2b`, `gemma4:e4b`, and `llava`.
 - `packaging/linux/jarvis.desktop` is the Linux desktop entry bundled into the `.deb`/`.rpm` by GoReleaser.
@@ -89,7 +91,7 @@ The GitHub updater only runs on proper semver builds. When creating a release, b
 - Folder ingest builds a lightweight workspace map for regular files and code. It classifies documents, PDFs, spreadsheets, presentations, images, data, config, text, and code files. It extracts symbols/imports only for supported text/code files. Keep scanners fast and dependency-free unless the roadmap explicitly moves to tree-sitter.
 - Folder ingest persists watched folders. The app runs a background re-indexer that checks watched folders every 10 minutes, re-indexes only new or modified files, refreshes the workspace map, and records task traces when files change.
 - Folder ingest also persists the folder as the active project. Keep this project layer as the foundation for future project-scoped indexes, command policy, tool traces, and patch review.
-- The Workbench panel surfaces task traces, retrieval events, model state, workspace file type counts, searchable files, searchable symbols, and active-project local diffs. Keep it dense, practical, and work-focused.
+- The Workbench panel surfaces task traces, retrieval events, model state, workspace file type counts, searchable files, searchable symbols, active-project local diffs, read-only project tools, and approved command output. Keep it dense, practical, and work-focused.
 - Reply-to-message and focused file mentions are part of the chat flow. Preserve `reply_to`, `focus_document_ids`, and `focus_files` support in `/api/v1/chat`.
 - Queued follow-up messages are a first-class chat feature. Users can queue messages while a response streams, edit queued text, reorder queued messages, or remove them before they run. If a queued message is being edited when streaming finishes, do not send it until the edit is saved or canceled.
 - Assistant response actions are part of the chat flow. Preserve copy, rating, fork-from-response, live working time, and final duration metadata in server-side chat history.
@@ -125,8 +127,8 @@ The GitHub updater only runs on proper semver builds. When creating a release, b
 A Codex-like local agent is possible, but it must stay layered and approval-driven:
 
 - Start with project-scoped state: vector store, chat history, workspace map, command policy, and edit history per project.
-- Add read-only tools first: list files, search files, read files, inspect symbols, summarize files, and fetch context.
-- Add command execution only with working directory controls, timeouts, output capture, and user approvals or allowlists.
+- Add read-only tools first: list files, search files, read files, inspect symbols, summarize files, and fetch context. Active-project file search, read, and summarize endpoints are now available.
+- Add command execution only with working directory controls, timeouts, output capture, and user approvals or allowlists. Do not add a raw shell endpoint.
 - Add file edits as proposed patches. Show diffs and apply only after review. The current diff panel is read-only and should remain the review foundation for future apply flows.
 - Scheduled folder re-indexing should keep project context fresh, but it must not overwrite user files or hide edits from review.
 

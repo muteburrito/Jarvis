@@ -62,6 +62,8 @@ Included:
 - Queued chat follow-ups with edit, reorder, and remove controls
 - Response copy, rating, fork, and working-time controls
 - Local git change summary and expandable diff review for the active project
+- Read-only project tools for active-project file search, preview, symbols, imports, and summaries
+- Approved command runner for allowlisted checks with captured output and task traces
 - Watched folder background re-indexing
 - Safe clear-index behavior that preserves external source files
 - Neutral Codex-style UI theme and updated Help modal
@@ -72,7 +74,8 @@ Included:
 |---|---|
 | **Project-scoped indexes** | Move from one global vector store to project/document-set scoped stores. Keep each project isolated for retrieval, chat history, workspace map, command policy, and future edits. |
 | **Agent tool loop** | Let the model call tools mid-task: search files, read files, inspect symbols, list directories, summarize files, fetch URLs, and ask for approval. |
-| **Safe local command runner** | Add a terminal tool with working directory controls, timeouts, output capture, and command approval policies. |
+| **Read-only project tools** | In progress. Search active-project files, read safe text previews, summarize symbols/imports, and record tool traces. Next wire these tools into the model loop. |
+| **Safe local command runner** | In progress. Runs only allowlisted, approved commands in the active project with timeouts, output caps, exit code, and task traces. |
 | **Patch generation and apply flow** | Generate unified diffs, preview changes in the UI, apply approved patches, and support discard per file. |
 | **Test and fix loop** | Let the agent run tests, parse failures, update the patch, and repeat within a bounded iteration count. |
 | **Git worktree and branch support** | Create isolated worktrees or branches per task so multiple agents can work without overwriting each other. |
@@ -86,8 +89,8 @@ The Codex-like workflow is possible, but it should land in careful layers:
 
 1. **Projects:** a folder becomes a persisted project with a root path, active state, workspace map, watched re-indexing, and a reserved vector-store location.
 2. **Project-scoped storage:** each project gets its own vector store, chat state, workspace map, command policy, and edit history. This prevents one project from polluting another project's retrieval.
-3. **Read-only tools:** list files, search files, read files, inspect symbols, summarize files, and fetch project context.
-4. **Command tools:** run approved commands with working directory controls, timeouts, output capture, and allowlists.
+3. **Read-only tools:** list files, search files, read files, inspect symbols, summarize files, and fetch project context. Search, read, and summarize endpoints now exist for active-project files.
+4. **Command tools:** run approved commands with working directory controls, timeouts, output capture, and allowlists. The first allowlisted command runner is available for git status/diff and Go test checks.
 5. **Patch tools:** propose file edits as diffs, show review UI, apply only approved patches, and record edit history. The first read-only diff review surface is now available in the Workbench.
 6. **Review and test loop:** run tests, parse failures, update patches, and produce a final review summary.
 

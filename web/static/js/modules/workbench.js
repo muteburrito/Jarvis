@@ -81,6 +81,44 @@ window.jarvisWorkbench = {
             }
         },
 
+        async runProjectCommand() {
+            const parsed = this.parseCommandPreset(this.commandPreset);
+            if (!parsed) {
+                this.showToast('Choose an approved command first', 'error');
+                return;
+            }
+            this.commandRunning = true;
+            try {
+                const resp = await fetch(this.apiURL('/api/v1/tools/run-command'), {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        command: parsed.command,
+                        args: parsed.args,
+                        approved: true,
+                        timeout_seconds: 60
+                    })
+                });
+                if (!resp.ok) throw new Error('Command failed');
+                this.commandResult = await resp.json();
+                await this.loadTaskState();
+            } catch {
+                this.showToast('Command runner failed', 'error');
+            } finally {
+                this.commandRunning = false;
+            }
+        },
+
+        parseCommandPreset(value) {
+            const presets = {
+                'git status --short': { command: 'git', args: ['status', '--short'] },
+                'git diff --stat': { command: 'git', args: ['diff', '--stat'] },
+                'git diff --name-only': { command: 'git', args: ['diff', '--name-only'] },
+                'go test ./...': { command: 'go', args: ['test', './...'] }
+            };
+            return presets[value] || null;
+        },
+
         async openWorkbenchPanel() {
             await Promise.all([
                 this.loadTaskState(),
@@ -179,6 +217,15 @@ window.jarvisWorkbench = {
         toolPreviewLines(limit = 80) {
             const excerpt = this.toolPreview?.excerpt || this.toolPreview?.description || '';
             return excerpt.split('\n').slice(0, limit);
+        },
+
+        commandOutputLines(limit = 180) {
+            const result = this.commandResult || {};
+            const output = [result.stdout || '', result.stderr || '']
+                .filter(Boolean)
+                .join('\n')
+                .trim();
+            return (output || 'No output').split('\n').slice(0, limit);
         },
 
         workspaceTypeBreakdown(limit = 8) {

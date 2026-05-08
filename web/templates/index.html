@@ -1065,6 +1065,53 @@
                     </div>
                 </div>
 
+                <div class="workbench-map-panel">
+                    <div class="mb-3 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                        <div class="min-w-0">
+                            <div class="flex flex-wrap items-center gap-2">
+                                <h3 class="text-sm font-semibold text-slate-100">Approved command runner</h3>
+                                <span class="workspace-count-pill">
+                                    <span>allowlisted</span>
+                                </span>
+                            </div>
+                            <p class="mt-1 text-xs text-slate-500">Run safe project checks with captured output and task traces.</p>
+                        </div>
+                    </div>
+                    <div class="mb-3 flex flex-col gap-2 sm:flex-row">
+                        <select x-model="commandPreset" class="workspace-search-input">
+                            <option value="git status --short">git status --short</option>
+                            <option value="git diff --stat">git diff --stat</option>
+                            <option value="git diff --name-only">git diff --name-only</option>
+                            <option value="go test ./...">go test ./...</option>
+                        </select>
+                        <button @click="runProjectCommand()"
+                                :disabled="commandRunning"
+                                class="workbench-secondary-button shrink-0">
+                            <span x-text="commandRunning ? 'Running...' : 'Run command'"></span>
+                        </button>
+                    </div>
+                    <template x-if="!commandResult">
+                        <div class="workspace-empty-row">Command output will appear here.</div>
+                    </template>
+                    <template x-if="commandResult">
+                        <div>
+                            <div class="mb-2 flex flex-wrap items-center gap-2 text-xs text-slate-500">
+                                <span>Exit</span>
+                                <span class="diff-status" x-text="commandResult.exit_code"></span>
+                                <span x-text="commandResult.duration_ms + ' ms'"></span>
+                                <span x-show="commandResult.timed_out">timed out</span>
+                            </div>
+                            <div class="diff-patch is-preview">
+                                <template x-for="(line, lineIndex) in commandOutputLines()" :key="lineIndex">
+                                    <div class="diff-line">
+                                        <span x-text="line || ' '"></span>
+                                    </div>
+                                </template>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+
                 <template x-if="!taskState">
                     <div class="workbench-empty-state">No workbench state loaded yet</div>
                 </template>

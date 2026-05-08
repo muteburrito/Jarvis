@@ -34,6 +34,7 @@ func (s *Server) registerRoutes() {
 	s.router.Get("/api/v1/tools/files", s.handleSearchProjectFiles)
 	s.router.Post("/api/v1/tools/read-file", s.handleReadProjectFile)
 	s.router.Post("/api/v1/tools/summarize-file", s.handleSummarizeProjectFile)
+	s.router.Post("/api/v1/tools/run-command", s.handleRunProjectCommand)
 	s.router.Get("/api/v1/task", s.handleTaskState)
 	s.router.Post("/api/v1/task/traces", s.handleAddTaskTrace)
 	s.router.Post("/api/v1/task/edits", s.handleAddTaskEdit)

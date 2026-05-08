@@ -55,7 +55,7 @@ type FileSummary struct {
 	SizeBytes   int64        `json:"size_bytes"`
 	LineCount   int          `json:"line_count"`
 	Imports     []string     `json:"imports,omitempty"`
-	Symbols      []SymbolInfo `json:"symbols,omitempty"`
+	Symbols     []SymbolInfo `json:"symbols,omitempty"`
 	Excerpt     string       `json:"excerpt,omitempty"`
 	Binary      bool         `json:"binary"`
 	Readable    bool         `json:"readable"`

@@ -19,7 +19,7 @@ No data leaves your machine. No API keys needed. Single binary, runs anywhere.
 - **Hybrid retrieval:** combines vector similarity with BM25 keyword scoring for better exact matches on code symbols, error codes, and config keys
 - **Workspace map:** folder ingest maps regular files, Office documents, PDFs, images, data files, source files, and code symbols
 - **Project foundation:** indexed folders are saved as projects with an active project, workspace map, watched re-indexing, and a reserved project vector-store path for future agent workflows
-- **Workbench activity:** inspect local task traces, retrieval events, selected model, workspace map, files, symbols, local git changes, expandable diffs, and future edit history
+- **Workbench activity:** inspect local task traces, retrieval events, selected model, workspace map, files, symbols, local git changes, expandable diffs, read-only project tools, approved command output, and future edit history
 - **Image support:** upload standalone images (PNG, JPG, etc.) or PDFs with embedded images. A vision model describes each image so it becomes searchable and queryable
 - **Deep research mode:** toggle research mode and Jarvis searches the web via DuckDuckGo, fetches the top articles, indexes them, and answers with citations and links. No API key needed
 - **URL fetching:** paste a website link directly in chat. Jarvis auto-detects URLs in normal chat messages, fetches the page, and indexes it. URLs inside the code snippet box are treated as code and are not fetched
@@ -102,6 +102,8 @@ Suggested highlights:
 - Watched folder background re-indexing for new and modified files
 - Workbench activity panel for traces, workspace map, files, symbols, and task state
 - Local changes panel with changed-file totals and expandable git diffs for the active project
+- Read-only project tools for file search, safe file preview, symbols, imports, and summaries
+- Approved command runner for allowlisted checks like git status, git diff summaries, and Go tests
 - Safer clear-index behavior that preserves external source files
 - Neutral Codex-style UI theme and expanded in-app Help guide
 
@@ -217,6 +219,10 @@ packaging/
 | `POST /api/v1/projects` | Open a folder as the active project |
 | `GET /api/v1/diff` | Changed-file summary and text patches for the active git project |
 | `GET /api/v1/repo-map` | Current workspace map with files, file kinds, imports, and symbols |
+| `GET /api/v1/tools/files` | Search active-project files by path, kind, language, or imports |
+| `POST /api/v1/tools/read-file` | Safely read a text file inside the active project |
+| `POST /api/v1/tools/summarize-file` | Return metadata, symbols, imports, and a short excerpt for one active-project file |
+| `POST /api/v1/tools/run-command` | Run an approved allowlisted command in the active project and capture output |
 | `GET /api/v1/task` | Current persisted task state, messages, traces, and edit history |
 | `POST /api/v1/task/traces` | Append a tool trace event to the current task |
 | `POST /api/v1/task/edits` | Append an edit-history entry to the current task |
@@ -244,6 +250,8 @@ The Workbench panel surfaces local task and workspace state:
 - searchable files across documents, PDFs, spreadsheets, presentations, images, data, text, config, and code
 - searchable symbols for supported code files
 - local git change summary with per-file additions, deletions, status, and expandable text patches
+- read-only project tools for searching files and previewing metadata, symbols, imports, and text excerpts
+- approved command runner for allowlisted checks with captured stdout, stderr, exit code, duration, and task traces
 
 This is the bridge from document chat toward a local coding and knowledge workbench while keeping all state local.
 
@@ -254,8 +262,8 @@ Jarvis is being prepared for a Codex-like local agent workflow. The current rele
 The next layers are:
 
 - project-scoped vector stores, chat history, workspace maps, command policy, and edit history
-- read-only tools for listing, searching, reading, and summarizing project files
-- safe command execution with approvals, timeouts, and captured output
+- read-only tools for listing, searching, reading, and summarizing project files. The first tool endpoints and Workbench preview UI are available now.
+- safe command execution with approvals, timeouts, and captured output. The first allowlisted command runner is available in the Workbench.
 - patch generation, review, apply, and discard flows. The current Workbench already shows read-only local diffs for the active git project.
 - test and fix loops that keep all changes visible and reversible
 
