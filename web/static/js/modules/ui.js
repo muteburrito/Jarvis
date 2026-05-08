@@ -47,6 +47,21 @@ window.jarvisUi = {
             return `${value.toFixed(precision)} ${units[unitIndex]}`;
         },
 
+        formatDuration(milliseconds) {
+            const totalSeconds = Math.max(0, Math.floor((Number(milliseconds) || 0) / 1000));
+            const hours = Math.floor(totalSeconds / 3600);
+            const minutes = Math.floor((totalSeconds % 3600) / 60);
+            const seconds = totalSeconds % 60;
+
+            if (hours > 0) {
+                return `${hours}h ${minutes}m`;
+            }
+            if (minutes > 0) {
+                return `${minutes}m ${seconds}s`;
+            }
+            return `${seconds}s`;
+        },
+
         detectCodeLanguage(code) {
             const text = code || '';
             const trimmed = text.trim();

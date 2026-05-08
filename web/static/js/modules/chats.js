@@ -59,6 +59,7 @@ window.jarvisChats = {
                 const session = await resp.json();
                 this.activeChatID = session.id;
                 this.messages = session.messages || [];
+                this.messageQueue = [];
                 await this.refreshChatList();
                 if (showToast) this.showToast('New chat created');
                 this.$nextTick(() => {
@@ -82,6 +83,7 @@ window.jarvisChats = {
                 const session = await resp.json();
                 this.activeChatID = session.id;
                 this.messages = session.messages || [];
+                this.messageQueue = [];
                 this.scrollToBottom(true);
             } catch {
                 this.showToast('Failed to open chat', 'error');
@@ -128,6 +130,10 @@ window.jarvisChats = {
                             content: message.content || '',
                             sources: message.sources || [],
                             progress: message.progress || [],
+                            startedAt: message.startedAt || '',
+                            completedAt: message.completedAt || '',
+                            durationMs: message.durationMs || 0,
+                            rating: message.rating || '',
                             replyTo: message.replyTo || null,
                             focusedDocuments: message.focusedDocuments || [],
                             attachments: (message.attachments || []).map(attachment => ({

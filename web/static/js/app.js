@@ -3,6 +3,8 @@ function chatApp() {
         messages: [],
         input: '',
         isStreaming: false,
+        messageQueue: [],
+        clockTick: Date.now(),
         sidebarOpen: window.innerWidth >= 1024,
         documents: [],
         chatSessions: [],
@@ -82,6 +84,7 @@ function chatApp() {
             this.loadHardwareStatus();
             this.loadUpdateStatus();
             setInterval(() => this.loadUpdateStatus(), 60 * 60 * 1000);
+            setInterval(() => { this.clockTick = Date.now(); }, 1000);
 
             marked.setOptions({
                 breaks: true,

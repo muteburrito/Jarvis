@@ -1,27 +1,31 @@
 window.jarvisMessages = {
         async sendMessage() {
-            const query = this.input.trim();
-            const codeSnippet = this.codeSnippet.trim();
-            const imageAttachments = [...this.imageAttachments];
-            if ((!query && !codeSnippet && imageAttachments.length === 0) || this.isStreaming) return;
+            const draft = this.createMessageDraft();
+            if (!this.hasDraftContent(draft)) return;
 
-            const replyTo = this.safeReplyContext();
-            const focusDocuments = this.safeFocusDocuments(query);
-            this.messages.push(this.buildOutgoingUserMessage(
-                query,
-                codeSnippet,
-                imageAttachments,
-                replyTo,
-                focusDocuments
-            ));
             this.resetComposerState();
+            this.resetComposerHeight();
 
-            if (this.$refs.chatInput) {
-                this.$refs.chatInput.style.height = 'auto';
+            if (this.isStreaming) {
+                this.enqueueMessageDraft(draft);
+                return;
             }
 
+            await this.submitMessageDraft(draft);
+        },
+
+        async submitMessageDraft(draft) {
+            this.messages.push(this.buildOutgoingUserMessage(draft));
             this.isStreaming = true;
-            this.messages.push({ role: 'assistant', content: '', sources: [], progress: [] });
+            const startedAt = new Date().toISOString();
+            this.messages.push({
+                role: 'assistant',
+                content: '',
+                sources: [],
+                progress: [],
+                startedAt
+            });
+
             const assistantIdx = this.messages.length - 1;
             this.scrollToBottom(true);
 
@@ -38,24 +42,12 @@ window.jarvisMessages = {
             };
 
             try {
-                const uploadedImages = [];
-                for (const attachment of imageAttachments) {
-                    const result = await this.uploadFile(attachment.file, attachment.uploadName, true);
-                    if (result?.filename) uploadedImages.push(result.filename);
-                }
-                if (uploadedImages.length > 0) {
-                    this.showToast(`Indexed ${uploadedImages.length} pasted image${uploadedImages.length === 1 ? '' : 's'}`);
-                }
-                const serverQuery = this.buildServerQuery(query, uploadedImages);
+                const uploadedImages = await this.uploadDraftImages(draft.imageAttachments);
+                const serverQuery = this.buildServerQuery(draft.query, uploadedImages);
                 const response = await fetch(this.apiURL('/api/v1/chat'), {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(this.buildChatPayload(
-                        serverQuery,
-                        codeSnippet,
-                        replyTo,
-                        focusDocuments
-                    ))
+                    body: JSON.stringify(this.buildChatPayload(serverQuery, draft))
                 });
 
                 if (!response.ok) {
@@ -104,39 +96,118 @@ window.jarvisMessages = {
                 }
                 this.showToast(error.message, 'error');
             } finally {
+                const assistant = this.messages[assistantIdx];
+                if (assistant) {
+                    assistant.completedAt = new Date().toISOString();
+                    assistant.durationMs = this.responseDurationMs(assistant);
+                }
                 this.isStreaming = false;
                 await this.saveActiveChat();
                 this.scrollToBottom(false);
                 this.$nextTick(() => {
                     if (this.$refs.chatInput) this.$refs.chatInput.focus();
                 });
+                this.processNextQueuedMessage();
             }
         },
 
-        buildOutgoingUserMessage(query, codeSnippet, imageAttachments, replyTo, focusDocuments) {
+        createMessageDraft() {
+            const query = this.input.trim();
+            return {
+                id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+                query,
+                codeSnippet: this.codeSnippet.trim(),
+                imageAttachments: [...this.imageAttachments],
+                replyTo: this.safeReplyContext(),
+                focusDocuments: this.safeFocusDocuments(query),
+                researchMode: Boolean(this.researchMode),
+                queuedAt: new Date().toISOString()
+            };
+        },
+
+        hasDraftContent(draft) {
+            return Boolean(
+                draft?.query ||
+                draft?.codeSnippet ||
+                draft?.imageAttachments?.length
+            );
+        },
+
+        enqueueMessageDraft(draft) {
+            this.messageQueue.push(draft);
+            this.showToast(`Queued follow-up ${this.messageQueue.length}`);
+            this.scrollToBottom(false);
+            this.$nextTick(() => {
+                if (this.$refs.chatInput) this.$refs.chatInput.focus();
+            });
+        },
+
+        processNextQueuedMessage() {
+            if (this.isStreaming || this.messageQueue.length === 0) return;
+            const nextDraft = this.messageQueue.shift();
+            this.$nextTick(() => this.submitMessageDraft(nextDraft));
+        },
+
+        removeQueuedMessage(id) {
+            this.messageQueue = this.messageQueue.filter(item => item.id !== id);
+        },
+
+        queuedMessageLabel(draft) {
+            if (!draft) return '';
+            const text = draft.query || (
+                draft.codeSnippet
+                    ? 'Code snippet follow-up'
+                    : 'Image follow-up'
+            );
+            return this.messageExcerpt(text);
+        },
+
+        resetComposerHeight() {
+            if (this.$refs.chatInput) {
+                this.$refs.chatInput.style.height = 'auto';
+            }
+        },
+
+        async uploadDraftImages(imageAttachments) {
+            const uploadedImages = [];
+            for (const attachment of imageAttachments || []) {
+                const result = await this.uploadFile(attachment.file, attachment.uploadName, true);
+                if (result?.filename) uploadedImages.push(result.filename);
+            }
+            if (uploadedImages.length > 0) {
+                this.showToast(`Indexed ${uploadedImages.length} pasted image${uploadedImages.length === 1 ? '' : 's'}`);
+            }
+            return uploadedImages;
+        },
+
+        buildOutgoingUserMessage(draft) {
             return {
                 role: 'user',
-                content: this.buildUserMessage(query, codeSnippet, imageAttachments),
-                attachments: imageAttachments.map(attachment => ({
+                content: this.buildUserMessage(
+                    draft.query,
+                    draft.codeSnippet,
+                    draft.imageAttachments
+                ),
+                attachments: draft.imageAttachments.map(attachment => ({
                     name: attachment.name,
                     type: attachment.type,
                     size: attachment.size,
                     previewUrl: attachment.previewUrl
                 })),
-                replyTo,
-                focusedDocuments: focusDocuments
+                replyTo: draft.replyTo,
+                focusedDocuments: draft.focusDocuments
             };
         },
 
-        buildChatPayload(query, codeSnippet, replyTo, focusDocuments) {
+        buildChatPayload(query, draft) {
             return {
                 query,
-                code_snippet: codeSnippet,
-                code_language: this.detectCodeLanguage(codeSnippet),
-                research: this.researchMode,
-                reply_to: replyTo,
-                focus_document_ids: focusDocuments.map(doc => doc.id),
-                focus_files: focusDocuments.map(doc => doc.filename),
+                code_snippet: draft.codeSnippet,
+                code_language: this.detectCodeLanguage(draft.codeSnippet),
+                research: draft.researchMode,
+                reply_to: draft.replyTo,
+                focus_document_ids: draft.focusDocuments.map(doc => doc.id),
+                focus_files: draft.focusDocuments.map(doc => doc.filename),
                 locale: navigator.language || '',
                 timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || '',
                 history: this.messages.slice(0, -2).map(message => ({
@@ -185,7 +256,7 @@ window.jarvisMessages = {
         },
 
         setReplyTo(message, index) {
-            if (!message || this.isStreaming) return;
+            if (!message) return;
             this.replyTo = {
                 index,
                 role: message.role || 'message',
@@ -335,7 +406,6 @@ window.jarvisMessages = {
         },
 
         handleChatPaste(event) {
-            if (this.isStreaming) return;
             const items = Array.from(event.clipboardData?.items || []);
             const imageItems = items.filter(item => item.kind === 'file' && item.type.startsWith('image/'));
             if (imageItems.length === 0) return;
@@ -347,7 +417,6 @@ window.jarvisMessages = {
         },
 
         handleChatDrop(event) {
-            if (this.isStreaming) return;
             const files = Array.from(event.dataTransfer?.files || []);
             if (files.length === 0) return;
             event.preventDefault();
@@ -356,7 +425,7 @@ window.jarvisMessages = {
             for (const file of imageFiles) {
                 this.addImageAttachment(file);
             }
-            if (otherFiles.length > 0) {
+            if (otherFiles.length > 0 && !this.isStreaming) {
                 this.uploadFiles(otherFiles);
             }
         },
@@ -399,5 +468,92 @@ window.jarvisMessages = {
             };
             return map[type] || 'png';
         },
-};
 
+        async copyResponse(message) {
+            const content = message?.content || '';
+            if (!content.trim()) return;
+            try {
+                await navigator.clipboard.writeText(content);
+                this.showToast('Response copied');
+            } catch {
+                this.showToast('Could not copy response', 'error');
+            }
+        },
+
+        async rateResponse(message, rating) {
+            if (!message || message.role !== 'assistant') return;
+            message.rating = message.rating === rating ? '' : rating;
+            await this.saveActiveChat();
+        },
+
+        async forkResponse(index) {
+            if (index < 0 || index >= this.messages.length) return;
+            const messages = this.cloneMessagesForFork(this.messages.slice(0, index + 1));
+            const titleSource = messages.find(message => message.role === 'user' && message.content);
+            const title = titleSource ? `Fork: ${this.messageExcerpt(titleSource.content)}` : 'Forked chat';
+
+            try {
+                const resp = await fetch(this.apiURL('/api/v1/chats'), {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ title })
+                });
+                if (!resp.ok) throw new Error('Create fork failed');
+                const session = await resp.json();
+
+                const saveResp = await fetch(this.apiURL(`/api/v1/chats/${session.id}`), {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ title, messages })
+                });
+                if (!saveResp.ok) throw new Error('Save fork failed');
+
+                this.activeChatID = session.id;
+                this.messages = messages;
+                this.messageQueue = [];
+                await this.refreshChatList();
+                this.scrollToBottom(true);
+                this.showToast('Forked conversation');
+            } catch (error) {
+                this.showToast(error.message || 'Failed to fork response', 'error');
+            }
+        },
+
+        cloneMessagesForFork(messages) {
+            return messages.map(message => ({
+                role: message.role,
+                content: message.content || '',
+                sources: message.sources || [],
+                progress: message.progress || [],
+                replyTo: message.replyTo || null,
+                focusedDocuments: message.focusedDocuments || [],
+                attachments: (message.attachments || []).map(attachment => ({
+                    name: attachment.name || 'image',
+                    type: attachment.type || 'image',
+                    size: attachment.size || 0
+                })),
+                startedAt: message.startedAt || '',
+                completedAt: message.completedAt || '',
+                durationMs: message.durationMs || 0,
+                rating: message.rating || ''
+            }));
+        },
+
+        responseDurationMs(message) {
+            if (!message?.startedAt) return 0;
+            const start = new Date(message.startedAt).getTime();
+            if (!Number.isFinite(start)) return 0;
+            const end = message.completedAt
+                ? new Date(message.completedAt).getTime()
+                : this.clockTick;
+            if (!Number.isFinite(end) || end < start) return 0;
+            return end - start;
+        },
+
+        responseDurationLabel(message, index) {
+            const isActive = this.isStreaming && index === this.messages.length - 1;
+            const duration = this.responseDurationMs(message);
+            const label = this.formatDuration(duration);
+            return isActive ? `Working for ${label}` : `Took ${label}`;
+        },
+};

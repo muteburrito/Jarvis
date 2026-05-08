@@ -299,6 +299,44 @@
                                             </div>
                                         </div>
                                     </template>
+
+                                    <div x-show="msg.content || (msg.progress && msg.progress.length > 0)"
+                                         class="response-action-row">
+                                        <button @click="copyResponse(msg)"
+                                                :disabled="!msg.content"
+                                                class="response-action-button"
+                                                title="Copy response">
+                                            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16h8M8 12h8m-7 8h6a2 2 0 002-2V7.5L12.5 3H9a2 2 0 00-2 2v13a2 2 0 002 2z"/>
+                                            </svg>
+                                        </button>
+                                        <button @click="rateResponse(msg, 'up')"
+                                                class="response-action-button"
+                                                :class="msg.rating === 'up' ? 'is-selected' : ''"
+                                                title="Good response">
+                                            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 9V5a3 3 0 00-3-3l-4 9v11h11.3a2 2 0 002-1.7l1.4-9A2 2 0 0019.7 9H14zM7 22H4a2 2 0 01-2-2v-7a2 2 0 012-2h3"/>
+                                            </svg>
+                                        </button>
+                                        <button @click="rateResponse(msg, 'down')"
+                                                class="response-action-button"
+                                                :class="msg.rating === 'down' ? 'is-selected' : ''"
+                                                title="Bad response">
+                                            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 15v4a3 3 0 003 3l4-9V2H5.7a2 2 0 00-2 1.7l-1.4 9A2 2 0 004.3 15H10zm7-13h3a2 2 0 012 2v7a2 2 0 01-2 2h-3"/>
+                                            </svg>
+                                        </button>
+                                        <button @click="forkResponse(idx)"
+                                                class="response-action-button"
+                                                title="Fork conversation from here">
+                                            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 3v5a4 4 0 004 4h2m4-9v5a4 4 0 01-4 4h-2m0 0v9"/>
+                                            </svg>
+                                        </button>
+                                        <span x-show="msg.startedAt"
+                                              class="response-duration"
+                                              x-text="responseDurationLabel(msg, idx)"></span>
+                                    </div>
                                 </div>
                             </template>
                         </div>
@@ -335,7 +373,6 @@
                             </div>
                         </div>
                         <select @change="applyPromptTemplate(promptTemplates[$event.target.value]); $event.target.value = ''"
-                                :disabled="isStreaming"
                                 class="w-full sm:w-56 rounded-lg border border-slate-600 bg-slate-900 text-slate-300 px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:opacity-50">
                             <option value="">Prompt templates</option>
                             <template x-for="(template, index) in promptTemplates" :key="template.name">
@@ -420,6 +457,33 @@
                         </template>
                     </div>
 
+                    <div x-show="messageQueue.length > 0" x-cloak class="message-queue mb-2">
+                        <div class="message-queue-header">
+                            <span x-text="messageQueue.length + ' queued follow-up' + (messageQueue.length === 1 ? '' : 's')"></span>
+                            <span x-show="isStreaming">Runs after the current answer</span>
+                        </div>
+                        <div class="message-queue-list">
+                            <template x-for="queued in messageQueue" :key="queued.id">
+                                <div class="message-queue-item">
+                                    <div class="min-w-0">
+                                        <p class="truncate" x-text="queuedMessageLabel(queued)"></p>
+                                        <div class="message-queue-meta">
+                                            <span x-show="queued.researchMode">research</span>
+                                            <span x-show="queued.codeSnippet">code</span>
+                                            <span x-show="queued.imageAttachments.length" x-text="queued.imageAttachments.length + ' image' + (queued.imageAttachments.length === 1 ? '' : 's')"></span>
+                                            <span x-show="queued.focusDocuments.length" x-text="queued.focusDocuments.length + ' focused'"></span>
+                                        </div>
+                                    </div>
+                                    <button @click="removeQueuedMessage(queued.id)" title="Remove queued message">
+                                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                                        </svg>
+                                    </button>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+
                     <div class="jarvis-composer flex items-end gap-2">
                         <button @click="$refs.fileInput.click()"
                                 :disabled="isStreaming || isUploading"
@@ -438,7 +502,6 @@
                             </svg>
                         </button>
                         <button @click="codePanelOpen = !codePanelOpen"
-                                :disabled="isStreaming"
                                 class="composer-icon-button relative font-medium"
                                 :class="codePanelOpen || codeSnippet.trim() ? 'is-active' : ''"
                                 title="Add code snippet">
@@ -467,7 +530,6 @@
                                 @paste="handleChatPaste($event)"
                                 @dragover.prevent
                                 @drop="handleChatDrop($event)"
-                                :disabled="isStreaming"
                                 rows="1"
                                 :placeholder="researchMode ? 'Ask a research question...' : 'Ask a question about your documents...'"
                                 class="composer-input w-full resize-none text-sm disabled:opacity-50"
@@ -485,25 +547,25 @@
                         </button>
                         <button @click="sendMessage()"
                                 type="button"
-                                :disabled="isStreaming || (!input.trim() && !codeSnippet.trim() && imageAttachments.length === 0)"
+                                :disabled="!input.trim() && !codeSnippet.trim() && imageAttachments.length === 0"
                                 class="composer-send-button disabled:opacity-50 disabled:cursor-not-allowed"
                                 :class="researchMode ? 'is-research' : ''">
                             <svg x-show="!isStreaming" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/>
                             </svg>
-                            <svg x-show="isStreaming" class="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
-                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                            <svg x-show="isStreaming" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v14m7-7H5"/>
                             </svg>
                         </button>
                     </div>
                     <p class="text-xs mt-2 text-center" :class="researchMode ? 'text-purple-400' : 'text-slate-500'">
                         <span x-show="researchMode">Research mode: will search the web and fetch articles before answering</span>
-                        <span x-show="!researchMode && !codeSnippet.trim() && imageAttachments.length === 0">Press Enter to send, Shift+Enter for new line. Paste an image to attach it.</span>
-                        <span x-show="!researchMode && codeSnippet.trim()">
+                        <span x-show="!researchMode && isStreaming">Press Enter to queue a follow-up while the current answer streams.</span>
+                        <span x-show="!researchMode && !isStreaming && !codeSnippet.trim() && imageAttachments.length === 0">Press Enter to send, Shift+Enter for new line. Paste an image to attach it.</span>
+                        <span x-show="!researchMode && !isStreaming && codeSnippet.trim()">
                             Code snippet attached as <span x-text="detectedCodeLanguage()"></span>. Press Enter to send.
                         </span>
-                        <span x-show="!researchMode && !codeSnippet.trim() && imageAttachments.length > 0">
+                        <span x-show="!researchMode && !isStreaming && !codeSnippet.trim() && imageAttachments.length > 0">
                             Image attached. Press Enter to send.
                         </span>
                     </p>

@@ -28,6 +28,10 @@ type ChatMessage struct {
 	Attachments      []AttachmentInfo    `json:"attachments,omitempty"`
 	ReplyTo          *ReplyInfo          `json:"replyTo,omitempty"`
 	FocusedDocuments []FocusedDocument   `json:"focusedDocuments,omitempty"`
+	StartedAt        string              `json:"startedAt,omitempty"`
+	CompletedAt      string              `json:"completedAt,omitempty"`
+	DurationMs       int64               `json:"durationMs,omitempty"`
+	Rating           string              `json:"rating,omitempty"`
 }
 
 type ProgressSnapshot struct {
