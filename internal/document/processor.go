@@ -37,6 +37,14 @@ var ignoredDirs = map[string]bool{
 	"Release":      true,
 }
 
+var ignoredStateFiles = map[string]bool{
+	"chat_sessions.json":   true,
+	"projects.json":        true,
+	"repo_map.json":        true,
+	"task_state.json":      true,
+	"watched_folders.json": true,
+}
+
 type Processor struct {
 	registry    *Registry
 	chunker     *Chunker
@@ -186,10 +194,13 @@ func (p *Processor) ProcessDirectory(ctx context.Context, dir string) (int, int,
 		}
 		if d.IsDir() {
 			name := strings.ToLower(d.Name())
-			if ignoredDirs[d.Name()] || ignoredDirs[name] || strings.HasPrefix(d.Name(), ".") && d.Name() != "." {
+			if ignoredDirs[d.Name()] || ignoredDirs[name] || strings.HasPrefix(d.Name(), ".") && d.Name() != "." || p.isAppStoragePath(path) {
 				slog.Debug("skipping ignored directory", "dir", path)
 				return filepath.SkipDir
 			}
+			return nil
+		}
+		if ignoredStateFiles[strings.ToLower(d.Name())] || p.isAppStoragePath(path) {
 			return nil
 		}
 		if !p.registry.CanLoad(path) {
@@ -251,6 +262,31 @@ func canonicalDocumentPath(path string) (string, bool) {
 		return "", false
 	}
 	return strings.ToLower(filepath.Clean(absPath)), true
+}
+
+func (p *Processor) isAppStoragePath(path string) bool {
+	return p.sameOrInsideConfiguredDir(path, p.cfg.DataDir) || p.sameOrInsideConfiguredDir(path, p.cfg.VectorStoreDir)
+}
+
+func (p *Processor) sameOrInsideConfiguredDir(path string, dir string) bool {
+	if strings.TrimSpace(path) == "" || strings.TrimSpace(dir) == "" {
+		return false
+	}
+	pathAbs, pathErr := filepath.Abs(path)
+	dirAbs, dirErr := filepath.Abs(dir)
+	if pathErr != nil || dirErr != nil {
+		return false
+	}
+	pathAbs = filepath.Clean(pathAbs)
+	dirAbs = filepath.Clean(dirAbs)
+	if strings.EqualFold(pathAbs, dirAbs) {
+		return true
+	}
+	rel, err := filepath.Rel(dirAbs, pathAbs)
+	if err != nil {
+		return false
+	}
+	return rel != "." && rel != ".." && !strings.HasPrefix(rel, ".."+string(filepath.Separator))
 }
 
 func sameSourceFile(info os.FileInfo, doc vectorstore.DocumentInfo) bool {

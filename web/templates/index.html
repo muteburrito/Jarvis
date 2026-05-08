@@ -102,11 +102,19 @@
             <div class="p-4">
                 <button @click="newChat()"
                         :disabled="isStreaming"
-                        class="mb-5 flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-medium text-slate-200 hover:bg-slate-700/80 disabled:opacity-50 transition-colors">
+                        class="mb-2 flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-medium text-slate-200 hover:bg-slate-700/80 disabled:opacity-50 transition-colors">
                     <svg class="h-4 w-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v14m-7-7h14"/>
                     </svg>
                     <span>New chat</span>
+                </button>
+                <button @click="$refs.folderInput.click()"
+                        :disabled="isUploading"
+                        class="mb-5 flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-medium text-slate-400 hover:bg-slate-700/80 hover:text-slate-200 disabled:opacity-50 transition-colors">
+                    <svg class="h-4 w-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V7z"/>
+                    </svg>
+                    <span>Index folder</span>
                 </button>
                 <div class="flex items-center justify-between mb-3">
                     <h2 class="text-xs font-medium text-slate-500">Chats</h2>
@@ -282,11 +290,11 @@
                                          x-html="renderMarkdown(msg.content)"></div>
 
                                     <!-- Sources -->
-                                    <template x-if="msg.sources && msg.sources.length > 0">
+                                    <template x-if="visibleSources(msg).length > 0">
                                         <div class="mt-3 pt-2 border-t border-slate-700">
                                             <p class="text-xs text-slate-400 mb-1">Sources:</p>
                                             <div class="flex flex-wrap gap-1">
-                                                <template x-for="src in msg.sources" :key="src.index + src.filename + (src.page || '')">
+                                                <template x-for="src in visibleSources(msg)" :key="src.index + src.filename + (src.page || '')">
                                                     <button @click="openSourcePreview(src)"
                                                             class="inline-flex items-center gap-1 text-xs bg-slate-700 text-slate-400 hover:text-slate-100 hover:bg-slate-600 rounded-full px-2 py-0.5 transition-colors"
                                                             :title="'Preview source [' + src.index + ']'">
@@ -527,14 +535,6 @@
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21.44 11.05l-8.49 8.49a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/>
                             </svg>
                         </button>
-                        <button @click="$refs.folderInput.click()"
-                                :disabled="isStreaming || isUploading"
-                                class="composer-icon-button disabled:opacity-50 disabled:cursor-not-allowed"
-                                title="Attach folder">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V7z"/>
-                            </svg>
-                        </button>
                         <button @click="codePanelOpen = !codePanelOpen"
                                 class="composer-icon-button relative font-medium"
                                 :class="codePanelOpen || codeSnippet.trim() ? 'is-active' : ''"
@@ -754,7 +754,7 @@
                         </span>
                         <h2 class="text-lg font-semibold text-slate-100">Workbench</h2>
                     </div>
-                    <p class="text-xs text-slate-400 mt-1">Workspace map, retrieval traces, task activity, and future edits.</p>
+                    <p class="text-xs text-slate-400 mt-1">Project summary, local changes, and recent activity.</p>
                 </div>
                 <div class="flex items-center gap-2">
                     <button @click="loadTaskState()"
@@ -806,10 +806,6 @@
                                 <div>
                                     <p class="mt-1 truncate text-sm font-medium text-slate-200" x-text="projectSummary().active.name"></p>
                                     <p class="mt-1 truncate text-xs text-slate-500" x-text="projectSummary().active.path"></p>
-                                    <p class="mt-1 truncate text-xs text-slate-500">
-                                        <span>Future project vector store: </span>
-                                        <span x-text="projectSummary().vectorStoreDir"></span>
-                                    </p>
                                 </div>
                             </template>
                             <p x-show="!projectSummary().active" class="mt-1 text-xs text-slate-500">Index or open a folder to make it the active project.</p>
@@ -845,71 +841,13 @@
                     </div>
 
                     <template x-if="repoMap">
-                        <div>
-                            <div class="mb-3 flex flex-wrap gap-2">
-                                <template x-for="item in workspaceTypeBreakdown()" :key="item.type">
-                                    <span class="repo-language-chip">
-                                        <span x-text="item.type"></span>
-                                        <strong x-text="item.count"></strong>
-                                    </span>
-                                </template>
-                            </div>
-                            <div class="mb-2 flex items-center justify-between gap-3">
-                                <input x-model="repoSearch"
-                                       type="search"
-                                       placeholder="Search files, symbols, or types"
-                                       class="workspace-search-input">
-                                <span class="shrink-0 text-xs text-slate-500">
-                                    <span x-text="filteredWorkspaceFiles().length"></span>
-                                    <span> files</span>
+                        <div class="flex flex-wrap gap-2">
+                            <template x-for="item in workspaceTypeBreakdown(6)" :key="item.type">
+                                <span class="repo-language-chip">
+                                    <span x-text="item.type"></span>
+                                    <strong x-text="item.count"></strong>
                                 </span>
-                            </div>
-                            <div class="repo-file-list mb-3">
-                                <template x-if="filteredWorkspaceFiles().length === 0">
-                                    <div class="workspace-empty-row">No matching files</div>
-                                </template>
-                                <template x-for="file in filteredWorkspaceFiles()" :key="file.path">
-                                    <div class="repo-file-row">
-                                        <div class="min-w-0">
-                                            <div class="flex items-center gap-2">
-                                                <span class="repo-symbol-kind" x-text="file.kind || 'file'"></span>
-                                                <span class="truncate text-sm font-medium text-slate-100" x-text="file.path"></span>
-                                            </div>
-                                            <p class="truncate text-xs text-slate-500">
-                                                <span x-text="file.language || 'unknown'"></span>
-                                                <span x-text="' , ' + formatBytes(file.size_bytes)"></span>
-                                            </p>
-                                        </div>
-                                    </div>
-                                </template>
-                            </div>
-                            <div class="mb-2 flex items-center justify-between">
-                                <p class="text-xs font-semibold uppercase text-slate-500">Symbols</p>
-                                <span class="text-xs text-slate-500">
-                                    <span x-text="filteredSymbols().length"></span>
-                                    <span> shown</span>
-                                </span>
-                            </div>
-                            <div class="repo-symbol-list">
-                                <template x-if="filteredSymbols().length === 0">
-                                    <div class="workspace-empty-row">No matching symbols</div>
-                                </template>
-                                <template x-for="symbol in filteredSymbols()" :key="symbol.file_path + symbol.line + symbol.name">
-                                    <div class="repo-symbol-row">
-                                        <div class="min-w-0">
-                                            <div class="flex items-center gap-2">
-                                                <span class="repo-symbol-kind" x-text="symbol.kind"></span>
-                                                <span class="truncate text-sm font-medium text-slate-100" x-text="symbol.name"></span>
-                                            </div>
-                                            <p class="truncate text-xs text-slate-500">
-                                                <span x-text="symbol.file_path"></span>
-                                                <span x-text="':' + symbol.line"></span>
-                                            </p>
-                                        </div>
-                                        <span class="shrink-0 text-[11px] text-slate-500" x-text="symbol.language"></span>
-                                    </div>
-                                </template>
-                            </div>
+                            </template>
                         </div>
                     </template>
                 </div>
@@ -980,7 +918,7 @@
                     </template>
                 </div>
 
-                <div class="workbench-map-panel">
+                <div class="workbench-map-panel hidden">
                     <div class="mb-3 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                         <div class="min-w-0">
                             <div class="flex flex-wrap items-center gap-2">
@@ -1058,7 +996,7 @@
                     </div>
                 </div>
 
-                <div class="workbench-map-panel">
+                <div class="workbench-map-panel hidden">
                     <div class="mb-3 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                         <div class="min-w-0">
                             <div class="flex flex-wrap items-center gap-2">

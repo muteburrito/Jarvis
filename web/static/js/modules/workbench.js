@@ -126,9 +126,6 @@ window.jarvisWorkbench = {
                 this.loadProjects(),
                 this.loadDiffSummary()
             ]);
-            if (this.toolResults.length === 0) {
-                this.searchProjectTools();
-            }
             this.showWorkbenchPanel = true;
         },
 

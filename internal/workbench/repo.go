@@ -51,6 +51,16 @@ var ignoredRepoDirs = map[string]bool{
 	"Release":      true,
 	"target":       true,
 	"vendor":       true,
+	"data":         true,
+	"vectorstore":  true,
+}
+
+var ignoredRepoFiles = map[string]bool{
+	"chat_sessions.json":   true,
+	"projects.json":        true,
+	"repo_map.json":        true,
+	"task_state.json":      true,
+	"watched_folders.json": true,
 }
 
 func ScanRepository(root string) (*RepoMap, error) {
@@ -73,6 +83,9 @@ func ScanRepository(root string) (*RepoMap, error) {
 			if ignoredRepoDirs[name] || ignoredRepoDirs[strings.ToLower(name)] || strings.HasPrefix(name, ".") && path != absRoot {
 				return filepath.SkipDir
 			}
+			return nil
+		}
+		if ignoredRepoFiles[strings.ToLower(d.Name())] {
 			return nil
 		}
 

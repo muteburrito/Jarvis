@@ -64,6 +64,7 @@ func (c *Chain) Query(ctx context.Context, question string, history []ollamaapi.
 		}
 
 		results := c.searchRelevantEntries(embeddings[0], question, opts)
+		results = filterUserVisibleResults(results)
 		ragContext := buildContext(results)
 		sources = buildSourceList(results)
 
@@ -106,6 +107,37 @@ func (c *Chain) Query(ctx context.Context, question string, history []ollamaapi.
 	}
 
 	return &QueryResult{Sources: sources}, nil
+}
+
+func filterUserVisibleResults(results []vectorstore.SearchResult) []vectorstore.SearchResult {
+	filtered := make([]vectorstore.SearchResult, 0, len(results))
+	for _, result := range results {
+		if isInternalStateSource(result.Metadata["source"]) {
+			continue
+		}
+		filtered = append(filtered, result)
+	}
+	return filtered
+}
+
+func isInternalStateSource(source string) bool {
+	source = strings.ToLower(strings.TrimSpace(source))
+	if source == "" {
+		return false
+	}
+	names := []string{
+		"chat_sessions.json",
+		"projects.json",
+		"repo_map.json",
+		"task_state.json",
+		"watched_folders.json",
+	}
+	for _, name := range names {
+		if strings.HasSuffix(source, "/"+name) || strings.HasSuffix(source, "\\"+name) || source == name {
+			return true
+		}
+	}
+	return false
 }
 
 func (c *Chain) searchRelevantEntries(query []float32, question string, opts *QueryOptions) []vectorstore.SearchResult {

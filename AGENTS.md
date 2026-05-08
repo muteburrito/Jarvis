@@ -72,7 +72,7 @@ The GitHub updater only runs on proper semver builds. When creating a release, b
 - `internal/workbench/commands.go` owns the safe command runner. Keep it shell-free, allowlisted, approval-gated, timeout-bound, and output-capped.
 - `web/` contains the single-page frontend (HTML template, JS, CSS). Keep Alpine app state and initialization in `web/static/js/app.js`, with feature behavior in focused files under `web/static/js/modules/`. Embedded into the binary via `go:embed` in `web/embed.go`, so the exe is self-contained.
 - `web/static/js/modules/messages.js` composes focused chat modules: `message_composer.js`, `message_streaming.js`, `message_queue.js`, `message_context.js`, `message_attachments.js`, and `message_actions.js`.
-- `web/static/js/modules/workbench.js` owns Workbench activity, workspace-map, project, local diff review, and read-only project tool UI behavior.
+- `web/static/js/modules/workbench.js` owns Workbench activity, workspace-map, project, and local diff review UI behavior. Keep advanced tool endpoints out of the default Workbench UI unless the user asks for an agent/debug surface.
 - `packaging/windows/jarvis.nsi` is the NSIS installer script. Per-user install to `%LOCALAPPDATA%\Programs\Jarvis`, no UAC. Accepts `/S` for silent install. Manual installs run `packaging/windows/bootstrap-ollama.ps1`; silent auto-updates skip the bootstrap.
 - `packaging/windows/bootstrap-ollama.ps1` checks for Ollama, installs it if missing, waits for the local API, and pulls `nomic-embed-text`, `gemma4:e2b`, `gemma4:e4b`, and `llava`.
 - `packaging/linux/jarvis.desktop` is the Linux desktop entry bundled into the `.deb`/`.rpm` by GoReleaser.
@@ -102,7 +102,7 @@ The GitHub updater only runs on proper semver builds. When creating a release, b
 - Jarvis picks the chat model automatically when `CHAT_MODEL` is unset: use `gemma4:e2b` for very low-end machines and `gemma4:e4b` for everyone else. Do not auto-select `gemma4:26b`; it is opt-in through `CHAT_MODEL` only because Jarvis is local and RAG-first, and speed matters for daily use. Keep the main chat UI free of model-picker controls unless the roadmap explicitly reintroduces advanced model settings.
 - Startup auto-pulls missing required Ollama models through the Go Ollama API as a fallback. Keep chat and embedding models required. Keep the vision model optional unless product requirements change. Do not remove startup verification just because the Windows installer bootstraps Ollama.
 - Chat sessions are persisted server-side as JSON in the data directory and listed in the sidebar. Do not move primary chat history back to browser-only `localStorage`.
-- Folder indexing walks directories recursively and skips common build output (bin, obj, node_modules, .git, vendor, etc).
+- Folder indexing walks directories recursively and skips common build output (bin, obj, node_modules, .git, vendor, etc), Jarvis app storage directories, and Jarvis app-state JSON files.
 - Vision model is optional. If not installed, the app still works but skips image processing.
 - Images (standalone or extracted from PDFs) are described by the vision model. The description is embedded and stored like any other text chunk, making images searchable.
 - Unknown extensions are accepted when the file looks like UTF-8 text. Binary files are rejected or skipped.
@@ -110,7 +110,7 @@ The GitHub updater only runs on proper semver builds. When creating a release, b
 - Image byte slices are copied out of the PDF buffer and freed after vision processing. This prevents holding the entire PDF in memory.
 - URL fetching extracts visible text from HTML pages. It skips script, style, nav, footer, and other non-content elements. Response bodies are limited to 10 MB.
 - URLs pasted in the main chat box are auto-detected and fetched before the RAG query. URLs inside the code snippet box are treated as code and must not be fetched or indexed. Already-indexed URLs are skipped. Fetch failures are non-fatal.
-- The chat header owns indexed files. The main input bar owns attachments: paper clip for files, folder icon for browser-selected folders, and a code snippet toggle with automatic language detection and syntax-highlighted preview. Avoid reintroducing large upload, folder path, URL fetch panels, or duplicate document buttons in the sidebar or composer.
+- The sidebar owns folder indexing. The chat header owns indexed files. The main input bar owns message attachments: paper clip for files and a code snippet toggle with automatic language detection and syntax-highlighted preview. Avoid reintroducing large upload, folder path, URL fetch panels, or duplicate document buttons in the composer.
 - Pasted images in the chat input must show a compact preview before send. On send, upload them through the normal document pipeline so the vision model describes and indexes them before the chat request runs.
 - The `web/` folder is embedded via `go:embed`. No external files are needed to run the exe.
 - Research mode uses DuckDuckGo HTML scraping (no API key). The LLM generates 2-3 search queries, results are fetched and indexed, then the RAG chain answers with a research-specific prompt emphasising source citations. Research progress must be sent as structured SSE progress events, not markdown status text mixed into the answer.

@@ -13,13 +13,13 @@ No data leaves your machine. No API keys needed. Single binary, runs anywhere.
 - **Response controls:** copy answers, rate responses, fork a conversation from a response, and see live/final response timing
 - **General chat:** works as a regular assistant even without documents loaded
 - **Streaming responses:** token-by-token SSE streaming with markdown rendering
-- **Recursive folder indexing:** point it at a C#, Go, Python (or any) project and it walks all subdirectories, skipping build output like `bin/`, `obj/`, `node_modules/`
+- **Recursive folder indexing:** use the sidebar folder button to point Jarvis at a project or regular folder. It walks subdirectories while skipping build output and Jarvis-owned app state
 - **Watched folders:** indexed folders are remembered and checked in the background, so new and changed files are refreshed without clearing the index
 - **Wide file support:** PDF, DOCX, XLSX, PPTX, images, known source files, and unknown text-like files. Binary files are rejected
 - **Hybrid retrieval:** combines vector similarity with BM25 keyword scoring for better exact matches on code symbols, error codes, and config keys
 - **Workspace map:** folder ingest maps regular files, Office documents, PDFs, images, data files, source files, and code symbols
 - **Project foundation:** indexed folders are saved as projects with an active project, workspace map, watched re-indexing, and a reserved project vector-store path for future agent workflows
-- **Workbench activity:** inspect local task traces, retrieval events, selected model, workspace map, files, symbols, local git changes, expandable diffs, read-only project tools, approved command output, and future edit history
+- **Workbench activity:** inspect the active project, workspace map summary, local git changes, and recent task activity without crowding the chat UI
 - **Image support:** upload standalone images (PNG, JPG, etc.) or PDFs with embedded images. A vision model describes each image so it becomes searchable and queryable
 - **Live context:** normal chat quietly uses current date/time, browser locale, timezone, pasted URLs, and web context when available, without showing search progress
 - **Deep research mode:** toggle research mode when you want visible search progress, fetched sources, citations, and links. No API key needed
@@ -28,7 +28,7 @@ No data leaves your machine. No API keys needed. Single binary, runs anywhere.
 - **Document management:** upload, list, delete individual docs, or clear everything at once. Clearing indexed files removes Jarvis-owned upload copies and preserves external source files
 - **Server-side chat history:** chats are saved locally under the data directory and shown in the sidebar
 - **Codex-style desktop UI:** neutral dark workbench theme with a focused chat surface, consistent panels, compact controls, and responsive layout
-- **Chat-bar attachments** with file and folder picker buttons plus progress tracking
+- **Chat-bar attachments** with file picker, pasted image support, code snippets, and progress tracking. Folder indexing lives in the sidebar
 - **Code snippet mode** with automatic language detection and syntax-highlighted preview
 - **Self-contained binary:** the web UI is embedded into the exe via go:embed. No external files needed. Pure Go, no CGo, builds on Windows/Linux/Mac
 
@@ -101,10 +101,9 @@ Suggested highlights:
 - Copy, rate, fork, and response timing controls
 - Workspace map for regular folders, Office files, PDFs, images, data, text, config, and code symbols
 - Watched folder background re-indexing for new and modified files
-- Workbench activity panel for traces, workspace map, files, symbols, and task state
+- Simplified Workbench panel for project summary, workspace map counts, local changes, and recent activity
 - Local changes panel with changed-file totals and expandable git diffs for the active project
-- Read-only project tools for file search, safe file preview, symbols, imports, and summaries
-- Approved command runner for allowlisted checks like git status, git diff summaries, and Go tests
+- Agent foundations for read-only project tools and approved command execution, kept out of the default Workbench surface
 - Safer clear-index behavior that preserves external source files
 - Neutral Codex-style UI theme and expanded in-app Help guide
 
@@ -248,11 +247,10 @@ The Workbench panel surfaces local task and workspace state:
 - active project metadata and reserved per-project vector-store path
 - selected model, message count, trace count, and edit count
 - workspace map root, file count, symbol count, and file type breakdown
-- searchable files across documents, PDFs, spreadsheets, presentations, images, data, text, config, and code
-- searchable symbols for supported code files
 - local git change summary with per-file additions, deletions, status, and expandable text patches
-- read-only project tools for searching files and previewing metadata, symbols, imports, and text excerpts
-- approved command runner for allowlisted checks with captured stdout, stderr, exit code, duration, and task traces
+- recent task activity
+
+Jarvis hides its own app-state JSON, such as chat history, task state, project metadata, and workspace-map files, from user-facing sources. Those files remain available to the app internally but should not appear as evidence for normal answers.
 
 This is the bridge from document chat toward a local coding and knowledge workbench while keeping all state local.
 

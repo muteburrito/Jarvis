@@ -182,9 +182,10 @@ window.jarvisUi = {
             for (const message of this.messages) {
                 const speaker = message.role === 'user' ? 'User' : appName;
                 lines.push(`## ${speaker}`, '', message.content || '', '');
-                if (message.sources && message.sources.length > 0) {
+                const sources = this.visibleSources(message);
+                if (sources.length > 0) {
                     lines.push('### Sources', '');
-                    for (const source of message.sources) {
+                    for (const source of sources) {
                         lines.push(`- [${source.index}] ${this.sourceLabel(source)}`);
                     }
                     lines.push('');
@@ -206,6 +207,21 @@ window.jarvisUi = {
         sourceLabel(source) {
             if (!source) return '';
             return source.filename + (source.page ? ` p.${source.page}` : '');
+        },
+
+        visibleSources(message) {
+            return (message?.sources || []).filter(source => !this.isInternalSource(source));
+        },
+
+        isInternalSource(source) {
+            const value = `${source?.filename || ''} ${source?.source || ''}`.toLowerCase();
+            return [
+                'chat_sessions.json',
+                'projects.json',
+                'repo_map.json',
+                'task_state.json',
+                'watched_folders.json'
+            ].some(name => value.includes(name));
         },
 
         progressLabel(step) {

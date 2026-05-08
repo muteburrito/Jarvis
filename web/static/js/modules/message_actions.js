@@ -23,6 +23,7 @@ window.jarvisMessageActions = {
             const title = titleSource ? `Fork: ${this.messageExcerpt(titleSource.content)}` : 'Forked chat';
 
             try {
+                await this.saveActiveChat();
                 const resp = await fetch(this.apiURL('/api/v1/chats'), {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -37,11 +38,21 @@ window.jarvisMessageActions = {
                     body: JSON.stringify({ title, messages })
                 });
                 if (!saveResp.ok) throw new Error('Save fork failed');
+                const savedSession = await saveResp.json();
 
-                this.activeChatID = session.id;
-                this.messages = messages;
+                this.activeChatID = savedSession.id;
+                this.messages = savedSession.messages || messages;
                 this.messageQueue = [];
+                this.cancelEditQueuedMessage();
                 await this.refreshChatList();
+                if (!this.chatSessions.some(chat => chat.id === savedSession.id)) {
+                    this.chatSessions = [{
+                        id: savedSession.id,
+                        title: savedSession.title || title,
+                        message_count: this.messages.length,
+                        updated_at: savedSession.updated_at || new Date().toISOString()
+                    }, ...this.chatSessions];
+                }
                 this.scrollToBottom(true);
                 this.showToast('Forked conversation');
             } catch (error) {

@@ -113,6 +113,34 @@ func TestSameSourceFileRequiresSizeAndModifiedTimeMatch(t *testing.T) {
 	}
 }
 
+func TestProcessDirectorySkipsAppStateFiles(t *testing.T) {
+	root := t.TempDir()
+	dataDir := filepath.Join(root, "data")
+	vectorDir := filepath.Join(root, "vectorstore")
+	if err := os.MkdirAll(dataDir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.MkdirAll(vectorDir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	writeTestFile(t, filepath.Join(dataDir, "chat_sessions.json"), `{"private":true}`)
+	writeTestFile(t, filepath.Join(root, "task_state.json"), `{"private":true}`)
+
+	store := vectorstore.New(2)
+	processor := NewProcessor(nil, nil, nil, store, &config.Config{
+		DataDir:        dataDir,
+		VectorStoreDir: vectorDir,
+	}, false)
+
+	processed, chunks, err := processor.ProcessDirectory(context.Background(), root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if processed != 0 || chunks != 0 {
+		t.Fatalf("expected app state files to be skipped, got processed=%d chunks=%d", processed, chunks)
+	}
+}
+
 func writeTestFile(t *testing.T, path, content string) {
 	t.Helper()
 	if err := os.WriteFile(path, []byte(content), 0o644); err != nil {
