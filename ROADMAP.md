@@ -9,8 +9,8 @@ Jarvis should grow from a private document chatbot into an open-source, web-base
 The key product bets:
 
 - **Local-first and open-source**: run with Ollama or other local model servers first. Cloud models can be optional later, but never required.
-- **Web workbench, not only chat**: keep the browser UI, but evolve it into a coding workspace with files, tasks, diffs, terminals, tests, and review output.
-- **Trust through visibility**: every agent action should be visible, interruptible, and reversible. Show plans, file reads, commands, patches, test output, and final diffs.
+- **Workspace, not only chat**: keep the browser and desktop UI shared, but evolve Jarvis into a workbench with files, tasks, workspace maps, diffs, terminals, tests, and review output.
+- **Trust through visibility**: every agent action should be visible, interruptible, and reversible. Show plans, file reads, commands, patches, test output, retrieval traces, and final diffs.
 - **Small models with good context**: use retrieval, repo maps, symbols, BM25, reranking, and compact task state so local models can perform well without huge memory needs.
 - **Human-in-the-loop by default**: proposed edits are reviewed before apply. Commands require allowlists or approval until the user changes policy.
 
@@ -28,14 +28,18 @@ Recent coding-agent tools point toward a few patterns worth copying:
 
 | Feature | What it adds |
 |---|---|
+| **Workbench activity panel** | Done. Shows task traces, retrieval events, selected model, message count, edit count, and a polished activity timeline. |
+| **Workspace map** | Done. Folder ingest maps regular documents, PDFs, images, spreadsheets, presentations, data files, source files, and code symbols. |
+| **Reply and focused file context** | Done. Users can reply to a specific message and use `@file` or `#file` mentions to focus retrieval on indexed files. |
+| **Windows installer bootstrap** | Done for Windows. Manual NSIS installs check/install Ollama and pull Jarvis models. Silent auto-updates skip bootstrap. |
 | **Scheduled folder re-indexing** | Watch folders for file changes and re-index modified or new files in the background. Useful for live wikis, shared drives, and actively developed codebases. |
 | **Multiple named workspaces** | Save and switch between named document sets. Each workspace should have its own vector store, documents, and chat history. |
 | **Vector compression research** | Evaluate TurboQuant, QJL, and PolarQuant ideas for compressing Jarvis embeddings or adding an approximate search tier. Reference: https://research.google/blog/turboquant-redefining-ai-efficiency-with-extreme-compression/ |
-| **Codebase map** | Build a lightweight repo map with files, symbols, imports, package or module boundaries, and tests. |
+| **Workspace map depth** | Add richer document metadata, media dimensions, Office document summaries, package boundaries, tests, and better file grouping. |
 | **Context picker** | Let users pin files, folders, symbols, diffs, terminal output, URLs, and documents into the next task. Show context budget impact before sending. |
 | **Code-aware retrieval** | Add code-specific chunking, symbol metadata, exact identifier search, dependency-aware boosting, and optional reranking. |
 | **Model role profiles** | Split model config by role: chat, edit, apply, autocomplete, embedding, reranker, and vision. |
-| **Frontend modularization** | Split the large Alpine app and HTML template into smaller maintainable modules or partials while keeping the current no-build setup unless explicitly changed. |
+| **Frontend modularization** | In progress. JS behavior is split into modules. Next, split the large HTML template into partials or server-rendered sections while avoiding a build step until it is clearly worth it. |
 
 ## Phase 4 - Local Coding Agent
 

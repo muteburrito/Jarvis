@@ -1,23 +1,26 @@
 # Jarvis - Chat with your Documents
 
-A local, privacy-first document chatbot built with Go and Alpine.js. Upload PDFs, DOCX, XLSX, code files, or point it at an entire project folder. It indexes everything locally and lets you ask questions using a local LLM through Ollama. It can also search the web and research topics for you.
+A local, privacy-first document chatbot and workbench built with Go, Wails, and Alpine.js. Upload PDFs, DOCX, XLSX, PPTX, images, code files, or point it at an entire folder. It indexes everything locally and lets you ask questions using a local LLM through Ollama. It can also search the web and research topics for you.
 
 No data leaves your machine. No API keys needed. Single binary, runs anywhere.
 
 ## Features
 
 - **Chat with documents:** upload files or index entire folders, then ask questions with source citations
+- **Reply context:** reply to a specific prior message so follow-up questions carry the intended local context
+- **Focused file mentions:** type or select `@file` and `#file` mentions so retrieval prioritizes specific indexed files
 - **General chat:** works as a regular assistant even without documents loaded
 - **Streaming responses:** token-by-token SSE streaming with markdown rendering
 - **Recursive folder indexing:** point it at a C#, Go, Python (or any) project and it walks all subdirectories, skipping build output like `bin/`, `obj/`, `node_modules/`
 - **Wide file support:** PDF, DOCX, XLSX, PPTX, images, known source files, and unknown text-like files. Binary files are rejected
 - **Hybrid retrieval:** combines vector similarity with BM25 keyword scoring for better exact matches on code symbols, error codes, and config keys
-- **Codebase memory:** folder ingest builds a lightweight repo map, symbol index, task state, and trace log for Codex-style coding sessions
+- **Workspace map:** folder ingest maps regular files, Office documents, PDFs, images, data files, source files, and code symbols
+- **Workbench activity:** inspect local task traces, retrieval events, selected model, workspace map, files, symbols, and future edit history
 - **Image support:** upload standalone images (PNG, JPG, etc.) or PDFs with embedded images. A vision model describes each image so it becomes searchable and queryable
-- **Deep research mode:** toggle research mode and DocChat searches the web via DuckDuckGo, fetches the top articles, indexes them, and answers with citations and links. No API key needed
-- **URL fetching:** paste a website link directly in chat. DocChat auto-detects URLs in normal chat messages, fetches the page, and indexes it. URLs inside the code snippet box are treated as code and are not fetched
+- **Deep research mode:** toggle research mode and Jarvis searches the web via DuckDuckGo, fetches the top articles, indexes them, and answers with citations and links. No API key needed
+- **URL fetching:** paste a website link directly in chat. Jarvis auto-detects URLs in normal chat messages, fetches the page, and indexes it. URLs inside the code snippet box are treated as code and are not fetched
 - **Regional awareness:** automatically detects your locale and timezone from the browser. Answers use your local currency, date formats, and regionally relevant context
-- **Document management:** upload, list, delete individual docs, or clear everything at once
+- **Document management:** upload, list, delete individual docs, or clear everything at once. Clearing indexed files removes Jarvis-owned upload copies and preserves external source files
 - **Server-side chat history:** chats are saved locally under the data directory and shown in the sidebar
 - **Dark mode UI:** clean, responsive interface built with Tailwind CSS and Alpine.js
 - **Chat-bar attachments** with file and folder picker buttons plus progress tracking
@@ -29,10 +32,13 @@ No data leaves your machine. No API keys needed. Single binary, runs anywhere.
 - [Go 1.22+](https://go.dev/dl/)
 - [Ollama](https://ollama.com/) running locally
 
-Pull the required models:
+On Windows, the NSIS installer bootstraps Ollama for manual installs. It checks for `ollama.exe`, installs Ollama if missing, starts it, and pulls the Jarvis models. Silent auto-updates skip this bootstrap step so updates stay fast.
+
+For development or manual setup, pull the required models:
 
 ```bash
 ollama pull gemma4:e2b
+ollama pull gemma4:e4b
 ollama pull nomic-embed-text
 ollama pull llava              # optional, enables image support
 ```
@@ -84,7 +90,7 @@ All settings are configurable through environment variables:
 |----------|---------|-------------|
 | `PORT` | `8080` | Server port |
 | `OLLAMA_URL` | `http://localhost:11434` | Ollama API endpoint |
-| `OLLAMA_KEEP_ALIVE` | `30s` | How long Ollama keeps models loaded after a request. Use `0s` for lowest idle memory |
+| `OLLAMA_KEEP_ALIVE` | `120s` | How long Ollama keeps models loaded after a request. Use `0s` for lowest idle memory |
 | `CHAT_MODEL` | auto | LLM model for chat. Leave unset for hardware-aware selection, or set it to force a model |
 | `EMBEDDING_MODEL` | `nomic-embed-text` | Model for generating embeddings |
 | `VISION_MODEL` | `llava` | Vision model for describing images (optional) |
@@ -136,7 +142,7 @@ internal/
     math.go                    Vector math utilities
   workbench/
     chat.go                    Local chat session store
-    repo.go                    Repo map and symbol scanning
+    repo.go                    Workspace map, file classification, and symbol scanning
     task.go                    Task state, traces, and edit history
   rag/
     chain.go                   RAG pipeline: retrieve, prompt, stream
@@ -156,6 +162,9 @@ web/
   static/js/modules/           Focused browser-loaded frontend modules
   static/css/app.css           Custom styles
   embed.go                     Embeds web/ into the binary
+packaging/
+  windows/jarvis.nsi           Windows NSIS installer
+  windows/bootstrap-ollama.ps1 Ollama and model bootstrap for manual Windows installs
 ```
 
 ## API Endpoints
@@ -179,7 +188,7 @@ web/
 | `GET /api/v1/health` | Health check with model and store info |
 | `GET /api/v1/system` | Hardware and system status |
 | `GET /api/v1/models` | List installed Ollama models and the default chat model |
-| `GET /api/v1/repo-map` | Current lightweight repo map with files, imports, and symbols |
+| `GET /api/v1/repo-map` | Current workspace map with files, file kinds, imports, and symbols |
 | `GET /api/v1/task` | Current persisted task state, messages, traces, and edit history |
 | `POST /api/v1/task/traces` | Append a tool trace event to the current task |
 | `POST /api/v1/task/edits` | Append an edit-history entry to the current task |
@@ -190,8 +199,21 @@ web/
 1. **Upload or index:** files are split into overlapping text chunks. Images (standalone or extracted from PDFs) are described by a vision model, and those descriptions become searchable text. URLs pasted in the main chat box are auto-detected and fetched.
 2. **Embed:** each chunk is converted to a vector using `nomic-embed-text` via Ollama
 3. **Store:** vectors are kept in memory and persisted to disk in gob format
-4. **Query:** your question is embedded, the most similar chunks are retrieved, and they are passed as context to the LLM. Your locale and timezone are included so answers use local conventions.
-5. **Stream:** the LLM response streams back token-by-token via Server-Sent Events
+4. **Map:** folder ingest also builds a workspace map for files, documents, images, data, code symbols, and imports
+5. **Query:** your question is embedded, the most similar chunks are retrieved, and they are passed as context to the LLM. Reply context and focused `@file` mentions are included when present. Your locale and timezone are included so answers use local conventions.
+6. **Stream:** the LLM response streams back token-by-token via Server-Sent Events
+
+### Workbench
+
+The Workbench panel surfaces local task and workspace state:
+
+- task traces from chat, research, retrieval, workspace map updates, and future tools
+- selected model, message count, trace count, and edit count
+- workspace map root, file count, symbol count, and file type breakdown
+- searchable files across documents, PDFs, spreadsheets, presentations, images, data, text, config, and code
+- searchable symbols for supported code files
+
+This is the bridge from document chat toward a local coding and knowledge workbench while keeping all state local.
 
 ### Research mode
 
@@ -207,7 +229,7 @@ Research steps stream as a compact progress timeline while the answer is being p
 
 ## Hardware Requirements
 
-Ollama runs the models on your hardware. DocChat itself (the Go server) uses very little memory, typically under 100 MB even with thousands of indexed chunks. The models are what need the horsepower.
+Ollama runs the models on your hardware. Jarvis itself uses very little memory, typically under 100 MB even with thousands of indexed chunks. The models are what need the horsepower.
 
 ### Model resource usage
 
@@ -269,6 +291,16 @@ This repo includes `.github/workflows/ci.yml` for personal GitHub repositories.
 - Tagged releases also build the Windows NSIS installer from the desktop binary and upload it to the GitHub Release.
 - Release builds bake the GitHub repository into the binary so the in-app updater can check GitHub Releases.
 - Jobs use standard GitHub-hosted runners, `ubuntu-latest` and `windows-latest`, which are free and unlimited for public repositories.
+
+## Windows Installer
+
+The Windows installer is built from `packaging/windows/jarvis.nsi`.
+
+- Installs per-user to `%LOCALAPPDATA%\Programs\Jarvis`.
+- Does not require UAC.
+- Manual installs copy and run `bootstrap-ollama.ps1`.
+- The bootstrap script checks for Ollama, installs it if missing, starts the local API, and pulls `nomic-embed-text`, `gemma4:e2b`, `gemma4:e4b`, and `llava`.
+- Silent installs, including in-app auto-updates, skip the Ollama bootstrap and restart Jarvis after install.
 
 ## Desktop App
 
