@@ -171,17 +171,6 @@ window.jarvisUi = {
             setTimeout(() => { this.toast.show = false; }, 3000);
         },
 
-        applyPromptTemplate(template) {
-            if (!template) return;
-            this.input = template.prompt;
-            this.$nextTick(() => {
-                if (this.$refs.chatInput) {
-                    this.autoResize(this.$refs.chatInput);
-                    this.$refs.chatInput.focus();
-                }
-            });
-        },
-
         exportConversation() {
             if (this.messages.length === 0) {
                 this.showToast('No conversation to export', 'error');

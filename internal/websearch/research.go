@@ -18,6 +18,9 @@ import (
 const maxSearchQueries = 3
 const maxResultsPerQuery = 8
 const maxSuccessfulFetches = 5
+const maxQuietSearchQueries = 2
+const maxQuietResultsPerQuery = 5
+const maxQuietFetches = 2
 
 const queryGenPrompt = `Today's date is %s. Generate %d focused web search queries for answering this question. Use the current year in queries when the question is about recent or current events. Return only the queries, one per line, no numbering or bullet points.
 
@@ -138,6 +141,62 @@ func (r *Researcher) Research(ctx context.Context, question, chatModel string, o
 	}
 
 	return nil
+}
+
+func (r *Researcher) GatherLiveContext(ctx context.Context, question, chatModel string) (int, error) {
+	queries, err := r.generateQueries(ctx, question, chatModel)
+	if err != nil {
+		slog.Warn("quiet live context query generation failed, using original question", "error", err)
+		queries = []string{question}
+	}
+	if len(queries) > maxQuietSearchQueries {
+		queries = queries[:maxQuietSearchQueries]
+	}
+
+	var allResults []Result
+	seen := make(map[string]bool)
+	for _, q := range queries {
+		results, err := Search(ctx, q, maxQuietResultsPerQuery)
+		if err != nil {
+			slog.Warn("quiet live context search failed", "query", q, "error", err)
+			continue
+		}
+		for _, res := range results {
+			if res.URL == "" || seen[res.URL] {
+				continue
+			}
+			seen[res.URL] = true
+			allResults = append(allResults, res)
+		}
+	}
+
+	if len(allResults) == 0 {
+		return 0, nil
+	}
+
+	indexed := make(map[string]bool)
+	for _, d := range r.store.ListDocuments() {
+		indexed[d.FilePath] = true
+	}
+
+	fetched := 0
+	for _, res := range allResults {
+		if fetched >= maxQuietFetches {
+			break
+		}
+		if indexed[res.URL] {
+			fetched++
+			continue
+		}
+		_, title, chunks, err := r.processor.ProcessURL(ctx, res.URL)
+		if err != nil {
+			slog.Warn("quiet live context fetch failed", "url", res.URL, "error", err)
+			continue
+		}
+		slog.Info("quiet live context indexed page", "url", res.URL, "title", title, "chunks", chunks)
+		fetched++
+	}
+	return fetched, nil
 }
 
 func (r *Researcher) generateQueries(ctx context.Context, question, chatModel string) ([]string, error) {

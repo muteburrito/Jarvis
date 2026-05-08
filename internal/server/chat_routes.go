@@ -1,12 +1,14 @@
 package server
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"log/slog"
 	"net/http"
 	"regexp"
 	"strings"
+	"time"
 
 	ollamaapi "github.com/ollama/ollama/api"
 
@@ -105,15 +107,18 @@ func (s *Server) handleChat(w http.ResponseWriter, r *http.Request) {
 			if indexed[u] {
 				continue
 			}
-			onToken(fmt.Sprintf("> Fetching %s...\n\n", u))
 			_, title, chunks, err := s.processor.ProcessURL(r.Context(), u)
 			if err != nil {
 				slog.Warn("auto-fetch URL failed", "url", u, "error", err)
-				onToken(fmt.Sprintf("> Could not fetch %s\n\n", u))
+				s.recordTaskTrace("live_context", "URL fetch failed", map[string]string{"url": u})
 				continue
 			}
 			slog.Info("auto-fetched URL from chat", "url", u, "title", title, "chunks", chunks)
-			onToken(fmt.Sprintf("> Indexed \"%s\" (%d chunks)\n\n", title, chunks))
+			s.recordTaskTrace("live_context", "Fetched URL from chat", map[string]string{
+				"url":    u,
+				"title":  title,
+				"chunks": fmt.Sprintf("%d", chunks),
+			})
 		}
 	}
 
@@ -122,6 +127,16 @@ func (s *Server) handleChat(w http.ResponseWriter, r *http.Request) {
 		if err := s.researcher.Research(r.Context(), effectiveQuery, chatModel, onProgress); err != nil {
 			slog.Warn("research failed, continuing with existing context", "error", err)
 			s.recordTaskTrace("research", "Research failed", map[string]string{"error": err.Error()})
+		}
+	} else if shouldGatherLiveContext(query, codeSnippet) {
+		liveCtx, cancel := context.WithTimeout(r.Context(), 12*time.Second)
+		defer cancel()
+		fetched, err := s.researcher.GatherLiveContext(liveCtx, effectiveQuery, chatModel)
+		if err != nil {
+			slog.Warn("quiet live context failed", "error", err)
+			s.recordTaskTrace("live_context", "Quiet live context failed", map[string]string{"error": err.Error()})
+		} else if fetched > 0 {
+			s.recordTaskTrace("live_context", "Quietly refreshed live context", map[string]string{"pages": fmt.Sprintf("%d", fetched)})
 		}
 	}
 
@@ -222,4 +237,12 @@ func buildChatQuery(query, codeSnippet, codeLang string) string {
 		codeLang = "text"
 	}
 	return query + "\n\nCode snippet:\n```" + codeLang + "\n" + codeSnippet + "\n```"
+}
+
+func shouldGatherLiveContext(query string, codeSnippet string) bool {
+	query = strings.TrimSpace(query)
+	if query == "" || strings.TrimSpace(codeSnippet) != "" {
+		return false
+	}
+	return true
 }

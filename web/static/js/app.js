@@ -55,37 +55,6 @@ function chatApp() {
         notesModal: { show: false, tag: '', content: '' },
         sourceModal: { show: false, source: null },
         showRoadmap: false,
-        promptTemplates: [
-            {
-                name: 'Summarize document',
-                prompt: [
-                    'Summarize this document.',
-                    'Focus on the main points, decisions, risks, and follow-up actions.'
-                ].join(' ')
-            },
-            {
-                name: 'Code review',
-                prompt: [
-                    'Review this code like a senior staff engineer.',
-                    'Call out bugs, edge cases, design risks, and missing tests.',
-                    'Keep the feedback practical.'
-                ].join(' ')
-            },
-            {
-                name: 'Find TODOs',
-                prompt: [
-                    'Find all TODOs, FIXMEs, incomplete work, and risky placeholders.',
-                    'Group them by file or topic and suggest the next action for each one.'
-                ].join(' ')
-            },
-            {
-                name: 'Release notes',
-                prompt: [
-                    'Generate release notes from the available git log or project notes.',
-                    'Group changes into features, fixes, and known risks.'
-                ].join(' ')
-            }
-        ],
 
         init() {
             this.loadChats();

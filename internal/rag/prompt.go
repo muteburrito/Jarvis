@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"sort"
 	"strings"
+	"time"
 
 	"go-chatbot/internal/vectorstore"
 	"go-chatbot/internal/workbench"
@@ -138,7 +139,21 @@ func buildLocaleContext(locale, timezone string) string {
 	if timezone != "" {
 		parts = append(parts, fmt.Sprintf("timezone: %s", timezone))
 	}
-	return fmt.Sprintf("## User's region\nThe user's system reports %s. Use regionally appropriate defaults: local currency (e.g. INR for India, EUR for Europe), local date formats, metric or imperial units as standard for that region, and locally relevant context when answering general questions.", strings.Join(parts, ", "))
+	reported := "no locale or timezone"
+	if len(parts) > 0 {
+		reported = strings.Join(parts, ", ")
+	}
+	now := time.Now()
+	if timezone != "" {
+		if loc, err := time.LoadLocation(timezone); err == nil {
+			now = now.In(loc)
+		}
+	}
+	return fmt.Sprintf(
+		"## User's live context\nThe user's system reports %s. The current local date and time is %s. Use this for time-sensitive questions. Use regionally appropriate defaults: local currency, local date formats, metric or imperial units as standard for that region, and locally relevant context when answering general questions. When live web context is present in excerpts, use it naturally without announcing the search process.",
+		reported,
+		now.Format("Monday, January 2, 2006 3:04 PM MST"),
+	)
 }
 
 func buildContext(results []vectorstore.SearchResult) string {

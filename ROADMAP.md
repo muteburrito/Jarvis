@@ -34,6 +34,7 @@ Recent coding-agent tools point toward a few patterns worth copying:
 | **Windows installer bootstrap** | Done for Windows. Manual NSIS installs check/install Ollama and pull Jarvis models. Silent auto-updates skip bootstrap. |
 | **Scheduled folder re-indexing** | Done. Folder ingest saves watched folders and refreshes new or modified files in the background while keeping workspace maps current. |
 | **Codex-style chat workspace** | Done. Neutral desktop theme, queued follow-ups, editable/reorderable queue, response copy/rating/fork controls, response timing, and expanded in-app Help. |
+| **Natural live context** | Done. Normal chat quietly uses current local time, locale, timezone, pasted URLs, and live web context when available. Research mode remains the transparent source-heavy path. |
 | **Project foundation** | Done. Indexed folders become persisted projects with an active project, workspace map, watched re-indexing, and a reserved per-project vector-store path for the agent workflow. |
 | **Local diff review** | Done. The Workbench shows changed-file totals, additions, deletions, statuses, and expandable text patches for the active git project. |
 | **Multiple named workspaces** | Save and switch between named document sets. Each workspace should have its own vector store, documents, and chat history. |

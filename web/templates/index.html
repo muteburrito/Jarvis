@@ -29,7 +29,7 @@
                 </svg>
             </button>
             <div class="flex items-center gap-2">
-                <svg class="w-6 h-6 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg class="w-6 h-6 text-zinc-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/>
                 </svg>
                 <h1 class="text-sm font-semibold text-slate-100" x-text="appConfig.app_name || 'Jarvis'">Jarvis</h1>
@@ -71,14 +71,14 @@
 
     <!-- Update banner -->
     <div x-show="updateInfo?.update_available && !updateDismissed" x-cloak
-         class="bg-blue-700 text-white px-4 py-2 flex items-center justify-between text-sm shrink-0">
+         class="bg-zinc-800 text-white px-4 py-2 flex items-center justify-between text-sm shrink-0">
         <span>
             <strong><span x-text="appConfig.app_name || 'Jarvis'">Jarvis</span> <span x-text="updateInfo?.latest"></span></strong> is available
-            <span class="text-blue-100">-</span> you have <span x-text="updateInfo?.current"></span>.
+            <span class="text-zinc-300">-</span> you have <span x-text="updateInfo?.current"></span>.
         </span>
         <div class="flex items-center gap-3">
             <button x-show="updateInfo?.installer_url" @click="applyUpdate()" :disabled="updateApplying"
-                    class="bg-white text-blue-700 font-medium px-3 py-1 rounded hover:bg-blue-50 disabled:opacity-60 disabled:cursor-not-allowed transition-colors">
+                    class="bg-white text-zinc-900 font-medium px-3 py-1 rounded hover:bg-zinc-100 disabled:opacity-60 disabled:cursor-not-allowed transition-colors">
                 <span x-show="!updateApplying">Install now</span>
                 <span x-show="updateApplying">Restarting...</span>
             </button>
@@ -120,7 +120,7 @@
                 </template>
                 <template x-for="chat in chatSessions" :key="chat.id">
                     <div class="group mb-1.5 flex items-center gap-2 rounded-xl px-2.5 py-2.5 transition-colors"
-                         :class="activeChatID === chat.id ? 'bg-slate-700/90 text-slate-100 shadow-sm ring-1 ring-blue-400/10' : 'text-slate-400 hover:bg-slate-700/50 hover:text-slate-200'">
+                         :class="activeChatID === chat.id ? 'bg-slate-700/90 text-slate-100 shadow-sm ring-1 ring-zinc-400/10' : 'text-slate-400 hover:bg-slate-700/50 hover:text-slate-200'">
                         <button @click="openChat(chat.id)"
                                 :disabled="isStreaming"
                                 class="min-w-0 flex-1 text-left disabled:cursor-not-allowed disabled:opacity-60">
@@ -255,7 +255,7 @@
                                 <div>
                                     <template x-if="msg.progress && msg.progress.length > 0">
                                         <div class="research-progress mb-3 rounded-xl border border-slate-700 bg-slate-900/70 p-3">
-                                            <div class="mb-2 flex items-center gap-2 text-xs font-medium text-purple-300">
+                                            <div class="mb-2 flex items-center gap-2 text-xs font-medium text-zinc-300">
                                                 <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
                                                 </svg>
@@ -265,7 +265,7 @@
                                                 <template x-for="(event, progressIdx) in msg.progress.slice(-6)" :key="progressIdx + event.step + event.detail">
                                                     <div class="research-progress-item flex items-start gap-2 text-xs">
                                                         <span class="mt-1 h-2 w-2 shrink-0 rounded-full"
-                                                              :class="event.status === 'done' ? 'bg-emerald-400' : event.status === 'failed' ? 'bg-red-400' : 'bg-purple-400 animate-pulse'"></span>
+                                                              :class="event.status === 'done' ? 'bg-zinc-400' : event.status === 'failed' ? 'bg-red-400' : 'bg-zinc-500 animate-pulse'"></span>
                                                         <div class="min-w-0">
                                                             <span class="font-medium text-slate-300" x-text="progressLabel(event.step)"></span>
                                                             <span class="text-slate-500">:</span>
@@ -368,17 +368,10 @@
                                 <span x-text="uploadProgress + '%'"></span>
                             </div>
                             <div class="w-full bg-slate-700 rounded-full h-1.5">
-                                <div class="bg-blue-600 h-1.5 rounded-full transition-all duration-300"
+                                <div class="upload-progress-bar h-1.5 rounded-full transition-all duration-300"
                                      :style="'width: ' + uploadProgress + '%'"></div>
                             </div>
                         </div>
-                        <select @change="applyPromptTemplate(promptTemplates[$event.target.value]); $event.target.value = ''"
-                                class="w-full sm:w-56 rounded-lg border border-slate-600 bg-slate-900 text-slate-300 px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:opacity-50">
-                            <option value="">Prompt templates</option>
-                            <template x-for="(template, index) in promptTemplates" :key="template.name">
-                                <option :value="index" x-text="template.name"></option>
-                            </template>
-                        </select>
                     </div>
 
                     <div x-show="codePanelOpen" x-cloak class="mb-2 rounded-xl border border-slate-700 bg-slate-900/95 p-3 shadow-lg">
@@ -410,7 +403,7 @@
                         <textarea x-model="codeSnippet"
                                   rows="4"
                                   placeholder="Paste code here"
-                                  class="code-snippet-editor w-full resize-none rounded-lg border border-slate-700 bg-slate-950 text-slate-100 px-3 py-2 font-mono text-xs leading-5 focus:outline-none focus:ring-1 focus:ring-blue-500 placeholder-slate-600"></textarea>
+                                  class="code-snippet-editor w-full resize-none rounded-lg border border-slate-700 bg-slate-950 text-slate-100 px-3 py-2 font-mono text-xs leading-5 focus:outline-none placeholder-slate-600"></textarea>
                     </div>
 
                     <div x-show="imageAttachments.length > 0" x-cloak class="image-preview-tray mb-2">
@@ -548,13 +541,13 @@
                                 title="Add code snippet">
                             <span class="block w-5 h-5 text-center font-mono text-sm leading-5">{}</span>
                             <span x-show="codeSnippet.trim()"
-                                  class="absolute -right-1 -top-1 h-3 w-3 rounded-full border-2 border-slate-800 bg-emerald-300"></span>
+                                  class="absolute -right-1 -top-1 h-3 w-3 rounded-full border-2 border-slate-800 bg-zinc-300"></span>
                         </button>
                         <div class="flex-1 relative">
                             <div x-show="mentionOpen && mentionSuggestions().length > 0" x-cloak class="mention-popover">
                                 <template x-for="doc in mentionSuggestions()" :key="doc.id">
                                     <button @mousedown.prevent="selectMentionDocument(doc)" type="button" class="mention-option">
-                                        <svg class="h-4 w-4 shrink-0 text-blue-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <svg class="h-4 w-4 shrink-0 text-zinc-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
                                         </svg>
                                         <span class="min-w-0">
@@ -599,8 +592,8 @@
                             </svg>
                         </button>
                     </div>
-                    <p class="text-xs mt-2 text-center" :class="researchMode ? 'text-purple-400' : 'text-slate-500'">
-                        <span x-show="researchMode">Research mode: will search the web and fetch articles before answering</span>
+                    <p class="text-xs mt-2 text-center" :class="researchMode ? 'text-zinc-300' : 'text-slate-500'">
+                        <span x-show="researchMode">Research mode: shows web search progress and sources before answering</span>
                         <span x-show="!researchMode && isStreaming">Press Enter to queue a follow-up while the current answer streams.</span>
                         <span x-show="!researchMode && !isStreaming && !codeSnippet.trim() && imageAttachments.length === 0">Press Enter to send, Shift+Enter for new line. Paste an image to attach it.</span>
                         <span x-show="!researchMode && !isStreaming && codeSnippet.trim()">
@@ -618,14 +611,14 @@
     <!-- Toast notifications -->
     <div x-show="toast.show" x-transition
          class="fixed bottom-6 right-6 z-50 px-4 py-3 rounded-xl shadow-lg text-sm font-medium"
-         :class="toast.type === 'error' ? 'bg-red-500 text-white' : 'bg-emerald-500 text-white'">
+         :class="toast.type === 'error' ? 'bg-red-500 text-white' : 'bg-zinc-700 text-white'">
         <span x-text="toast.message"></span>
     </div>
 
     <!-- Updating overlay -->
     <div x-show="updateApplying" x-cloak
          class="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-slate-900/95 backdrop-blur-sm">
-        <svg class="w-12 h-12 text-blue-400 animate-spin mb-6" fill="none" viewBox="0 0 24 24">
+        <svg class="w-12 h-12 text-zinc-300 animate-spin mb-6" fill="none" viewBox="0 0 24 24">
             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
             <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
         </svg>
@@ -1158,7 +1151,7 @@
             </div>
             <div class="p-5 space-y-6 text-sm">
                 <div>
-                    <h3 class="mb-3 text-sm font-semibold text-purple-300">Phase 3 - Power Features</h3>
+                    <h3 class="mb-3 text-sm font-semibold text-zinc-300">Phase 3 - Power Features</h3>
                     <div class="space-y-2">
                         <div class="rounded-lg bg-slate-700/40 p-3">
                             <p class="font-medium text-slate-200">Scheduled folder re-indexing</p>
@@ -1264,42 +1257,41 @@
                 </div>
 
                 <div>
-                    <h3 class="text-base font-semibold text-blue-400 mb-2">1. Add context</h3>
+                    <h3 class="help-section-title">1. Add context</h3>
                     <p class="mb-1">Use the composer buttons beside the chat input:</p>
                     <ul class="list-disc list-inside space-y-1 text-slate-400 ml-2">
                         <li><strong class="text-slate-300">Paper clip</strong> uploads files such as PDF, DOCX, XLSX, PPTX, images, markdown, text, logs, data files, config files, and source code</li>
                         <li><strong class="text-slate-300">Folder</strong> indexes a local folder recursively. Jarvis skips build output such as node_modules, bin, obj, vendor, and .git</li>
                         <li><strong class="text-slate-300">Braces</strong> opens the code snippet box for code that should stay inline with your question</li>
                         <li><strong class="text-slate-300">Paste images</strong> directly into chat to attach them to the next question</li>
-                        <li><strong class="text-slate-300">Paste URLs</strong> in normal chat to fetch and index web pages automatically</li>
+                        <li><strong class="text-slate-300">Paste URLs</strong> in normal chat to fetch and index web pages quietly</li>
                     </ul>
                     <p class="mt-2 text-slate-500">Folders you index are remembered. Jarvis checks watched folders in the background and refreshes new or changed files.</p>
                 </div>
 
                 <div>
-                    <h3 class="text-base font-semibold text-blue-400 mb-2">2. Ask questions</h3>
+                    <h3 class="help-section-title">2. Ask questions</h3>
                     <p class="mb-1">Type a question and press <strong class="text-slate-300">Enter</strong>. Use <strong class="text-slate-300">Shift+Enter</strong> for a new line. Jarvis will:</p>
                     <ul class="list-disc list-inside space-y-1 text-slate-400 ml-2">
                         <li>Search indexed files with hybrid retrieval, semantic search plus keyword matching</li>
                         <li>Answer based on what it finds, with source citations</li>
                         <li>Fall back to general chat when no relevant files are indexed</li>
-                        <li>Show research progress, sources, and response timing when available</li>
+                        <li>Use your browser locale, timezone, and quiet live web context for current questions when available</li>
                     </ul>
                 </div>
 
                 <div>
-                    <h3 class="text-base font-semibold text-emerald-400 mb-2">3. Focus the conversation</h3>
+                    <h3 class="help-section-title">3. Focus the conversation</h3>
                     <ul class="list-disc list-inside space-y-1 text-slate-400 ml-2">
                         <li><strong class="text-slate-300">Reply to a message</strong> by using the reply button near a chat bubble. Jarvis includes that exact message as context</li>
                         <li><strong class="text-slate-300">@file or #file</strong> mentions focus retrieval on specific indexed files. Start typing @ or # and choose from suggestions</li>
-                        <li><strong class="text-slate-300">Prompt templates</strong> can quickly start common tasks like summaries, code review, TODO searches, and release notes</li>
                         <li><strong class="text-slate-300">Queued follow-ups</strong> let you type the next message while an answer is still streaming. Jarvis runs it automatically afterward</li>
                     </ul>
                 </div>
 
                 <div>
-                    <h3 class="text-base font-semibold text-purple-400 mb-2">4. Research mode</h3>
-                    <p class="mb-2">Click the <strong class="text-slate-200">magnifying glass</strong> button next to the chat input. It turns purple when active.</p>
+                    <h3 class="help-section-title">4. Research mode</h3>
+                    <p class="mb-2">Click the <strong class="text-slate-200">magnifying glass</strong> button next to the chat input when you want to see the web search process.</p>
                     <p class="mb-1">In research mode, <span x-text="appConfig.app_name || 'Jarvis'">Jarvis</span> will:</p>
                     <ul class="list-disc list-inside space-y-1 text-slate-400 ml-2">
                         <li>Generate search queries from your question</li>
@@ -1307,11 +1299,11 @@
                         <li>Fetch and read the top articles</li>
                         <li>Index useful pages locally, then answer with citations and links</li>
                     </ul>
-                    <p class="mt-2 text-slate-500">No API key needed. Fetched articles are saved locally so follow-up questions are instant.</p>
+                    <p class="mt-2 text-slate-500">Normal chat can quietly refresh live context too. Research mode is for transparent source-heavy work where you want progress and citations visible.</p>
                 </div>
 
                 <div>
-                    <h3 class="text-base font-semibold text-blue-400 mb-2">5. Use response tools</h3>
+                    <h3 class="help-section-title">5. Use response tools</h3>
                     <ul class="list-disc list-inside space-y-1 text-slate-400 ml-2">
                         <li><strong class="text-slate-300">Copy response</strong> copies the assistant answer as markdown text</li>
                         <li><strong class="text-slate-300">Thumbs up or down</strong> saves your rating on that response</li>
@@ -1321,7 +1313,7 @@
                 </div>
 
                 <div>
-                    <h3 class="text-base font-semibold text-blue-400 mb-2">6. Manage indexed files</h3>
+                    <h3 class="help-section-title">6. Manage indexed files</h3>
                     <ul class="list-disc list-inside space-y-1 text-slate-400 ml-2">
                         <li>Click the indexed count in the chat header to view indexed documents</li>
                         <li>Delete a single indexed file when you no longer want it in retrieval</li>
@@ -1332,7 +1324,7 @@
                 </div>
 
                 <div>
-                    <h3 class="text-base font-semibold text-cyan-400 mb-2">7. Workbench</h3>
+                    <h3 class="help-section-title">7. Workbench</h3>
                     <p class="mb-1">Open the Workbench button in the top bar to inspect local activity:</p>
                     <ul class="list-disc list-inside space-y-1 text-slate-400 ml-2">
                         <li>Task traces from chat, retrieval, research, folder indexing, and workspace map updates</li>
@@ -1342,7 +1334,7 @@
                 </div>
 
                 <div>
-                    <h3 class="text-base font-semibold text-blue-400 mb-2">Models and setup</h3>
+                    <h3 class="help-section-title">Models and setup</h3>
                     <p class="mb-1">Jarvis uses Ollama locally for chat, embeddings, and optional image understanding. On Windows, the installer can bootstrap Ollama and pull required models during manual install.</p>
                     <ul class="list-disc list-inside space-y-1 text-slate-400 ml-2">
                         <li><strong class="text-slate-300">nomic-embed-text</strong> creates embeddings for retrieval</li>
@@ -1354,7 +1346,7 @@
                 </div>
 
                 <div>
-                    <h3 class="text-base font-semibold text-blue-400 mb-2">Updates and desktop use</h3>
+                    <h3 class="help-section-title">Updates and desktop use</h3>
                     <ul class="list-disc list-inside space-y-1 text-slate-400 ml-2">
                         <li>The desktop app is the primary installed experience</li>
                         <li>Release builds can check GitHub Releases for updates</li>
@@ -1364,20 +1356,20 @@
                 </div>
 
                 <div>
-                    <h3 class="text-base font-semibold text-blue-400 mb-2">Helpful habits</h3>
+                    <h3 class="help-section-title">Helpful habits</h3>
                     <ul class="list-disc list-inside space-y-1 text-slate-400 ml-2">
                         <li>Use @file mentions when a question must stay grounded in a specific indexed file</li>
                         <li>Use the code snippet box for code that should not trigger URL fetching</li>
                         <li>Use forks when a response is useful but you want to try a different next step</li>
-                        <li>Use research mode for current web information, not for private local files</li>
+                        <li>Use research mode when you want visible search progress and cited web sources</li>
                         <li>Jarvis adapts answers to your browser locale and timezone when possible</li>
                     </ul>
                 </div>
 
                 <div class="pt-2 border-t border-slate-700 text-xs text-slate-500 flex items-center justify-between">
-                    <p><span x-text="appConfig.app_name || 'Jarvis'">Jarvis</span> is local-first. Your indexed files, embeddings, chat history, task state, and workspace maps stay on your computer unless you explicitly fetch a public web page in research or URL mode.</p>
+                    <p><span x-text="appConfig.app_name || 'Jarvis'">Jarvis</span> is local-first. Your indexed files, embeddings, chat history, task state, and workspace maps stay on your computer. Web pages are fetched only for live context, research, or pasted URLs.</p>
                     <a x-show="hasSupportContact()" x-cloak :href="supportHref()"
-                       class="shrink-0 ml-4 text-blue-400 hover:text-blue-300 underline hover:no-underline whitespace-nowrap">Contact support</a>
+                       class="shrink-0 ml-4 text-zinc-300 hover:text-zinc-100 underline hover:no-underline whitespace-nowrap">Contact support</a>
                 </div>
             </div>
         </div>

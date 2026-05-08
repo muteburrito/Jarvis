@@ -21,8 +21,9 @@ No data leaves your machine. No API keys needed. Single binary, runs anywhere.
 - **Project foundation:** indexed folders are saved as projects with an active project, workspace map, watched re-indexing, and a reserved project vector-store path for future agent workflows
 - **Workbench activity:** inspect local task traces, retrieval events, selected model, workspace map, files, symbols, local git changes, expandable diffs, read-only project tools, approved command output, and future edit history
 - **Image support:** upload standalone images (PNG, JPG, etc.) or PDFs with embedded images. A vision model describes each image so it becomes searchable and queryable
-- **Deep research mode:** toggle research mode and Jarvis searches the web via DuckDuckGo, fetches the top articles, indexes them, and answers with citations and links. No API key needed
-- **URL fetching:** paste a website link directly in chat. Jarvis auto-detects URLs in normal chat messages, fetches the page, and indexes it. URLs inside the code snippet box are treated as code and are not fetched
+- **Live context:** normal chat quietly uses current date/time, browser locale, timezone, pasted URLs, and web context when available, without showing search progress
+- **Deep research mode:** toggle research mode when you want visible search progress, fetched sources, citations, and links. No API key needed
+- **URL fetching:** paste a website link directly in chat. Jarvis auto-detects URLs in normal chat messages, fetches the page, and indexes it quietly. URLs inside the code snippet box are treated as code and are not fetched
 - **Regional awareness:** automatically detects your locale and timezone from the browser. Answers use your local currency, date formats, and regionally relevant context
 - **Document management:** upload, list, delete individual docs, or clear everything at once. Clearing indexed files removes Jarvis-owned upload copies and preserves external source files
 - **Server-side chat history:** chats are saved locally under the data directory and shown in the sidebar
@@ -235,7 +236,7 @@ packaging/
 3. **Store:** vectors are kept in memory and persisted to disk in gob format
 4. **Map:** folder ingest also builds a workspace map for files, documents, images, data, code symbols, and imports
 5. **Refresh:** watched folders are checked in the background. New and modified files are re-indexed, and the workspace map is refreshed.
-6. **Query:** your question is embedded, the most similar chunks are retrieved, and they are passed as context to the LLM. Reply context and focused `@file` mentions are included when present. Your locale and timezone are included so answers use local conventions.
+6. **Query:** your question is embedded, the most similar chunks are retrieved, and they are passed as context to the LLM. Reply context and focused `@file` mentions are included when present. Your locale, timezone, and current local date/time are included so answers use local conventions.
 7. **Stream:** the LLM response streams back token-by-token via Server-Sent Events. While it is streaming, you can queue, edit, reorder, or remove follow-up prompts.
 8. **Act:** after a response, copy it, rate it, fork a new conversation from that point, or inspect how long generation took.
 
@@ -274,6 +275,7 @@ The chat UI supports a few context controls that make local models more useful:
 - reply to a message to anchor a follow-up to that exact turn
 - type `@` or `#` to focus retrieval on a specific indexed file
 - paste images into the composer so they are indexed before the question runs
+- ask current questions naturally. Normal chat can quietly refresh live web context when internet is available
 - queue follow-up messages while the current response streams
 - edit or reorder queued follow-ups before Jarvis sends them
 - fork a conversation from an assistant response when you want a new branch of thought
