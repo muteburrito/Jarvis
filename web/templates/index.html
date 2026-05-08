@@ -646,23 +646,30 @@
          x-transition:enter-end="opacity-100" x-transition:leave="transition ease-in duration-150"
          x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0"
          class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60" @click.self="showWorkbenchPanel = false">
-        <div class="bg-slate-800 border border-slate-700 rounded-2xl shadow-2xl w-full max-w-4xl max-h-[84vh] overflow-hidden flex flex-col"
+        <div class="workbench-shell"
              @keydown.escape.window="showWorkbenchPanel = false">
-            <div class="flex items-start justify-between gap-4 p-5 border-b border-slate-700 bg-slate-800">
+            <div class="workbench-header">
                 <div>
-                    <h2 class="text-lg font-semibold text-slate-100">Workbench activity</h2>
-                    <p class="text-xs text-slate-400 mt-1">Local task state, traces, retrieval steps, and future edit history.</p>
+                    <div class="flex items-center gap-2">
+                        <span class="workbench-header-icon">
+                            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 5h16M4 12h16M4 19h16M8 5v14"/>
+                            </svg>
+                        </span>
+                        <h2 class="text-lg font-semibold text-slate-100">Workbench</h2>
+                    </div>
+                    <p class="text-xs text-slate-400 mt-1">Workspace map, retrieval traces, task activity, and future edits.</p>
                 </div>
                 <div class="flex items-center gap-2">
                     <button @click="loadTaskState()"
-                            class="rounded-lg border border-slate-600 bg-slate-900/60 px-3 py-1.5 text-xs text-slate-300 hover:bg-slate-700">
+                            class="workbench-secondary-button">
                         Refresh
                     </button>
                     <button @click="clearTaskState()"
-                            class="rounded-lg border border-red-900/60 bg-red-950/30 px-3 py-1.5 text-xs text-red-300 hover:bg-red-950/60">
+                            class="workbench-danger-button">
                         Clear
                     </button>
-                    <button @click="showWorkbenchPanel = false" class="p-1.5 rounded-lg hover:bg-slate-700 text-slate-400 hover:text-slate-200 shrink-0">
+                    <button @click="showWorkbenchPanel = false" class="workbench-close-button">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
                         </svg>
@@ -670,7 +677,7 @@
                 </div>
             </div>
 
-            <div class="grid gap-3 border-b border-slate-700 bg-slate-900/35 p-4 sm:grid-cols-4">
+            <div class="workbench-stats-grid">
                 <div class="workbench-stat">
                     <span>Traces</span>
                     <strong x-text="workbenchSummary().traces"></strong>
@@ -689,17 +696,17 @@
                 </div>
             </div>
 
-            <div class="overflow-y-auto p-4">
-                <div class="mb-4 rounded-xl border border-slate-700/80 bg-slate-900/35 p-4">
+            <div class="workbench-body">
+                <div class="workbench-map-panel">
                     <div class="mb-3 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                         <div class="min-w-0">
                             <div class="flex items-center gap-2">
                                 <h3 class="text-sm font-semibold text-slate-100">Workspace map</h3>
-                                <span x-show="repoMap" class="rounded-full border border-blue-500/30 bg-blue-950/40 px-2 py-0.5 text-[11px] font-medium text-blue-200">
+                                <span x-show="repoMap" class="workspace-count-pill is-files">
                                     <span x-text="repoSummary().files"></span>
                                     <span> files</span>
                                 </span>
-                                <span x-show="repoMap" class="rounded-full border border-emerald-500/30 bg-emerald-950/30 px-2 py-0.5 text-[11px] font-medium text-emerald-200">
+                                <span x-show="repoMap" class="workspace-count-pill is-symbols">
                                     <span x-text="repoSummary().symbols"></span>
                                     <span> symbols</span>
                                 </span>
@@ -708,7 +715,7 @@
                             <p x-show="!repoMap" class="mt-1 text-xs text-slate-500">Index a local folder path to map documents, media, data, and code.</p>
                         </div>
                         <button @click="loadRepoMap()"
-                                class="shrink-0 rounded-lg border border-slate-600 bg-slate-900/60 px-3 py-1.5 text-xs text-slate-300 hover:bg-slate-700">
+                                class="workbench-secondary-button shrink-0">
                             Refresh map
                         </button>
                     </div>
@@ -727,13 +734,16 @@
                                 <input x-model="repoSearch"
                                        type="search"
                                        placeholder="Search files, symbols, or types"
-                                       class="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-200 placeholder-slate-600 focus:border-blue-500 focus:outline-none">
+                                       class="workspace-search-input">
                                 <span class="shrink-0 text-xs text-slate-500">
                                     <span x-text="filteredWorkspaceFiles().length"></span>
                                     <span> files</span>
                                 </span>
                             </div>
                             <div class="repo-file-list mb-3">
+                                <template x-if="filteredWorkspaceFiles().length === 0">
+                                    <div class="workspace-empty-row">No matching files</div>
+                                </template>
                                 <template x-for="file in filteredWorkspaceFiles()" :key="file.path">
                                     <div class="repo-file-row">
                                         <div class="min-w-0">
@@ -757,6 +767,9 @@
                                 </span>
                             </div>
                             <div class="repo-symbol-list">
+                                <template x-if="filteredSymbols().length === 0">
+                                    <div class="workspace-empty-row">No matching symbols</div>
+                                </template>
                                 <template x-for="symbol in filteredSymbols()" :key="symbol.file_path + symbol.line + symbol.name">
                                     <div class="repo-symbol-row">
                                         <div class="min-w-0">
@@ -778,10 +791,10 @@
                 </div>
 
                 <template x-if="!taskState">
-                    <div class="py-10 text-center text-sm text-slate-500">No workbench state loaded yet</div>
+                    <div class="workbench-empty-state">No workbench state loaded yet</div>
                 </template>
                 <template x-if="taskState && recentWorkbenchEvents().length === 0">
-                    <div class="py-10 text-center text-sm text-slate-500">No activity recorded yet</div>
+                    <div class="workbench-empty-state">No activity recorded yet</div>
                 </template>
                 <div class="space-y-2">
                     <template x-for="event in recentWorkbenchEvents()" :key="event.kind + event.type + event.title + event.created_at">

@@ -385,11 +385,120 @@ body {
     background: rgba(51, 65, 85, 0.9);
 }
 
+.workbench-shell {
+    display: flex;
+    flex-direction: column;
+    width: min(100%, 64rem);
+    max-height: 86vh;
+    overflow: hidden;
+    border: 1px solid rgba(71, 85, 105, 0.72);
+    border-radius: 18px;
+    background:
+        linear-gradient(180deg, rgba(30, 41, 59, 0.98), rgba(15, 23, 42, 0.98)),
+        #0f172a;
+    box-shadow:
+        0 28px 80px rgba(0, 0, 0, 0.54),
+        inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+.workbench-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    border-bottom: 1px solid rgba(71, 85, 105, 0.58);
+    background: rgba(15, 23, 42, 0.72);
+    padding: 18px 20px;
+}
+
+.workbench-header-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border: 1px solid rgba(96, 165, 250, 0.28);
+    border-radius: 9px;
+    color: #bfdbfe;
+    background: rgba(37, 99, 235, 0.16);
+}
+
+.workbench-secondary-button,
+.workbench-danger-button,
+.workbench-close-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 9px;
+    transition: background-color 140ms ease, color 140ms ease, border-color 140ms ease;
+}
+
+.workbench-secondary-button {
+    border: 1px solid rgba(71, 85, 105, 0.86);
+    background: rgba(15, 23, 42, 0.72);
+    color: #cbd5e1;
+    padding: 6px 10px;
+    font-size: 12px;
+}
+
+.workbench-secondary-button:hover {
+    border-color: rgba(96, 165, 250, 0.48);
+    background: rgba(30, 41, 59, 0.92);
+    color: #f8fafc;
+}
+
+.workbench-danger-button {
+    border: 1px solid rgba(127, 29, 29, 0.72);
+    background: rgba(69, 10, 10, 0.34);
+    color: #fca5a5;
+    padding: 6px 10px;
+    font-size: 12px;
+}
+
+.workbench-danger-button:hover {
+    background: rgba(127, 29, 29, 0.46);
+    color: #fee2e2;
+}
+
+.workbench-close-button {
+    flex-shrink: 0;
+    width: 32px;
+    height: 32px;
+    color: #94a3b8;
+}
+
+.workbench-close-button:hover {
+    background: rgba(51, 65, 85, 0.86);
+    color: #f8fafc;
+}
+
+.workbench-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+    border-bottom: 1px solid rgba(71, 85, 105, 0.5);
+    background: rgba(2, 6, 23, 0.22);
+    padding: 14px;
+}
+
+@media (min-width: 640px) {
+    .workbench-stats-grid {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+}
+
+.workbench-body {
+    overflow-y: auto;
+    padding: 14px;
+}
+
 .workbench-stat {
     min-width: 0;
-    border: 1px solid rgba(71, 85, 105, 0.7);
+    border: 1px solid rgba(71, 85, 105, 0.62);
     border-radius: 12px;
-    background: rgba(15, 23, 42, 0.72);
+    background:
+        linear-gradient(180deg, rgba(30, 41, 59, 0.72), rgba(15, 23, 42, 0.72)),
+        #0f172a;
     padding: 10px 12px;
 }
 
@@ -410,10 +519,10 @@ body {
 }
 
 .workbench-event {
-    border: 1px solid rgba(71, 85, 105, 0.68);
+    border: 1px solid rgba(71, 85, 105, 0.58);
     border-left: 3px solid #64748b;
     border-radius: 12px;
-    background: rgba(15, 23, 42, 0.58);
+    background: rgba(15, 23, 42, 0.48);
     padding: 10px 12px;
 }
 
@@ -444,6 +553,60 @@ body {
     text-transform: uppercase;
 }
 
+.workbench-map-panel {
+    margin-bottom: 16px;
+    border: 1px solid rgba(71, 85, 105, 0.66);
+    border-radius: 14px;
+    background:
+        linear-gradient(180deg, rgba(15, 23, 42, 0.74), rgba(2, 6, 23, 0.42)),
+        #0f172a;
+    padding: 14px;
+}
+
+.workspace-count-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    border-radius: 999px;
+    padding: 3px 8px;
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 1rem;
+}
+
+.workspace-count-pill.is-files {
+    border: 1px solid rgba(96, 165, 250, 0.34);
+    background: rgba(30, 64, 175, 0.24);
+    color: #bfdbfe;
+}
+
+.workspace-count-pill.is-symbols {
+    border: 1px solid rgba(52, 211, 153, 0.3);
+    background: rgba(6, 78, 59, 0.3);
+    color: #bbf7d0;
+}
+
+.workspace-search-input {
+    width: 100%;
+    border: 1px solid rgba(71, 85, 105, 0.78);
+    border-radius: 10px;
+    background: rgba(2, 6, 23, 0.72);
+    color: #e2e8f0;
+    padding: 9px 11px;
+    font-size: 14px;
+    outline: none;
+    transition: border-color 140ms ease, box-shadow 140ms ease;
+}
+
+.workspace-search-input::placeholder {
+    color: #64748b;
+}
+
+.workspace-search-input:focus {
+    border-color: rgba(96, 165, 250, 0.72);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.14);
+}
+
 .repo-language-chip {
     display: inline-flex;
     align-items: center;
@@ -468,7 +631,7 @@ body {
     overflow-y: auto;
     border: 1px solid rgba(71, 85, 105, 0.62);
     border-radius: 12px;
-    background: rgba(2, 6, 23, 0.36);
+    background: rgba(2, 6, 23, 0.44);
 }
 
 .repo-file-list {
@@ -483,6 +646,12 @@ body {
     gap: 12px;
     border-bottom: 1px solid rgba(71, 85, 105, 0.42);
     padding: 9px 11px;
+    transition: background-color 120ms ease;
+}
+
+.repo-file-row:hover,
+.repo-symbol-row:hover {
+    background: rgba(30, 41, 59, 0.52);
 }
 
 .repo-file-row:last-child,
@@ -499,6 +668,24 @@ body {
     font-weight: 700;
     line-height: 1rem;
     text-transform: uppercase;
+}
+
+.workspace-empty-row,
+.workbench-empty-state {
+    color: #64748b;
+    font-size: 13px;
+    text-align: center;
+}
+
+.workspace-empty-row {
+    padding: 18px 12px;
+}
+
+.workbench-empty-state {
+    border: 1px dashed rgba(71, 85, 105, 0.62);
+    border-radius: 14px;
+    background: rgba(15, 23, 42, 0.32);
+    padding: 28px 12px;
 }
 
 .typing-indicator {

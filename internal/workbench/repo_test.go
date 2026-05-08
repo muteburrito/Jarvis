@@ -48,12 +48,12 @@ func Start() {
 func TestScanRepositoryMapsRegularWorkspaceFiles(t *testing.T) {
 	root := t.TempDir()
 	files := map[string][]byte{
-		"report.pdf":       []byte("%PDF-1.7"),
-		"notes.docx":       []byte("fake zip bytes"),
-		"deck.pptx":        []byte("fake zip bytes"),
-		"budget.xlsx":      []byte("fake zip bytes"),
-		"diagram.png":      []byte{0x89, 0x50, 0x4e, 0x47},
-		"notes.md":         []byte("# Notes\nregular workspace file"),
+		"report.pdf":        []byte("%PDF-1.7"),
+		"notes.docx":        []byte("fake zip bytes"),
+		"deck.pptx":         []byte("fake zip bytes"),
+		"budget.xlsx":       []byte("fake zip bytes"),
+		"diagram.png":       []byte{0x89, 0x50, 0x4e, 0x47},
+		"notes.md":          []byte("# Notes\nregular workspace file"),
 		"ignored/video.mp4": []byte("video"),
 	}
 	if err := os.Mkdir(filepath.Join(root, "ignored"), 0o755); err != nil {
