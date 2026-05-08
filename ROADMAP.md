@@ -33,13 +33,35 @@ Recent coding-agent tools point toward a few patterns worth copying:
 | **Reply and focused file context** | Done. Users can reply to a specific message and use `@file` or `#file` mentions to focus retrieval on indexed files. |
 | **Windows installer bootstrap** | Done for Windows. Manual NSIS installs check/install Ollama and pull Jarvis models. Silent auto-updates skip bootstrap. |
 | **Scheduled folder re-indexing** | Done. Folder ingest saves watched folders and refreshes new or modified files in the background while keeping workspace maps current. |
+| **Codex-style chat workspace** | Done. Neutral desktop theme, queued follow-ups, editable/reorderable queue, response copy/rating/fork controls, response timing, and expanded in-app Help. |
 | **Multiple named workspaces** | Save and switch between named document sets. Each workspace should have its own vector store, documents, and chat history. |
 | **Vector compression research** | Evaluate TurboQuant, QJL, and PolarQuant ideas for compressing Jarvis embeddings or adding an approximate search tier. Reference: https://research.google/blog/turboquant-redefining-ai-efficiency-with-extreme-compression/ |
 | **Workspace map depth** | Add richer document metadata, media dimensions, Office document summaries, package boundaries, tests, and better file grouping. |
 | **Context picker** | Let users pin files, folders, symbols, diffs, terminal output, URLs, and documents into the next task. Show context budget impact before sending. |
 | **Code-aware retrieval** | Add code-specific chunking, symbol metadata, exact identifier search, dependency-aware boosting, and optional reranking. |
 | **Model role profiles** | Split model config by role: chat, edit, apply, autocomplete, embedding, reranker, and vision. |
-| **Frontend modularization** | In progress. JS behavior is split into modules. Next, split the large HTML template into partials or server-rendered sections while avoiding a build step until it is clearly worth it. |
+| **Frontend modularization** | In progress. JS behavior is split into modules, but `messages.js`, `index.html`, and `app.css` are now the largest surfaces. Next split messages into streaming, queue, mentions, attachments, and response-actions modules, split the template into embedded partials, and organize CSS by component. |
+
+## v2.1.0 Release Scope
+
+Target tag: `v2.1.0`, assuming the last public release was `v2.0.1`.
+
+This should be a minor release because it adds backward-compatible product features without requiring users to reconfigure Jarvis.
+
+Included:
+
+- Wails desktop-first app path with browser server kept for development and fallback
+- GitHub Releases updater path and Windows installer packaging
+- Windows Ollama bootstrap during manual install
+- Workbench activity and workspace map
+- Workspace map support for regular folders, Office documents, PDFs, images, spreadsheets, presentations, data, text, config, and code files
+- Reply-to-message context and focused `@file` / `#file` retrieval
+- Pasted image previews and image indexing through the normal document pipeline
+- Queued chat follow-ups with edit, reorder, and remove controls
+- Response copy, rating, fork, and working-time controls
+- Watched folder background re-indexing
+- Safe clear-index behavior that preserves external source files
+- Neutral Codex-style UI theme and updated Help modal
 
 ## Phase 4 - Local Coding Agent
 

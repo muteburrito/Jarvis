@@ -67,6 +67,7 @@ The GitHub updater only runs on proper semver builds. When creating a release, b
 - `internal/websearch/` contains the DuckDuckGo scraper (`duckduckgo.go`) and the research orchestrator (`research.go`). The orchestrator uses `ChatOnce` to generate search queries without streaming, then emits structured progress events for the UI while it searches, fetches, and indexes pages.
 - `internal/workbench/` contains the Codex-style memory layer: chat sessions, watched folders, workspace maps, symbol indexes, task messages, traces, and edit history persisted as JSON under the data directory. Workspace maps include regular documents, PDFs, images, spreadsheets, presentations, data files, source files, and code symbols.
 - `web/` contains the single-page frontend (HTML template, JS, CSS). Keep Alpine app state and initialization in `web/static/js/app.js`, with feature behavior in focused files under `web/static/js/modules/`. Embedded into the binary via `go:embed` in `web/embed.go`, so the exe is self-contained.
+- `web/static/js/modules/messages.js` currently owns chat send/streaming, reply context, file mentions, pasted images, queued follow-ups, response actions, and fork behavior. It is the next frontend file to split as the UI grows.
 - `web/static/js/modules/workbench.js` owns Workbench activity and workspace-map UI behavior.
 - `packaging/windows/jarvis.nsi` is the NSIS installer script. Per-user install to `%LOCALAPPDATA%\Programs\Jarvis`, no UAC. Accepts `/S` for silent install. Manual installs run `packaging/windows/bootstrap-ollama.ps1`; silent auto-updates skip the bootstrap.
 - `packaging/windows/bootstrap-ollama.ps1` checks for Ollama, installs it if missing, waits for the local API, and pulls `nomic-embed-text`, `gemma4:e2b`, `gemma4:e4b`, and `llava`.
@@ -87,6 +88,9 @@ The GitHub updater only runs on proper semver builds. When creating a release, b
 - Folder ingest persists watched folders. The app runs a background re-indexer that checks watched folders every 10 minutes, re-indexes only new or modified files, refreshes the workspace map, and records task traces when files change.
 - The Workbench panel surfaces task traces, retrieval events, model state, workspace file type counts, searchable files, and searchable symbols. Keep it dense, practical, and work-focused.
 - Reply-to-message and focused file mentions are part of the chat flow. Preserve `reply_to`, `focus_document_ids`, and `focus_files` support in `/api/v1/chat`.
+- Queued follow-up messages are a first-class chat feature. Users can queue messages while a response streams, edit queued text, reorder queued messages, or remove them before they run. If a queued message is being edited when streaming finishes, do not send it until the edit is saved or canceled.
+- Assistant response actions are part of the chat flow. Preserve copy, rating, fork-from-response, live working time, and final duration metadata in server-side chat history.
+- The UI theme should stay neutral and Codex-like. Avoid reintroducing mixed blue, purple, green, or slate-heavy surfaces unless a state genuinely needs semantic color.
 - Task state and tool traces are persisted locally. Record chat requests, research events, retrieval summaries, future tool calls, and future edits there so sessions can be resumed after refresh.
 - SSE (Server-Sent Events) is used for streaming chat responses. Simpler than WebSockets for this use case.
 - The app falls back to general chat when no documents are indexed. It does not refuse to answer.
@@ -111,6 +115,17 @@ The GitHub updater only runs on proper semver builds. When creating a release, b
 - The auto-updater no-ops on `dev` builds. It only runs when `Version` is a proper semver string baked in at build time.
 - Installer downloads use the `browser_download_url` from the latest GitHub Release asset. On Windows, Jarvis prefers an `.exe` asset whose name contains `setup`.
 - Manual Windows installs should bootstrap Ollama and models. Silent installs should skip bootstrap so auto-updates stay fast and predictable.
+- For the next release after `v2.0.1`, use `v2.1.0` unless a breaking change is introduced before tagging.
+
+## Frontend Modularization Notes
+
+The frontend is modular enough for `v2.1.0`, but the next maintainability pass should split the largest surfaces:
+
+- `messages.js` into streaming/send, queue, mentions, attachments, and response actions
+- `index.html` into embedded partials for chat, composer, documents, workbench, roadmap, help, source preview, update notes, and overlays
+- `app.css` into component sections or multiple embedded CSS files loaded in stable order
+
+Keep the no-build-step approach until a build step clearly pays for itself.
 
 ## Memory and Performance Notes
 

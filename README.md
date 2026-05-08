@@ -9,6 +9,8 @@ No data leaves your machine. No API keys needed. Single binary, runs anywhere.
 - **Chat with documents:** upload files or index entire folders, then ask questions with source citations
 - **Reply context:** reply to a specific prior message so follow-up questions carry the intended local context
 - **Focused file mentions:** type or select `@file` and `#file` mentions so retrieval prioritizes specific indexed files
+- **Message queue:** queue follow-up prompts while an answer is streaming, edit queued prompts inline, reorder them, or remove them before they run
+- **Response controls:** copy answers, rate responses, fork a conversation from a response, and see live/final response timing
 - **General chat:** works as a regular assistant even without documents loaded
 - **Streaming responses:** token-by-token SSE streaming with markdown rendering
 - **Recursive folder indexing:** point it at a C#, Go, Python (or any) project and it walks all subdirectories, skipping build output like `bin/`, `obj/`, `node_modules/`
@@ -23,7 +25,7 @@ No data leaves your machine. No API keys needed. Single binary, runs anywhere.
 - **Regional awareness:** automatically detects your locale and timezone from the browser. Answers use your local currency, date formats, and regionally relevant context
 - **Document management:** upload, list, delete individual docs, or clear everything at once. Clearing indexed files removes Jarvis-owned upload copies and preserves external source files
 - **Server-side chat history:** chats are saved locally under the data directory and shown in the sidebar
-- **Dark mode UI:** clean, responsive interface built with Tailwind CSS and Alpine.js
+- **Codex-style desktop UI:** neutral dark workbench theme with a focused chat surface, consistent panels, compact controls, and responsive layout
 - **Chat-bar attachments** with file and folder picker buttons plus progress tracking
 - **Code snippet mode** with automatic language detection and syntax-highlighted preview
 - **Self-contained binary:** the web UI is embedded into the exe via go:embed. No external files needed. Pure Go, no CGo, builds on Windows/Linux/Mac
@@ -82,6 +84,24 @@ When creating a release, build with the same version baked into the binary:
 ```bash
 go build -tags "desktop,production" -ldflags="-X main.Version=v1.4.2" -o jarvis.exe ./cmd/desktop/
 ```
+
+### Recommended v2.1.0 release
+
+If the previous public release was `v2.0.1`, the next tag should be `v2.1.0`. This release adds backward-compatible features across the desktop UI, document indexing, workspace mapping, chat context, installer bootstrap, and GitHub updater flow.
+
+Suggested highlights:
+
+- Wails desktop app is the primary installed experience
+- GitHub Releases based updater and Windows NSIS installer flow
+- Windows installer bootstrap for Ollama and required Jarvis models
+- Reply-to-message context and `@file` / `#file` focused retrieval
+- Queued follow-up prompts with edit, reorder, and remove controls
+- Copy, rate, fork, and response timing controls
+- Workspace map for regular folders, Office files, PDFs, images, data, text, config, and code symbols
+- Watched folder background re-indexing for new and modified files
+- Workbench activity panel for traces, workspace map, files, symbols, and task state
+- Safer clear-index behavior that preserves external source files
+- Neutral Codex-style UI theme and expanded in-app Help guide
 
 ## Configuration
 
@@ -204,7 +224,8 @@ packaging/
 4. **Map:** folder ingest also builds a workspace map for files, documents, images, data, code symbols, and imports
 5. **Refresh:** watched folders are checked in the background. New and modified files are re-indexed, and the workspace map is refreshed.
 6. **Query:** your question is embedded, the most similar chunks are retrieved, and they are passed as context to the LLM. Reply context and focused `@file` mentions are included when present. Your locale and timezone are included so answers use local conventions.
-7. **Stream:** the LLM response streams back token-by-token via Server-Sent Events
+7. **Stream:** the LLM response streams back token-by-token via Server-Sent Events. While it is streaming, you can queue, edit, reorder, or remove follow-up prompts.
+8. **Act:** after a response, copy it, rate it, fork a new conversation from that point, or inspect how long generation took.
 
 ### Workbench
 
@@ -217,6 +238,17 @@ The Workbench panel surfaces local task and workspace state:
 - searchable symbols for supported code files
 
 This is the bridge from document chat toward a local coding and knowledge workbench while keeping all state local.
+
+### Chat workflow
+
+The chat UI supports a few context controls that make local models more useful:
+
+- reply to a message to anchor a follow-up to that exact turn
+- type `@` or `#` to focus retrieval on a specific indexed file
+- paste images into the composer so they are indexed before the question runs
+- queue follow-up messages while the current response streams
+- edit or reorder queued follow-ups before Jarvis sends them
+- fork a conversation from an assistant response when you want a new branch of thought
 
 ### Research mode
 
