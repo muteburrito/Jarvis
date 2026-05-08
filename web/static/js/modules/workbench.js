@@ -19,10 +19,20 @@ window.jarvisWorkbench = {
             } catch {}
         },
 
+        async loadProjects() {
+            try {
+                const resp = await fetch(this.apiURL('/api/v1/projects'));
+                if (resp.ok) {
+                    this.projectState = await resp.json();
+                }
+            } catch {}
+        },
+
         async openWorkbenchPanel() {
             await Promise.all([
                 this.loadTaskState(),
-                this.loadRepoMap()
+                this.loadRepoMap(),
+                this.loadProjects()
             ]);
             this.showWorkbenchPanel = true;
         },
@@ -46,6 +56,17 @@ window.jarvisWorkbench = {
                 messages: (task.messages || []).length,
                 edits: (task.edit_history || []).length,
                 model: task.selected_model || this.systemInfo?.chat_model || ''
+            };
+        },
+
+        projectSummary() {
+            const state = this.projectState || {};
+            const projects = state.projects || [];
+            const active = projects.find(project => project.active) || null;
+            return {
+                count: projects.length,
+                active,
+                vectorStoreDir: active?.vector_store_dir || ''
             };
         },
 

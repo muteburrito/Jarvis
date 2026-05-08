@@ -140,6 +140,15 @@ func (s *Server) handleIngestPath(w http.ResponseWriter, r *http.Request) {
 	if err := workbench.SaveWatchedFolder(s.cfg.DataDir, req.Path); err != nil {
 		slog.Warn("failed to save watched folder", "path", req.Path, "error", err)
 	}
+	if _, project, err := workbench.UpsertProject(s.cfg.DataDir, req.Path, ""); err != nil {
+		slog.Warn("failed to save project", "path", req.Path, "error", err)
+	} else {
+		s.recordTaskTrace("project_open", "Opened project", map[string]string{
+			"name":             project.Name,
+			"path":             project.Path,
+			"vector_store_dir": project.VectorStoreDir,
+		})
+	}
 
 	writeJSON(w, http.StatusOK, map[string]interface{}{
 		"processed": processed,

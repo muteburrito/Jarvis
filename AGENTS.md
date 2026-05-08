@@ -66,6 +66,7 @@ The GitHub updater only runs on proper semver builds. When creating a release, b
 - `internal/updater/` polls GitHub Releases, compares semver tags, and can download and silently launch the Windows NSIS installer. Release builds bake the GitHub repository into `builtinRepo` via ldflags so end users do not need repository configuration.
 - `internal/websearch/` contains the DuckDuckGo scraper (`duckduckgo.go`) and the research orchestrator (`research.go`). The orchestrator uses `ChatOnce` to generate search queries without streaming, then emits structured progress events for the UI while it searches, fetches, and indexes pages.
 - `internal/workbench/` contains the Codex-style memory layer: chat sessions, watched folders, workspace maps, symbol indexes, task messages, traces, and edit history persisted as JSON under the data directory. Workspace maps include regular documents, PDFs, images, spreadsheets, presentations, data files, source files, and code symbols.
+- `internal/workbench/projects.go` owns persisted project metadata. A project is a local folder root with active state and a reserved per-project vector-store path. The current vector store is still global, but future agent work should move retrieval into project-scoped stores.
 - `web/` contains the single-page frontend (HTML template, JS, CSS). Keep Alpine app state and initialization in `web/static/js/app.js`, with feature behavior in focused files under `web/static/js/modules/`. Embedded into the binary via `go:embed` in `web/embed.go`, so the exe is self-contained.
 - `web/static/js/modules/messages.js` composes focused chat modules: `message_composer.js`, `message_streaming.js`, `message_queue.js`, `message_context.js`, `message_attachments.js`, and `message_actions.js`.
 - `web/static/js/modules/workbench.js` owns Workbench activity and workspace-map UI behavior.
@@ -86,6 +87,7 @@ The GitHub updater only runs on proper semver builds. When creating a release, b
 - RAG retrieval uses hybrid search. Keep BM25 pure Go and dependency-free so exact identifiers, error codes, function names, and config keys rank well alongside semantic matches.
 - Folder ingest builds a lightweight workspace map for regular files and code. It classifies documents, PDFs, spreadsheets, presentations, images, data, config, text, and code files. It extracts symbols/imports only for supported text/code files. Keep scanners fast and dependency-free unless the roadmap explicitly moves to tree-sitter.
 - Folder ingest persists watched folders. The app runs a background re-indexer that checks watched folders every 10 minutes, re-indexes only new or modified files, refreshes the workspace map, and records task traces when files change.
+- Folder ingest also persists the folder as the active project. Keep this project layer as the foundation for future project-scoped indexes, command policy, tool traces, and patch review.
 - The Workbench panel surfaces task traces, retrieval events, model state, workspace file type counts, searchable files, and searchable symbols. Keep it dense, practical, and work-focused.
 - Reply-to-message and focused file mentions are part of the chat flow. Preserve `reply_to`, `focus_document_ids`, and `focus_files` support in `/api/v1/chat`.
 - Queued follow-up messages are a first-class chat feature. Users can queue messages while a response streams, edit queued text, reorder queued messages, or remove them before they run. If a queued message is being edited when streaming finishes, do not send it until the edit is saved or canceled.
@@ -116,6 +118,16 @@ The GitHub updater only runs on proper semver builds. When creating a release, b
 - Installer downloads use the `browser_download_url` from the latest GitHub Release asset. On Windows, Jarvis prefers an `.exe` asset whose name contains `setup`.
 - Manual Windows installs should bootstrap Ollama and models. Silent installs should skip bootstrap so auto-updates stay fast and predictable.
 - For the next release after `v2.0.1`, use `v2.1.0` unless a breaking change is introduced before tagging.
+
+## Agent Workflow Notes
+
+A Codex-like local agent is possible, but it must stay layered and approval-driven:
+
+- Start with project-scoped state: vector store, chat history, workspace map, command policy, and edit history per project.
+- Add read-only tools first: list files, search files, read files, inspect symbols, summarize files, and fetch context.
+- Add command execution only with working directory controls, timeouts, output capture, and user approvals or allowlists.
+- Add file edits as proposed patches. Show diffs and apply only after review.
+- Scheduled folder re-indexing should keep project context fresh, but it must not overwrite user files or hide edits from review.
 
 ## Frontend Modularization Notes
 

@@ -34,6 +34,7 @@ Recent coding-agent tools point toward a few patterns worth copying:
 | **Windows installer bootstrap** | Done for Windows. Manual NSIS installs check/install Ollama and pull Jarvis models. Silent auto-updates skip bootstrap. |
 | **Scheduled folder re-indexing** | Done. Folder ingest saves watched folders and refreshes new or modified files in the background while keeping workspace maps current. |
 | **Codex-style chat workspace** | Done. Neutral desktop theme, queued follow-ups, editable/reorderable queue, response copy/rating/fork controls, response timing, and expanded in-app Help. |
+| **Project foundation** | Done. Indexed folders become persisted projects with an active project, workspace map, watched re-indexing, and a reserved per-project vector-store path for the agent workflow. |
 | **Multiple named workspaces** | Save and switch between named document sets. Each workspace should have its own vector store, documents, and chat history. |
 | **Vector compression research** | Evaluate TurboQuant, QJL, and PolarQuant ideas for compressing Jarvis embeddings or adding an approximate search tier. Reference: https://research.google/blog/turboquant-redefining-ai-efficiency-with-extreme-compression/ |
 | **Workspace map depth** | Add richer document metadata, media dimensions, Office document summaries, package boundaries, tests, and better file grouping. |
@@ -67,6 +68,7 @@ Included:
 
 | Feature | What it adds |
 |---|---|
+| **Project-scoped indexes** | Move from one global vector store to project/document-set scoped stores. Keep each project isolated for retrieval, chat history, workspace map, command policy, and future edits. |
 | **Agent tool loop** | Let the model call tools mid-task: search files, read files, inspect symbols, list directories, summarize files, fetch URLs, and ask for approval. |
 | **Safe local command runner** | Add a terminal tool with working directory controls, timeouts, output capture, and command approval policies. |
 | **Patch generation and apply flow** | Generate unified diffs, preview changes in the UI, apply approved patches, and support discard per file. |
@@ -75,3 +77,16 @@ Included:
 | **Code review mode** | Review a local diff or branch and produce findings with severity, file, line, risk, and test gaps. |
 | **GitHub issue and pull request flow** | Pull issue context from GitHub, create a task from it, push a branch, and draft a pull request with summary and tests. |
 | **Skills and project rules** | Support reusable local skills and repo instructions through `AGENTS.md` and optional `skills/*/SKILL.md` files. |
+
+## Agent Workflow Architecture
+
+The Codex-like workflow is possible, but it should land in careful layers:
+
+1. **Projects:** a folder becomes a persisted project with a root path, active state, workspace map, watched re-indexing, and a reserved vector-store location.
+2. **Project-scoped storage:** each project gets its own vector store, chat state, workspace map, command policy, and edit history. This prevents one project from polluting another project's retrieval.
+3. **Read-only tools:** list files, search files, read files, inspect symbols, summarize files, and fetch project context.
+4. **Command tools:** run approved commands with working directory controls, timeouts, output capture, and allowlists.
+5. **Patch tools:** propose file edits as diffs, show review UI, apply only approved patches, and record edit history.
+6. **Review and test loop:** run tests, parse failures, update patches, and produce a final review summary.
+
+Scheduled folder re-indexing helps this directly because it keeps the active project's local context current while the agent works.

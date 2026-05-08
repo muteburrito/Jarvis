@@ -27,6 +27,8 @@ func (s *Server) registerRoutes() {
 	s.router.Get("/api/v1/health", s.handleHealth)
 	s.router.Get("/api/v1/system", s.handleSystem)
 	s.router.Get("/api/v1/models", s.handleListModels)
+	s.router.Get("/api/v1/projects", s.handleListProjects)
+	s.router.Post("/api/v1/projects", s.handleOpenProject)
 	s.router.Get("/api/v1/repo-map", s.handleRepoMap)
 	s.router.Get("/api/v1/task", s.handleTaskState)
 	s.router.Post("/api/v1/task/traces", s.handleAddTaskTrace)

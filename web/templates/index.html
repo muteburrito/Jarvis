@@ -794,12 +794,40 @@
                     <strong x-text="workbenchSummary().edits"></strong>
                 </div>
                 <div class="workbench-stat">
-                    <span>Model</span>
-                    <strong class="truncate" x-text="workbenchSummary().model || 'Not selected'"></strong>
+                    <span>Projects</span>
+                    <strong x-text="projectSummary().count"></strong>
                 </div>
             </div>
 
             <div class="workbench-body">
+                <div class="workbench-map-panel">
+                    <div class="mb-3 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                        <div class="min-w-0">
+                            <div class="flex items-center gap-2">
+                                <h3 class="text-sm font-semibold text-slate-100">Active project</h3>
+                                <span x-show="projectSummary().active" class="workspace-count-pill">
+                                    <span>agent foundation</span>
+                                </span>
+                            </div>
+                            <template x-if="projectSummary().active">
+                                <div>
+                                    <p class="mt-1 truncate text-sm font-medium text-slate-200" x-text="projectSummary().active.name"></p>
+                                    <p class="mt-1 truncate text-xs text-slate-500" x-text="projectSummary().active.path"></p>
+                                    <p class="mt-1 truncate text-xs text-slate-500">
+                                        <span>Future project vector store: </span>
+                                        <span x-text="projectSummary().vectorStoreDir"></span>
+                                    </p>
+                                </div>
+                            </template>
+                            <p x-show="!projectSummary().active" class="mt-1 text-xs text-slate-500">Index or open a folder to make it the active project.</p>
+                        </div>
+                        <button @click="loadProjects()"
+                                class="workbench-secondary-button shrink-0">
+                            Refresh projects
+                        </button>
+                    </div>
+                </div>
+
                 <div class="workbench-map-panel">
                     <div class="mb-3 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                         <div class="min-w-0">

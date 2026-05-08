@@ -18,6 +18,7 @@ No data leaves your machine. No API keys needed. Single binary, runs anywhere.
 - **Wide file support:** PDF, DOCX, XLSX, PPTX, images, known source files, and unknown text-like files. Binary files are rejected
 - **Hybrid retrieval:** combines vector similarity with BM25 keyword scoring for better exact matches on code symbols, error codes, and config keys
 - **Workspace map:** folder ingest maps regular files, Office documents, PDFs, images, data files, source files, and code symbols
+- **Project foundation:** indexed folders are saved as projects with an active project, workspace map, watched re-indexing, and a reserved project vector-store path for future agent workflows
 - **Workbench activity:** inspect local task traces, retrieval events, selected model, workspace map, files, symbols, and future edit history
 - **Image support:** upload standalone images (PNG, JPG, etc.) or PDFs with embedded images. A vision model describes each image so it becomes searchable and queryable
 - **Deep research mode:** toggle research mode and Jarvis searches the web via DuckDuckGo, fetches the top articles, indexes them, and answers with citations and links. No API key needed
@@ -211,6 +212,8 @@ packaging/
 | `GET /api/v1/health` | Health check with model and store info |
 | `GET /api/v1/system` | Hardware and system status |
 | `GET /api/v1/models` | List installed Ollama models and the default chat model |
+| `GET /api/v1/projects` | List persisted projects and the active project |
+| `POST /api/v1/projects` | Open a folder as the active project |
 | `GET /api/v1/repo-map` | Current workspace map with files, file kinds, imports, and symbols |
 | `GET /api/v1/task` | Current persisted task state, messages, traces, and edit history |
 | `POST /api/v1/task/traces` | Append a tool trace event to the current task |
@@ -233,12 +236,25 @@ packaging/
 The Workbench panel surfaces local task and workspace state:
 
 - task traces from chat, research, retrieval, workspace map updates, and future tools
+- active project metadata and reserved per-project vector-store path
 - selected model, message count, trace count, and edit count
 - workspace map root, file count, symbol count, and file type breakdown
 - searchable files across documents, PDFs, spreadsheets, presentations, images, data, text, config, and code
 - searchable symbols for supported code files
 
 This is the bridge from document chat toward a local coding and knowledge workbench while keeping all state local.
+
+### Agent workflow direction
+
+Jarvis is being prepared for a Codex-like local agent workflow. The current release adds the project foundation: indexed folders become active projects with workspace maps and watched re-indexing. The reserved per-project vector-store path is the storage boundary for a future project-scoped index.
+
+The next layers are:
+
+- project-scoped vector stores, chat history, workspace maps, command policy, and edit history
+- read-only tools for listing, searching, reading, and summarizing project files
+- safe command execution with approvals, timeouts, and captured output
+- patch generation, review, apply, and discard flows
+- test and fix loops that keep all changes visible and reversible
 
 ### Chat workflow
 

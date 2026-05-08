@@ -15,6 +15,7 @@ function chatApp() {
         showWorkbenchPanel: false,
         taskState: null,
         repoMap: null,
+        projectState: null,
         repoSearch: '',
         uploadProgress: 0,
         isUploading: false,
