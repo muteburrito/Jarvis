@@ -385,6 +385,65 @@ body {
     background: rgba(51, 65, 85, 0.9);
 }
 
+.workbench-stat {
+    min-width: 0;
+    border: 1px solid rgba(71, 85, 105, 0.7);
+    border-radius: 12px;
+    background: rgba(15, 23, 42, 0.72);
+    padding: 10px 12px;
+}
+
+.workbench-stat span {
+    display: block;
+    color: #94a3b8;
+    font-size: 11px;
+    font-weight: 600;
+    line-height: 1rem;
+    text-transform: uppercase;
+}
+
+.workbench-stat strong {
+    display: block;
+    color: #f8fafc;
+    font-size: 15px;
+    line-height: 1.4rem;
+}
+
+.workbench-event {
+    border: 1px solid rgba(71, 85, 105, 0.68);
+    border-left: 3px solid #64748b;
+    border-radius: 12px;
+    background: rgba(15, 23, 42, 0.58);
+    padding: 10px 12px;
+}
+
+.workbench-event.is-error {
+    border-left-color: #f87171;
+}
+
+.workbench-event.is-edit {
+    border-left-color: #34d399;
+}
+
+.workbench-event.is-research {
+    border-left-color: #c084fc;
+}
+
+.workbench-event.is-context {
+    border-left-color: #60a5fa;
+}
+
+.workbench-event-type {
+    border-radius: 999px;
+    background: rgba(51, 65, 85, 0.9);
+    color: #cbd5e1;
+    padding: 2px 7px;
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 1rem;
+    text-transform: uppercase;
+}
+
 .typing-indicator {
     display: flex;
     gap: 4px;

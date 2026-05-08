@@ -8,6 +8,8 @@ function chatApp() {
         chatSessions: [],
         activeChatID: '',
         showDocumentsPanel: false,
+        showWorkbenchPanel: false,
+        taskState: null,
         uploadProgress: 0,
         isUploading: false,
         uploadingName: '',
@@ -73,6 +75,7 @@ function chatApp() {
             this.loadChats();
             this.loadAppConfig();
             this.loadDocuments();
+            this.loadTaskState();
             this.loadSystemInfo();
             this.loadHardwareStatus();
             this.loadUpdateStatus();
@@ -122,5 +125,6 @@ function chatApp() {
         window.jarvisSystem,
         window.jarvisDocuments,
         window.jarvisUpdates,
+        window.jarvisWorkbench,
     );
 }
