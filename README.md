@@ -182,6 +182,7 @@ web/
   templates/index.html         Frontend (Alpine.js + Tailwind)
   static/js/app.js             Alpine app state and initialization
   static/js/modules/           Focused browser-loaded frontend modules
+    message_*.js               Chat composer, streaming, queue, context, attachments, and response actions
   static/css/app.css           Custom styles
   embed.go                     Embeds web/ into the binary
 packaging/

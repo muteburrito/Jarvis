@@ -67,7 +67,7 @@ The GitHub updater only runs on proper semver builds. When creating a release, b
 - `internal/websearch/` contains the DuckDuckGo scraper (`duckduckgo.go`) and the research orchestrator (`research.go`). The orchestrator uses `ChatOnce` to generate search queries without streaming, then emits structured progress events for the UI while it searches, fetches, and indexes pages.
 - `internal/workbench/` contains the Codex-style memory layer: chat sessions, watched folders, workspace maps, symbol indexes, task messages, traces, and edit history persisted as JSON under the data directory. Workspace maps include regular documents, PDFs, images, spreadsheets, presentations, data files, source files, and code symbols.
 - `web/` contains the single-page frontend (HTML template, JS, CSS). Keep Alpine app state and initialization in `web/static/js/app.js`, with feature behavior in focused files under `web/static/js/modules/`. Embedded into the binary via `go:embed` in `web/embed.go`, so the exe is self-contained.
-- `web/static/js/modules/messages.js` currently owns chat send/streaming, reply context, file mentions, pasted images, queued follow-ups, response actions, and fork behavior. It is the next frontend file to split as the UI grows.
+- `web/static/js/modules/messages.js` composes focused chat modules: `message_composer.js`, `message_streaming.js`, `message_queue.js`, `message_context.js`, `message_attachments.js`, and `message_actions.js`.
 - `web/static/js/modules/workbench.js` owns Workbench activity and workspace-map UI behavior.
 - `packaging/windows/jarvis.nsi` is the NSIS installer script. Per-user install to `%LOCALAPPDATA%\Programs\Jarvis`, no UAC. Accepts `/S` for silent install. Manual installs run `packaging/windows/bootstrap-ollama.ps1`; silent auto-updates skip the bootstrap.
 - `packaging/windows/bootstrap-ollama.ps1` checks for Ollama, installs it if missing, waits for the local API, and pulls `nomic-embed-text`, `gemma4:e2b`, `gemma4:e4b`, and `llava`.
@@ -121,7 +121,7 @@ The GitHub updater only runs on proper semver builds. When creating a release, b
 
 The frontend is modular enough for `v2.1.0`, but the next maintainability pass should split the largest surfaces:
 
-- `messages.js` into streaming/send, queue, mentions, attachments, and response actions
+- Keep chat behavior split across the focused `message_*.js` modules. Avoid putting new chat behavior back into a monolithic `messages.js`.
 - `index.html` into embedded partials for chat, composer, documents, workbench, roadmap, help, source preview, update notes, and overlays
 - `app.css` into component sections or multiple embedded CSS files loaded in stable order
 

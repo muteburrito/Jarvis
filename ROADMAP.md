@@ -40,7 +40,7 @@ Recent coding-agent tools point toward a few patterns worth copying:
 | **Context picker** | Let users pin files, folders, symbols, diffs, terminal output, URLs, and documents into the next task. Show context budget impact before sending. |
 | **Code-aware retrieval** | Add code-specific chunking, symbol metadata, exact identifier search, dependency-aware boosting, and optional reranking. |
 | **Model role profiles** | Split model config by role: chat, edit, apply, autocomplete, embedding, reranker, and vision. |
-| **Frontend modularization** | In progress. JS behavior is split into modules, but `messages.js`, `index.html`, and `app.css` are now the largest surfaces. Next split messages into streaming, queue, mentions, attachments, and response-actions modules, split the template into embedded partials, and organize CSS by component. |
+| **Frontend modularization** | In progress. Chat behavior is split into focused message modules. Next split the large HTML template into embedded partials and organize CSS by component. |
 
 ## v2.1.0 Release Scope
 
