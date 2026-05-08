@@ -17,33 +17,33 @@ import (
 )
 
 var ignoredDirs = map[string]bool{
-	"bin":            true,
-	"obj":            true,
-	"node_modules":   true,
-	".git":           true,
-	".vs":            true,
-	".vscode":        true,
-	".idea":          true,
-	"vendor":         true,
-	"dist":           true,
-	"build":          true,
-	"target":         true,
-	"__pycache__":    true,
-	".next":          true,
-	".nuget":         true,
-	"packages":       true,
-	"TestResults":    true,
-	"Debug":          true,
-	"Release":        true,
+	"bin":          true,
+	"obj":          true,
+	"node_modules": true,
+	".git":         true,
+	".vs":          true,
+	".vscode":      true,
+	".idea":        true,
+	"vendor":       true,
+	"dist":         true,
+	"build":        true,
+	"target":       true,
+	"__pycache__":  true,
+	".next":        true,
+	".nuget":       true,
+	"packages":     true,
+	"TestResults":  true,
+	"Debug":        true,
+	"Release":      true,
 }
 
 type Processor struct {
-	registry     *Registry
-	chunker      *Chunker
-	ollama       *ollama.Client
-	store        *vectorstore.Store
-	cfg          *config.Config
-	visionReady  bool
+	registry    *Registry
+	chunker     *Chunker
+	ollama      *ollama.Client
+	store       *vectorstore.Store
+	cfg         *config.Config
+	visionReady bool
 }
 
 func NewProcessor(registry *Registry, chunker *Chunker, ollamaClient *ollama.Client, store *vectorstore.Store, cfg *config.Config, visionReady bool) *Processor {
@@ -204,14 +204,58 @@ func (p *Processor) ProcessDirectory(ctx context.Context, dir string) (int, int,
 }
 
 func (p *Processor) RemoveDocument(ctx context.Context, docID string) error {
+	for _, doc := range p.store.ListDocuments() {
+		if doc.ID == docID {
+			p.removeOwnedDataFile(doc.FilePath)
+			break
+		}
+	}
 	p.store.RemoveByDocumentID(docID)
 	p.store.RemoveDocument(docID)
 	return p.store.Save(p.cfg.VectorStoreDir)
 }
 
 func (p *Processor) ClearAll(ctx context.Context) error {
+	for _, doc := range p.store.ListDocuments() {
+		p.removeOwnedDataFile(doc.FilePath)
+	}
 	p.store.Clear()
 	return p.store.Save(p.cfg.VectorStoreDir)
+}
+
+func (p *Processor) removeOwnedDataFile(path string) {
+	if !p.isOwnedDataFile(path) {
+		return
+	}
+	if err := os.Remove(path); err != nil && !os.IsNotExist(err) {
+		slog.Warn("failed to remove indexed data file", "path", path, "error", err)
+	}
+}
+
+func (p *Processor) isOwnedDataFile(path string) bool {
+	if strings.TrimSpace(path) == "" || p.cfg == nil || strings.TrimSpace(p.cfg.DataDir) == "" {
+		return false
+	}
+	if strings.HasPrefix(path, "http://") || strings.HasPrefix(path, "https://") {
+		return false
+	}
+
+	absPath, err := filepath.Abs(path)
+	if err != nil {
+		return false
+	}
+	absDataDir, err := filepath.Abs(p.cfg.DataDir)
+	if err != nil {
+		return false
+	}
+
+	rel, err := filepath.Rel(absDataDir, absPath)
+	if err != nil || rel == "." || strings.HasPrefix(rel, "..") || filepath.IsAbs(rel) {
+		return false
+	}
+
+	info, err := os.Stat(absPath)
+	return err == nil && !info.IsDir()
 }
 
 func (p *Processor) describeImages(ctx context.Context, docs []Document) []Document {

@@ -80,12 +80,10 @@ func (s *Server) handleDeleteDocument(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	docs := s.store.ListDocuments()
 	var found bool
-	for _, d := range docs {
+	for _, d := range s.store.ListDocuments() {
 		if d.ID == id {
 			found = true
-			os.Remove(d.FilePath)
 			break
 		}
 	}
