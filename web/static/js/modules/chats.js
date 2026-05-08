@@ -60,6 +60,7 @@ window.jarvisChats = {
                 this.activeChatID = session.id;
                 this.messages = session.messages || [];
                 this.messageQueue = [];
+                this.cancelEditQueuedMessage();
                 await this.refreshChatList();
                 if (showToast) this.showToast('New chat created');
                 this.$nextTick(() => {
@@ -84,6 +85,7 @@ window.jarvisChats = {
                 this.activeChatID = session.id;
                 this.messages = session.messages || [];
                 this.messageQueue = [];
+                this.cancelEditQueuedMessage();
                 this.scrollToBottom(true);
             } catch {
                 this.showToast('Failed to open chat', 'error');

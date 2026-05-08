@@ -999,77 +999,123 @@
 
                 <div>
                     <h3 class="text-base font-semibold text-slate-100 mb-2">Getting started</h3>
-                    <p class="mb-2"><span x-text="appConfig.app_name || 'Jarvis'">Jarvis</span> lets you chat with your documents using a local AI. Everything runs on your machine. No data is sent to the cloud.</p>
-                    <p>You can also use it as a general-purpose assistant without uploading anything.</p>
+                    <p class="mb-2"><span x-text="appConfig.app_name || 'Jarvis'">Jarvis</span> is a local AI workbench for documents, folders, images, code, web research, and day-to-day questions. It runs on your machine with Ollama, keeps chat history locally, and can work even when no files are indexed.</p>
+                    <p>Your usual flow is simple: add context, ask a question, focus the next prompt when needed, then use the response tools to copy, rate, fork, or continue the conversation.</p>
                 </div>
 
                 <div>
-                    <h3 class="text-base font-semibold text-blue-400 mb-2">1. Upload a document</h3>
-                    <p class="mb-1">Use the buttons beside the chat input to add context:</p>
+                    <h3 class="text-base font-semibold text-blue-400 mb-2">1. Add context</h3>
+                    <p class="mb-1">Use the composer buttons beside the chat input:</p>
                     <ul class="list-disc list-inside space-y-1 text-slate-400 ml-2">
-                        <li><strong class="text-slate-300">Paper clip</strong> selects files such as PDF, DOCX, XLSX, PPTX, images, or code files</li>
-                        <li><strong class="text-slate-300">Folder</strong> selects and indexes files from a local folder</li>
+                        <li><strong class="text-slate-300">Paper clip</strong> uploads files such as PDF, DOCX, XLSX, PPTX, images, markdown, text, logs, data files, config files, and source code</li>
+                        <li><strong class="text-slate-300">Folder</strong> indexes a local folder recursively. Jarvis skips build output such as node_modules, bin, obj, vendor, and .git</li>
                         <li><strong class="text-slate-300">Braces</strong> opens the code snippet box for code that should stay inline with your question</li>
-                        <li><strong class="text-slate-300">URLs in normal chat</strong> are fetched and indexed automatically</li>
+                        <li><strong class="text-slate-300">Paste images</strong> directly into chat to attach them to the next question</li>
+                        <li><strong class="text-slate-300">Paste URLs</strong> in normal chat to fetch and index web pages automatically</li>
                     </ul>
+                    <p class="mt-2 text-slate-500">Folders you index are remembered. Jarvis checks watched folders in the background and refreshes new or changed files.</p>
                 </div>
 
                 <div>
                     <h3 class="text-base font-semibold text-blue-400 mb-2">2. Ask questions</h3>
-                    <p class="mb-1">Type your question in the chat input and press Enter. The AI will:</p>
+                    <p class="mb-1">Type a question and press <strong class="text-slate-300">Enter</strong>. Use <strong class="text-slate-300">Shift+Enter</strong> for a new line. Jarvis will:</p>
                     <ul class="list-disc list-inside space-y-1 text-slate-400 ml-2">
-                        <li>Search your indexed documents for relevant content</li>
+                        <li>Search indexed files with hybrid retrieval, semantic search plus keyword matching</li>
                         <li>Answer based on what it finds, with source citations</li>
-                        <li>If no documents are loaded, it works as a general assistant</li>
+                        <li>Fall back to general chat when no relevant files are indexed</li>
+                        <li>Show research progress, sources, and response timing when available</li>
                     </ul>
                 </div>
 
                 <div>
-                    <h3 class="text-base font-semibold text-blue-400 mb-2">Model selection</h3>
-                    <p class="mb-1"><span x-text="appConfig.app_name || 'Jarvis'">Jarvis</span> chooses a small local Gemma model when <strong class="text-slate-300">CHAT_MODEL</strong> is not set:</p>
+                    <h3 class="text-base font-semibold text-emerald-400 mb-2">3. Focus the conversation</h3>
                     <ul class="list-disc list-inside space-y-1 text-slate-400 ml-2">
-                        <li><strong class="text-slate-300">gemma4:e2b</strong> for very low-end machines</li>
-                        <li><strong class="text-slate-300">gemma4:e4b</strong> for everyone else</li>
+                        <li><strong class="text-slate-300">Reply to a message</strong> by using the reply button near a chat bubble. Jarvis includes that exact message as context</li>
+                        <li><strong class="text-slate-300">@file or #file</strong> mentions focus retrieval on specific indexed files. Start typing @ or # and choose from suggestions</li>
+                        <li><strong class="text-slate-300">Prompt templates</strong> can quickly start common tasks like summaries, code review, TODO searches, and release notes</li>
+                        <li><strong class="text-slate-300">Queued follow-ups</strong> let you type the next message while an answer is still streaming. Jarvis runs it automatically afterward</li>
                     </ul>
-                    <p class="mt-2 text-slate-500">The 26b model is opt-in only. Set CHAT_MODEL before starting Jarvis if you want qwen2.5-coder:14b, gemma4:26b, or another local model.</p>
                 </div>
 
                 <div>
-                    <h3 class="text-base font-semibold text-purple-400 mb-2">3. Research mode</h3>
+                    <h3 class="text-base font-semibold text-purple-400 mb-2">4. Research mode</h3>
                     <p class="mb-2">Click the <strong class="text-slate-200">magnifying glass</strong> button next to the chat input. It turns purple when active.</p>
                     <p class="mb-1">In research mode, <span x-text="appConfig.app_name || 'Jarvis'">Jarvis</span> will:</p>
                     <ul class="list-disc list-inside space-y-1 text-slate-400 ml-2">
                         <li>Generate search queries from your question</li>
                         <li>Search the web using DuckDuckGo</li>
                         <li>Fetch and read the top articles</li>
-                        <li>Answer with citations and links to the sources</li>
+                        <li>Index useful pages locally, then answer with citations and links</li>
                     </ul>
                     <p class="mt-2 text-slate-500">No API key needed. Fetched articles are saved locally so follow-up questions are instant.</p>
                 </div>
 
                 <div>
-                    <h3 class="text-base font-semibold text-blue-400 mb-2">4. Manage documents</h3>
+                    <h3 class="text-base font-semibold text-blue-400 mb-2">5. Use response tools</h3>
                     <ul class="list-disc list-inside space-y-1 text-slate-400 ml-2">
-                        <li>Click the indexed count in the chat header to view indexed documents</li>
-                        <li>Hover over a document and click the trash icon to remove it</li>
-                        <li>Use <strong class="text-slate-300">Clear all</strong> in the indexed files panel to remove everything</li>
+                        <li><strong class="text-slate-300">Copy response</strong> copies the assistant answer as markdown text</li>
+                        <li><strong class="text-slate-300">Thumbs up or down</strong> saves your rating on that response</li>
+                        <li><strong class="text-slate-300">Fork</strong> creates a new chat from the conversation up to that response, useful when you want to explore another direction</li>
+                        <li><strong class="text-slate-300">Working time</strong> shows how long Jarvis has been generating, then keeps the final response duration</li>
                     </ul>
                 </div>
 
                 <div>
-                    <h3 class="text-base font-semibold text-blue-400 mb-2">Tips</h3>
+                    <h3 class="text-base font-semibold text-blue-400 mb-2">6. Manage indexed files</h3>
                     <ul class="list-disc list-inside space-y-1 text-slate-400 ml-2">
-                        <li>Paste a URL directly in chat and the AI will auto-fetch it before answering</li>
-                        <li>Paste code into the code snippet box when URLs should not be fetched</li>
-                        <li>The AI adapts to your region automatically (currency, date format, etc.)</li>
-                        <li>Use <strong class="text-slate-300">Shift+Enter</strong> for a new line without sending</li>
-                        <li>Images in PDFs are described by a vision model and become searchable</li>
-                        <li>Supported files: documents, images, and any text-like source or config file. Binary files are skipped or rejected</li>
+                        <li>Click the indexed count in the chat header to view indexed documents</li>
+                        <li>Delete a single indexed file when you no longer want it in retrieval</li>
+                        <li>Use <strong class="text-slate-300">Clear all</strong> to clear the vector store and Jarvis-owned upload copies</li>
+                        <li>External files indexed from folders are preserved on disk when you delete or clear the index</li>
+                        <li>Images are described by the vision model when available, then stored as searchable text</li>
+                    </ul>
+                </div>
+
+                <div>
+                    <h3 class="text-base font-semibold text-cyan-400 mb-2">7. Workbench</h3>
+                    <p class="mb-1">Open the Workbench button in the top bar to inspect local activity:</p>
+                    <ul class="list-disc list-inside space-y-1 text-slate-400 ml-2">
+                        <li>Task traces from chat, retrieval, research, folder indexing, and workspace map updates</li>
+                        <li>Workspace map root, file counts, type breakdown, files, and code symbols</li>
+                        <li>Useful context for codebases and regular folders with Office files, PDFs, images, logs, and data</li>
+                    </ul>
+                </div>
+
+                <div>
+                    <h3 class="text-base font-semibold text-blue-400 mb-2">Models and setup</h3>
+                    <p class="mb-1">Jarvis uses Ollama locally for chat, embeddings, and optional image understanding. On Windows, the installer can bootstrap Ollama and pull required models during manual install.</p>
+                    <ul class="list-disc list-inside space-y-1 text-slate-400 ml-2">
+                        <li><strong class="text-slate-300">nomic-embed-text</strong> creates embeddings for retrieval</li>
+                        <li><strong class="text-slate-300">gemma4:e2b</strong> is selected automatically for very low-end machines</li>
+                        <li><strong class="text-slate-300">gemma4:e4b</strong> is the default for most machines</li>
+                        <li><strong class="text-slate-300">llava</strong> is optional and enables image descriptions</li>
+                    </ul>
+                    <p class="mt-2 text-slate-500">Set CHAT_MODEL before starting Jarvis if you want to force another local model. Larger models are opt-in because speed matters for daily use.</p>
+                </div>
+
+                <div>
+                    <h3 class="text-base font-semibold text-blue-400 mb-2">Updates and desktop use</h3>
+                    <ul class="list-disc list-inside space-y-1 text-slate-400 ml-2">
+                        <li>The desktop app is the primary installed experience</li>
+                        <li>Release builds can check GitHub Releases for updates</li>
+                        <li>Silent auto-updates keep installs fast and skip the Ollama bootstrap step</li>
+                        <li>The browser server remains useful for development and fallback testing</li>
+                    </ul>
+                </div>
+
+                <div>
+                    <h3 class="text-base font-semibold text-blue-400 mb-2">Helpful habits</h3>
+                    <ul class="list-disc list-inside space-y-1 text-slate-400 ml-2">
+                        <li>Use @file mentions when a question must stay grounded in a specific indexed file</li>
+                        <li>Use the code snippet box for code that should not trigger URL fetching</li>
+                        <li>Use forks when a response is useful but you want to try a different next step</li>
+                        <li>Use research mode for current web information, not for private local files</li>
+                        <li>Jarvis adapts answers to your browser locale and timezone when possible</li>
                     </ul>
                 </div>
 
                 <div class="pt-2 border-t border-slate-700 text-xs text-slate-500 flex items-center justify-between">
-                    <p><span x-text="appConfig.app_name || 'Jarvis'">Jarvis</span> runs entirely on your machine using Ollama. Your documents and conversations never leave your computer.</p>
+                    <p><span x-text="appConfig.app_name || 'Jarvis'">Jarvis</span> is local-first. Your indexed files, embeddings, chat history, task state, and workspace maps stay on your computer unless you explicitly fetch a public web page in research or URL mode.</p>
                     <a x-show="hasSupportContact()" x-cloak :href="supportHref()"
                        class="shrink-0 ml-4 text-blue-400 hover:text-blue-300 underline hover:no-underline whitespace-nowrap">Contact support</a>
                 </div>

@@ -4,6 +4,8 @@ function chatApp() {
         input: '',
         isStreaming: false,
         messageQueue: [],
+        editingQueueID: '',
+        queueEditText: '',
         clockTick: Date.now(),
         sidebarOpen: window.innerWidth >= 1024,
         documents: [],
