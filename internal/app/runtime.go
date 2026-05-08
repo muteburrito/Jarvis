@@ -79,6 +79,8 @@ func NewRuntime(ctx context.Context, version string) (*Runtime, error) {
 	if err != nil {
 		slog.Warn("could not initialize task store", "error", err)
 	}
+	startFolderReindexer(ctx, processor, cfg, taskStore)
+
 	chatStore, err := workbench.NewChatStore(cfg.DataDir)
 	if err != nil {
 		slog.Warn("could not initialize chat store", "error", err)

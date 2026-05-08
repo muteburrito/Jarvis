@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+	"time"
 
 	"go-chatbot/internal/config"
 	"go-chatbot/internal/vectorstore"
@@ -73,6 +74,42 @@ func TestRemoveDocumentPreservesExternalSourceFiles(t *testing.T) {
 	}
 	if store.DocumentCount() != 0 {
 		t.Fatalf("expected document to be removed from store, got %d", store.DocumentCount())
+	}
+}
+
+func TestSameSourceFileRequiresSizeAndModifiedTimeMatch(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "source.txt")
+	writeTestFile(t, path, "same")
+
+	modifiedAt := time.Now().Add(-time.Hour).Truncate(time.Second)
+	if err := os.Chtimes(path, modifiedAt, modifiedAt); err != nil {
+		t.Fatal(err)
+	}
+
+	info, err := os.Stat(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	doc := vectorstore.DocumentInfo{
+		FilePath:   path,
+		Size:       info.Size(),
+		ModifiedAt: info.ModTime(),
+	}
+	if !sameSourceFile(info, doc) {
+		t.Fatal("expected matching source file to be unchanged")
+	}
+
+	doc.Size++
+	if sameSourceFile(info, doc) {
+		t.Fatal("expected size change to require re-index")
+	}
+
+	doc.Size = info.Size()
+	doc.ModifiedAt = time.Time{}
+	if sameSourceFile(info, doc) {
+		t.Fatal("expected missing modified time to require re-index")
 	}
 }
 

@@ -29,6 +29,7 @@ type DocumentInfo struct {
 	Size       int64     `json:"size"`
 	ChunkCount int       `json:"chunk_count"`
 	UploadedAt time.Time `json:"uploaded_at"`
+	ModifiedAt time.Time `json:"modified_at"`
 }
 
 type Store struct {

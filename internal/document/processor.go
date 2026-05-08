@@ -67,11 +67,13 @@ func (p *Processor) ProcessFile(ctx context.Context, filePath string) (string, i
 
 	info, _ := os.Stat(filePath)
 	var fileSize int64
+	var modifiedAt time.Time
 	if info != nil {
 		fileSize = info.Size()
+		modifiedAt = info.ModTime()
 	}
 
-	return p.processDocs(ctx, docs, fileBaseName(filePath), filePath, fileSize)
+	return p.processDocs(ctx, docs, fileBaseName(filePath), filePath, fileSize, modifiedAt)
 }
 
 func (p *Processor) ProcessURL(ctx context.Context, url string) (string, string, int, error) {
@@ -87,11 +89,18 @@ func (p *Processor) ProcessURL(ctx context.Context, url string) (string, string,
 		}
 	}
 
-	docID, chunks, err := p.processDocs(ctx, docs, title, url, 0)
+	docID, chunks, err := p.processDocs(ctx, docs, title, url, 0, time.Time{})
 	return docID, title, chunks, err
 }
 
-func (p *Processor) processDocs(ctx context.Context, docs []Document, filename, sourcePath string, fileSize int64) (string, int, error) {
+func (p *Processor) processDocs(
+	ctx context.Context,
+	docs []Document,
+	filename string,
+	sourcePath string,
+	fileSize int64,
+	modifiedAt time.Time,
+) (string, int, error) {
 	var validDocs []Document
 	for _, doc := range docs {
 		if strings.TrimSpace(doc.Content) != "" {
@@ -150,6 +159,7 @@ func (p *Processor) processDocs(ctx context.Context, docs []Document, filename, 
 		Size:       fileSize,
 		ChunkCount: len(chunks),
 		UploadedAt: time.Now(),
+		ModifiedAt: modifiedAt,
 	})
 
 	if err := p.store.Save(p.cfg.VectorStoreDir); err != nil {
@@ -160,9 +170,12 @@ func (p *Processor) processDocs(ctx context.Context, docs []Document, filename, 
 }
 
 func (p *Processor) ProcessDirectory(ctx context.Context, dir string) (int, int, error) {
-	knownFiles := make(map[string]bool)
+	knownFiles := make(map[string]vectorstore.DocumentInfo)
 	for _, d := range p.store.ListDocuments() {
-		knownFiles[d.FilePath] = true
+		key, ok := canonicalDocumentPath(d.FilePath)
+		if ok {
+			knownFiles[key] = d
+		}
 	}
 
 	var processed, totalChunks int
@@ -182,11 +195,34 @@ func (p *Processor) ProcessDirectory(ctx context.Context, dir string) (int, int,
 		if !p.registry.CanLoad(path) {
 			return nil
 		}
-		absPath, _ := filepath.Abs(path)
-		if knownFiles[absPath] || knownFiles[path] {
-			slog.Debug("skipping already indexed file", "file", path)
+
+		info, err := d.Info()
+		if err != nil {
+			slog.Warn("failed to stat file", "file", path, "error", err)
 			return nil
 		}
+
+		key, ok := canonicalDocumentPath(path)
+		if ok {
+			if known, exists := knownFiles[key]; exists && sameSourceFile(info, known) {
+				slog.Debug("skipping unchanged indexed file", "file", path)
+				return nil
+			}
+			if known, exists := knownFiles[key]; exists {
+				slog.Info("re-indexing changed file", "file", path)
+				if err := p.RemoveDocument(ctx, known.ID); err != nil {
+					slog.Warn("failed to remove changed indexed file", "file", path, "error", err)
+					return nil
+				}
+			}
+		}
+
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		default:
+		}
+
 		_, chunks, err := p.ProcessFile(ctx, path)
 		if err != nil {
 			slog.Warn("failed to process file", "file", path, "error", err)
@@ -201,6 +237,30 @@ func (p *Processor) ProcessDirectory(ctx context.Context, dir string) (int, int,
 	}
 
 	return processed, totalChunks, nil
+}
+
+func canonicalDocumentPath(path string) (string, bool) {
+	if strings.TrimSpace(path) == "" {
+		return "", false
+	}
+	if strings.HasPrefix(path, "http://") || strings.HasPrefix(path, "https://") {
+		return "", false
+	}
+	absPath, err := filepath.Abs(path)
+	if err != nil {
+		return "", false
+	}
+	return strings.ToLower(filepath.Clean(absPath)), true
+}
+
+func sameSourceFile(info os.FileInfo, doc vectorstore.DocumentInfo) bool {
+	if info == nil {
+		return false
+	}
+	if info.Size() != doc.Size {
+		return false
+	}
+	return !doc.ModifiedAt.IsZero() && info.ModTime().Equal(doc.ModifiedAt)
 }
 
 func (p *Processor) RemoveDocument(ctx context.Context, docID string) error {

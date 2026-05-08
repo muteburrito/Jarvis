@@ -137,6 +137,9 @@ func (s *Server) handleIngestPath(w http.ResponseWriter, r *http.Request) {
 			"symbols": fmt.Sprintf("%d", repoMap.SymbolCount),
 		})
 	}
+	if err := workbench.SaveWatchedFolder(s.cfg.DataDir, req.Path); err != nil {
+		slog.Warn("failed to save watched folder", "path", req.Path, "error", err)
+	}
 
 	writeJSON(w, http.StatusOK, map[string]interface{}{
 		"processed": processed,

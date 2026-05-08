@@ -12,6 +12,7 @@ No data leaves your machine. No API keys needed. Single binary, runs anywhere.
 - **General chat:** works as a regular assistant even without documents loaded
 - **Streaming responses:** token-by-token SSE streaming with markdown rendering
 - **Recursive folder indexing:** point it at a C#, Go, Python (or any) project and it walks all subdirectories, skipping build output like `bin/`, `obj/`, `node_modules/`
+- **Watched folders:** indexed folders are remembered and checked in the background, so new and changed files are refreshed without clearing the index
 - **Wide file support:** PDF, DOCX, XLSX, PPTX, images, known source files, and unknown text-like files. Binary files are rejected
 - **Hybrid retrieval:** combines vector similarity with BM25 keyword scoring for better exact matches on code symbols, error codes, and config keys
 - **Workspace map:** folder ingest maps regular files, Office documents, PDFs, images, data files, source files, and code symbols
@@ -142,6 +143,7 @@ internal/
     math.go                    Vector math utilities
   workbench/
     chat.go                    Local chat session store
+    folders.go                 Watched folder persistence for background re-indexing
     repo.go                    Workspace map, file classification, and symbol scanning
     task.go                    Task state, traces, and edit history
   rag/
@@ -196,12 +198,13 @@ packaging/
 
 ## How It Works
 
-1. **Upload or index:** files are split into overlapping text chunks. Images (standalone or extracted from PDFs) are described by a vision model, and those descriptions become searchable text. URLs pasted in the main chat box are auto-detected and fetched.
+1. **Upload or index:** files are split into overlapping text chunks. Images (standalone or extracted from PDFs) are described by a vision model, and those descriptions become searchable text. URLs pasted in the main chat box are auto-detected and fetched. Indexed folders are remembered for background refreshes.
 2. **Embed:** each chunk is converted to a vector using `nomic-embed-text` via Ollama
 3. **Store:** vectors are kept in memory and persisted to disk in gob format
 4. **Map:** folder ingest also builds a workspace map for files, documents, images, data, code symbols, and imports
-5. **Query:** your question is embedded, the most similar chunks are retrieved, and they are passed as context to the LLM. Reply context and focused `@file` mentions are included when present. Your locale and timezone are included so answers use local conventions.
-6. **Stream:** the LLM response streams back token-by-token via Server-Sent Events
+5. **Refresh:** watched folders are checked in the background. New and modified files are re-indexed, and the workspace map is refreshed.
+6. **Query:** your question is embedded, the most similar chunks are retrieved, and they are passed as context to the LLM. Reply context and focused `@file` mentions are included when present. Your locale and timezone are included so answers use local conventions.
+7. **Stream:** the LLM response streams back token-by-token via Server-Sent Events
 
 ### Workbench
 

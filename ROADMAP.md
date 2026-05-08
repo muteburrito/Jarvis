@@ -32,7 +32,7 @@ Recent coding-agent tools point toward a few patterns worth copying:
 | **Workspace map** | Done. Folder ingest maps regular documents, PDFs, images, spreadsheets, presentations, data files, source files, and code symbols. |
 | **Reply and focused file context** | Done. Users can reply to a specific message and use `@file` or `#file` mentions to focus retrieval on indexed files. |
 | **Windows installer bootstrap** | Done for Windows. Manual NSIS installs check/install Ollama and pull Jarvis models. Silent auto-updates skip bootstrap. |
-| **Scheduled folder re-indexing** | Watch folders for file changes and re-index modified or new files in the background. Useful for live wikis, shared drives, and actively developed codebases. |
+| **Scheduled folder re-indexing** | Done. Folder ingest saves watched folders and refreshes new or modified files in the background while keeping workspace maps current. |
 | **Multiple named workspaces** | Save and switch between named document sets. Each workspace should have its own vector store, documents, and chat history. |
 | **Vector compression research** | Evaluate TurboQuant, QJL, and PolarQuant ideas for compressing Jarvis embeddings or adding an approximate search tier. Reference: https://research.google/blog/turboquant-redefining-ai-efficiency-with-extreme-compression/ |
 | **Workspace map depth** | Add richer document metadata, media dimensions, Office document summaries, package boundaries, tests, and better file grouping. |
