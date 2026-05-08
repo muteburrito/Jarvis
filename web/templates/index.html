@@ -921,6 +921,150 @@
                     </template>
                 </div>
 
+                <div class="workbench-map-panel">
+                    <div class="mb-3 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                        <div class="min-w-0">
+                            <div class="flex flex-wrap items-center gap-2">
+                                <h3 class="text-sm font-semibold text-slate-100">Local changes</h3>
+                                <span x-show="diffSummary" class="workspace-count-pill is-files">
+                                    <span x-text="diffSummaryStats().files"></span>
+                                    <span> files</span>
+                                </span>
+                                <span x-show="diffSummary && diffSummaryStats().additions > 0" class="diff-count is-add">
+                                    +<span x-text="diffSummaryStats().additions"></span>
+                                </span>
+                                <span x-show="diffSummary && diffSummaryStats().deletions > 0" class="diff-count is-delete">
+                                    -<span x-text="diffSummaryStats().deletions"></span>
+                                </span>
+                            </div>
+                            <p x-show="diffSummary" class="mt-1 truncate text-xs text-slate-500" x-text="diffSummaryStats().root"></p>
+                            <p x-show="!diffSummary" class="mt-1 text-xs text-slate-500">Open a git-backed project to review changed files and patches.</p>
+                        </div>
+                        <button @click="loadDiffSummary()"
+                                class="workbench-secondary-button shrink-0">
+                            Refresh changes
+                        </button>
+                    </div>
+
+                    <template x-if="diffSummary && diffSummaryStats().files === 0">
+                        <div class="workspace-empty-row">No local changes</div>
+                    </template>
+                    <template x-if="diffSummary && diffSummaryStats().files > 0">
+                        <div class="diff-file-list">
+                            <template x-for="file in diffSummary.files" :key="file.path">
+                                <div class="diff-file-item">
+                                    <button type="button"
+                                            class="diff-file-row"
+                                            @click="toggleDiff(file.path)">
+                                        <div class="min-w-0">
+                                            <div class="flex items-center gap-2">
+                                                <span class="truncate text-sm font-medium text-slate-100" x-text="file.path"></span>
+                                                <span class="diff-status" x-text="diffStatusLabel(file)"></span>
+                                            </div>
+                                        </div>
+                                        <div class="flex shrink-0 items-center gap-3">
+                                            <span class="diff-count is-add">+<span x-text="file.additions || 0"></span></span>
+                                            <span class="diff-count is-delete">-<span x-text="file.deletions || 0"></span></span>
+                                            <svg class="h-4 w-4 text-slate-400 transition-transform"
+                                                 :class="{ 'rotate-180': isDiffExpanded(file.path) }"
+                                                 fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                      d="M19 9l-7 7-7-7"></path>
+                                            </svg>
+                                        </div>
+                                    </button>
+                                    <div x-show="isDiffExpanded(file.path)" class="diff-patch">
+                                        <template x-for="(line, lineIndex) in diffLines(file)" :key="file.path + lineIndex">
+                                            <div class="diff-line" :class="diffLineClass(line)">
+                                                <span x-text="line || ' '"></span>
+                                            </div>
+                                        </template>
+                                        <p x-show="file.truncated" class="diff-truncated">Patch truncated for performance.</p>
+                                    </div>
+                                </div>
+                            </template>
+                        </div>
+                    </template>
+                </div>
+
+                <div class="workbench-map-panel">
+                    <div class="mb-3 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                        <div class="min-w-0">
+                            <div class="flex flex-wrap items-center gap-2">
+                                <h3 class="text-sm font-semibold text-slate-100">Read-only project tools</h3>
+                                <span class="workspace-count-pill is-symbols">
+                                    <span x-text="toolResults.length"></span>
+                                    <span> results</span>
+                                </span>
+                            </div>
+                            <p class="mt-1 text-xs text-slate-500">Search and inspect active-project files without modifying anything.</p>
+                        </div>
+                    </div>
+                    <div class="mb-3 flex flex-col gap-2 sm:flex-row">
+                        <input x-model="toolSearch"
+                               @keydown.enter.prevent="searchProjectTools()"
+                               type="search"
+                               placeholder="Search project files"
+                               class="workspace-search-input">
+                        <button @click="searchProjectTools()"
+                                class="workbench-secondary-button shrink-0">
+                            Search
+                        </button>
+                    </div>
+                    <div class="project-tools-layout">
+                        <div class="project-tool-results">
+                            <template x-if="toolResults.length === 0">
+                                <div class="workspace-empty-row" x-text="toolLoading ? 'Searching...' : 'No file results yet'"></div>
+                            </template>
+                            <template x-for="file in toolResults" :key="file.path">
+                                <button type="button"
+                                        class="project-tool-row"
+                                        @click="previewProjectFile(file.path)">
+                                    <div class="min-w-0">
+                                        <p class="truncate text-sm font-medium text-slate-100" x-text="file.path"></p>
+                                        <p class="truncate text-xs text-slate-500">
+                                            <span x-text="file.kind"></span>
+                                            <span x-text="' , ' + (file.language || 'unknown')"></span>
+                                            <span x-text="' , ' + formatBytes(file.size_bytes)"></span>
+                                        </p>
+                                    </div>
+                                </button>
+                            </template>
+                        </div>
+                        <div class="project-tool-preview">
+                            <template x-if="!toolPreview">
+                                <div class="workspace-empty-row">Select a file to preview its summary.</div>
+                            </template>
+                            <template x-if="toolPreview">
+                                <div>
+                                    <div class="mb-2 flex min-w-0 items-start justify-between gap-3">
+                                        <div class="min-w-0">
+                                            <p class="truncate text-sm font-semibold text-slate-100" x-text="toolPreview.path"></p>
+                                            <p class="truncate text-xs text-slate-500" x-text="toolPreview.description"></p>
+                                        </div>
+                                        <span class="diff-status" x-text="toolPreview.kind"></span>
+                                    </div>
+                                    <div x-show="toolPreview.symbols && toolPreview.symbols.length" class="mb-2 flex flex-wrap gap-2">
+                                        <template x-for="symbol in (toolPreview.symbols || []).slice(0, 8)" :key="symbol.file_path + symbol.line + symbol.name">
+                                            <span class="repo-language-chip">
+                                                <span x-text="symbol.kind"></span>
+                                                <strong x-text="symbol.name"></strong>
+                                            </span>
+                                        </template>
+                                    </div>
+                                    <div class="diff-patch is-preview">
+                                        <template x-for="(line, lineIndex) in toolPreviewLines()" :key="lineIndex">
+                                            <div class="diff-line">
+                                                <span x-text="line || ' '"></span>
+                                            </div>
+                                        </template>
+                                    </div>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+                </div>
+
                 <template x-if="!taskState">
                     <div class="workbench-empty-state">No workbench state loaded yet</div>
                 </template>

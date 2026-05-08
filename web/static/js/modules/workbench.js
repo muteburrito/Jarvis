@@ -28,12 +28,69 @@ window.jarvisWorkbench = {
             } catch {}
         },
 
+        async loadDiffSummary() {
+            try {
+                const resp = await fetch(this.apiURL('/api/v1/diff'));
+                if (resp.ok) {
+                    this.diffSummary = await resp.json();
+                } else {
+                    this.diffSummary = null;
+                }
+            } catch {
+                this.diffSummary = null;
+            }
+        },
+
+        async searchProjectTools() {
+            this.toolLoading = true;
+            try {
+                const params = new URLSearchParams();
+                if ((this.toolSearch || '').trim()) {
+                    params.set('query', this.toolSearch.trim());
+                }
+                params.set('limit', '40');
+                const resp = await fetch(this.apiURL(`/api/v1/tools/files?${params.toString()}`));
+                if (!resp.ok) throw new Error('Search failed');
+                const data = await resp.json();
+                this.toolResults = data.files || [];
+                if (this.toolResults.length === 0) {
+                    this.toolPreview = null;
+                }
+            } catch {
+                this.toolResults = [];
+                this.showToast('Project file search failed', 'error');
+            } finally {
+                this.toolLoading = false;
+            }
+        },
+
+        async previewProjectFile(path) {
+            this.toolLoading = true;
+            try {
+                const resp = await fetch(this.apiURL('/api/v1/tools/summarize-file'), {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ path })
+                });
+                if (!resp.ok) throw new Error('Preview failed');
+                this.toolPreview = await resp.json();
+            } catch {
+                this.showToast('File preview failed', 'error');
+            } finally {
+                this.toolLoading = false;
+            }
+        },
+
         async openWorkbenchPanel() {
             await Promise.all([
                 this.loadTaskState(),
                 this.loadRepoMap(),
-                this.loadProjects()
+                this.loadProjects(),
+                this.loadDiffSummary()
             ]);
+            if (this.toolResults.length === 0) {
+                this.searchProjectTools();
+            }
             this.showWorkbenchPanel = true;
         },
 
@@ -78,6 +135,50 @@ window.jarvisWorkbench = {
                 symbols: repo.symbol_count || (repo.symbols || []).length || 0,
                 updated: repo.updated_at || ''
             };
+        },
+
+        diffSummaryStats() {
+            const summary = this.diffSummary || {};
+            return {
+                root: summary.root || '',
+                files: summary.file_count || (summary.files || []).length || 0,
+                additions: summary.additions || 0,
+                deletions: summary.deletions || 0
+            };
+        },
+
+        toggleDiff(path) {
+            this.expandedDiffs = {
+                ...this.expandedDiffs,
+                [path]: !this.expandedDiffs[path]
+            };
+        },
+
+        isDiffExpanded(path) {
+            return Boolean(this.expandedDiffs?.[path]);
+        },
+
+        diffLines(file, limit = 500) {
+            const patch = file?.patch || 'No text patch available.';
+            return patch.split('\n').slice(0, limit);
+        },
+
+        diffLineClass(line) {
+            if (line.startsWith('+') && !line.startsWith('+++')) return 'is-add';
+            if (line.startsWith('-') && !line.startsWith('---')) return 'is-delete';
+            if (line.startsWith('@@')) return 'is-hunk';
+            if (line.startsWith('diff --git')) return 'is-header';
+            return '';
+        },
+
+        diffStatusLabel(file) {
+            if (file?.binary) return `${file.status || 'changed'} binary`;
+            return file?.status || 'changed';
+        },
+
+        toolPreviewLines(limit = 80) {
+            const excerpt = this.toolPreview?.excerpt || this.toolPreview?.description || '';
+            return excerpt.split('\n').slice(0, limit);
         },
 
         workspaceTypeBreakdown(limit = 8) {

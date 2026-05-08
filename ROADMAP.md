@@ -35,6 +35,7 @@ Recent coding-agent tools point toward a few patterns worth copying:
 | **Scheduled folder re-indexing** | Done. Folder ingest saves watched folders and refreshes new or modified files in the background while keeping workspace maps current. |
 | **Codex-style chat workspace** | Done. Neutral desktop theme, queued follow-ups, editable/reorderable queue, response copy/rating/fork controls, response timing, and expanded in-app Help. |
 | **Project foundation** | Done. Indexed folders become persisted projects with an active project, workspace map, watched re-indexing, and a reserved per-project vector-store path for the agent workflow. |
+| **Local diff review** | Done. The Workbench shows changed-file totals, additions, deletions, statuses, and expandable text patches for the active git project. |
 | **Multiple named workspaces** | Save and switch between named document sets. Each workspace should have its own vector store, documents, and chat history. |
 | **Vector compression research** | Evaluate TurboQuant, QJL, and PolarQuant ideas for compressing Jarvis embeddings or adding an approximate search tier. Reference: https://research.google/blog/turboquant-redefining-ai-efficiency-with-extreme-compression/ |
 | **Workspace map depth** | Add richer document metadata, media dimensions, Office document summaries, package boundaries, tests, and better file grouping. |
@@ -60,6 +61,7 @@ Included:
 - Pasted image previews and image indexing through the normal document pipeline
 - Queued chat follow-ups with edit, reorder, and remove controls
 - Response copy, rating, fork, and working-time controls
+- Local git change summary and expandable diff review for the active project
 - Watched folder background re-indexing
 - Safe clear-index behavior that preserves external source files
 - Neutral Codex-style UI theme and updated Help modal
@@ -86,7 +88,7 @@ The Codex-like workflow is possible, but it should land in careful layers:
 2. **Project-scoped storage:** each project gets its own vector store, chat state, workspace map, command policy, and edit history. This prevents one project from polluting another project's retrieval.
 3. **Read-only tools:** list files, search files, read files, inspect symbols, summarize files, and fetch project context.
 4. **Command tools:** run approved commands with working directory controls, timeouts, output capture, and allowlists.
-5. **Patch tools:** propose file edits as diffs, show review UI, apply only approved patches, and record edit history.
+5. **Patch tools:** propose file edits as diffs, show review UI, apply only approved patches, and record edit history. The first read-only diff review surface is now available in the Workbench.
 6. **Review and test loop:** run tests, parse failures, update patches, and produce a final review summary.
 
 Scheduled folder re-indexing helps this directly because it keeps the active project's local context current while the agent works.
