@@ -10,6 +10,8 @@ function chatApp() {
         showDocumentsPanel: false,
         showWorkbenchPanel: false,
         taskState: null,
+        repoMap: null,
+        repoSearch: '',
         uploadProgress: 0,
         isUploading: false,
         uploadingName: '',

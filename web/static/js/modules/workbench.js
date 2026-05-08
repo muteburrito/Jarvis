@@ -8,8 +8,22 @@ window.jarvisWorkbench = {
             } catch {}
         },
 
+        async loadRepoMap() {
+            try {
+                const resp = await fetch(this.apiURL('/api/v1/repo-map'));
+                if (resp.ok) {
+                    this.repoMap = await resp.json();
+                } else if (resp.status === 404) {
+                    this.repoMap = null;
+                }
+            } catch {}
+        },
+
         async openWorkbenchPanel() {
-            await this.loadTaskState();
+            await Promise.all([
+                this.loadTaskState(),
+                this.loadRepoMap()
+            ]);
             this.showWorkbenchPanel = true;
         },
 
@@ -33,6 +47,65 @@ window.jarvisWorkbench = {
                 edits: (task.edit_history || []).length,
                 model: task.selected_model || this.systemInfo?.chat_model || ''
             };
+        },
+
+        repoSummary() {
+            const repo = this.repoMap || {};
+            return {
+                root: repo.root || '',
+                files: repo.file_count || (repo.files || []).length || 0,
+                symbols: repo.symbol_count || (repo.symbols || []).length || 0,
+                updated: repo.updated_at || ''
+            };
+        },
+
+        workspaceTypeBreakdown(limit = 8) {
+            const counts = new Map();
+            for (const file of this.repoMap?.files || []) {
+                const type = file.kind || file.language || 'file';
+                counts.set(type, (counts.get(type) || 0) + 1);
+            }
+            return Array.from(counts.entries())
+                .map(([type, count]) => ({ type, count }))
+                .sort((a, b) => b.count - a.count || a.type.localeCompare(b.type))
+                .slice(0, limit);
+        },
+
+        filteredWorkspaceFiles(limit = 80) {
+            const files = this.repoMap?.files || [];
+            const query = (this.repoSearch || '').trim().toLowerCase();
+            return files
+                .filter(file => {
+                    if (!query) return true;
+                    return (
+                        (file.path || '').toLowerCase().includes(query) ||
+                        (file.kind || '').toLowerCase().includes(query) ||
+                        (file.language || '').toLowerCase().includes(query)
+                    );
+                })
+                .sort((a, b) => (a.path || '').localeCompare(b.path || ''))
+                .slice(0, limit);
+        },
+
+        filteredSymbols(limit = 50) {
+            const symbols = this.repoMap?.symbols || [];
+            const query = (this.repoSearch || '').trim().toLowerCase();
+            return symbols
+                .filter(symbol => {
+                    if (!query) return true;
+                    return (
+                        (symbol.name || '').toLowerCase().includes(query) ||
+                        (symbol.kind || '').toLowerCase().includes(query) ||
+                        (symbol.file_path || '').toLowerCase().includes(query) ||
+                        (symbol.language || '').toLowerCase().includes(query)
+                    );
+                })
+                .sort((a, b) => {
+                    const fileCompare = (a.file_path || '').localeCompare(b.file_path || '');
+                    if (fileCompare !== 0) return fileCompare;
+                    return (a.line || 0) - (b.line || 0);
+                })
+                .slice(0, limit);
         },
 
         recentWorkbenchEvents(limit = 30) {

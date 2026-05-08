@@ -20,6 +20,7 @@ type RepoMap struct {
 
 type RepoFile struct {
 	Path      string   `json:"path"`
+	Kind      string   `json:"kind"`
 	Language  string   `json:"language"`
 	Imports   []string `json:"imports,omitempty"`
 	SizeBytes int64    `json:"size_bytes"`
@@ -75,16 +76,12 @@ func ScanRepository(root string) (*RepoMap, error) {
 			return nil
 		}
 
-		language := languageForPath(path)
-		if language == "" {
+		kind, language := classifyWorkspaceFile(path)
+		if kind == "" {
 			return nil
 		}
 
 		info, err := d.Info()
-		if err != nil {
-			return nil
-		}
-		content, err := os.ReadFile(path)
 		if err != nil {
 			return nil
 		}
@@ -95,14 +92,23 @@ func ScanRepository(root string) (*RepoMap, error) {
 		}
 		relPath = filepath.ToSlash(relPath)
 
-		text := string(content)
-		repo.Files = append(repo.Files, RepoFile{
+		file := RepoFile{
 			Path:      relPath,
+			Kind:      kind,
 			Language:  language,
-			Imports:   extractImports(text, language),
 			SizeBytes: info.Size(),
-		})
-		repo.Symbols = append(repo.Symbols, extractSymbols(text, relPath, language)...)
+		}
+
+		if isTextReadable(kind, language) {
+			content, err := os.ReadFile(path)
+			if err == nil {
+				text := string(content)
+				file.Imports = extractImports(text, language)
+				repo.Symbols = append(repo.Symbols, extractSymbols(text, relPath, language)...)
+			}
+		}
+
+		repo.Files = append(repo.Files, file)
 		return nil
 	})
 	if err != nil {
@@ -137,26 +143,83 @@ func LoadRepoMap(dir string) (*RepoMap, error) {
 	return &repo, nil
 }
 
-func languageForPath(path string) string {
+func classifyWorkspaceFile(path string) (string, string) {
 	switch strings.ToLower(filepath.Ext(path)) {
 	case ".go":
-		return "go"
+		return "code", "go"
 	case ".js", ".jsx":
-		return "javascript"
+		return "code", "javascript"
 	case ".ts", ".tsx":
-		return "typescript"
+		return "code", "typescript"
 	case ".py":
-		return "python"
+		return "code", "python"
 	case ".cs":
-		return "csharp"
+		return "code", "csharp"
+	case ".java":
+		return "code", "java"
+	case ".c", ".cpp", ".h":
+		return "code", "cpp"
+	case ".rs":
+		return "code", "rust"
+	case ".rb":
+		return "code", "ruby"
+	case ".sh":
+		return "code", "shell"
+	case ".css":
+		return "code", "css"
+	case ".html":
+		return "code", "html"
+	case ".sql":
+		return "code", "sql"
+	case ".kt":
+		return "code", "kotlin"
+	case ".swift":
+		return "code", "swift"
+	case ".php":
+		return "code", "php"
 	case ".json":
-		return "json"
+		return "data", "json"
 	case ".yaml", ".yml":
-		return "yaml"
+		return "data", "yaml"
+	case ".xml":
+		return "data", "xml"
+	case ".csv":
+		return "spreadsheet", "csv"
+	case ".xlsx":
+		return "spreadsheet", "xlsx"
+	case ".xls":
+		return "spreadsheet", "xls"
+	case ".docx":
+		return "document", "docx"
+	case ".doc":
+		return "document", "doc"
+	case ".pptx":
+		return "presentation", "pptx"
+	case ".ppt":
+		return "presentation", "ppt"
+	case ".pdf":
+		return "pdf", "pdf"
+	case ".png", ".jpg", ".jpeg", ".gif", ".bmp", ".webp", ".tiff", ".tif":
+		return "image", strings.TrimPrefix(strings.ToLower(filepath.Ext(path)), ".")
 	case ".md":
-		return "markdown"
+		return "document", "markdown"
+	case ".txt", ".log":
+		return "text", strings.TrimPrefix(strings.ToLower(filepath.Ext(path)), ".")
+	case ".toml", ".ini", ".cfg", ".conf", ".tf", ".hcl":
+		return "config", strings.TrimPrefix(strings.ToLower(filepath.Ext(path)), ".")
 	default:
-		return ""
+		return "", ""
+	}
+}
+
+func isTextReadable(kind, language string) bool {
+	switch kind {
+	case "code", "data", "text", "config":
+		return true
+	case "document":
+		return language == "markdown"
+	default:
+		return false
 	}
 }
 
