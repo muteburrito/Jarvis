@@ -1,6 +1,6 @@
 # Jarvis - Chat with your Documents
 
-A local, privacy-first document chatbot and workbench built with Go, Wails, and Alpine.js. Upload PDFs, DOCX, XLSX, PPTX, images, code files, or point it at an entire folder. It indexes everything locally and lets you ask questions using a local LLM through Ollama. It can also search the web and research topics for you.
+A local, privacy-first document chatbot and workbench built with Go, Wails, and Alpine.js. Upload PDFs, DOCX, XLSX, PPTX, images, code files, or point it at an entire folder. It indexes everything locally and lets you ask questions using a local Gemma-first LLM through Ollama today, with direct llama.cpp support planned. It can also search the web and research topics for you.
 
 No data leaves your machine. No API keys needed. Single binary, runs anywhere.
 
@@ -21,6 +21,7 @@ No data leaves your machine. No API keys needed. Single binary, runs anywhere.
 - **Project foundation:** indexed folders are saved as projects with an active project, workspace map, watched re-indexing, and a reserved project vector-store path for future agent workflows
 - **Workbench activity:** inspect the active project, workspace map summary, local git changes, and recent task activity without crowding the chat UI
 - **Image support:** upload standalone images (PNG, JPG, etc.) or PDFs with embedded images. A vision model describes each image so it becomes searchable and queryable
+- **Gemma 4 profiles:** Gemma-specific prompt guidance, sampling defaults, research thinking mode cleanup, and capability metadata are kept in Go code
 - **Live context:** normal chat uses current date/time, browser locale, timezone, pasted URLs, and selective web context for current questions when available, without searching every message
 - **Deep research mode:** toggle research mode when you want visible search progress, fetched sources, citations, and links. No API key needed
 - **URL fetching:** paste a website link directly in chat. Jarvis auto-detects URLs in normal chat messages, fetches the page, and indexes it quietly. URLs inside the code snippet box are treated as code and are not fetched
@@ -49,6 +50,8 @@ ollama pull llava              # optional, enables image support
 ```
 
 Jarvis picks the chat model automatically when `CHAT_MODEL` is not set. Very low-end machines use `gemma4:e2b`; everyone else uses `gemma4:e4b`. The larger `26b` model is not selected automatically because Jarvis is local and RAG-first, and speed matters more for daily use. If Ollama is running but the required chat or embedding model is missing, Jarvis downloads it automatically on startup. Manual pulls are still useful for preparing a machine ahead of time.
+
+Gemma 4 is treated as the primary model family. Jarvis uses Gemma 4 defaults for chat quality, including `temperature=1.0`, `top_p=0.95`, and `top_k=64`. Query generation stays deterministic. Based on Google's official Gemma 4 model card and the local runtime guide, Jarvis treats Gemma as text-output multimodal understanding, not native media generation: E2B/E4B can handle text, image, audio, and short video understanding, while 26B-A4B/31B focus on stronger text and image reasoning. Gemma 4 also guides the agent roadmap through thinking mode, system prompts, function calling, coding, multilingual support, and long context. Image, audio, or video generation would need separate optional generation models.
 
 ## Quick Start
 
@@ -147,6 +150,7 @@ internal/
   app/runtime.go               Shared application bootstrap for server and desktop modes
   config/config.go             Environment-based configuration
   ollama/client.go             Ollama API wrapper (chat, embeddings, vision)
+  gemma/                       Gemma 4 profiles, capabilities, options, thinking cleanup
   websearch/
     duckduckgo.go              DuckDuckGo HTML search scraper
     research.go                Research orchestrator (query gen, search, fetch)

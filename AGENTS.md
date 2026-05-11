@@ -57,7 +57,8 @@ The GitHub updater only runs on proper semver builds. When creating a release, b
 - `cmd/server/main.go` is the browser/server entry point. `cmd/desktop/main.go` is the Wails desktop entry point. Both use `internal/app/runtime.go` for shared startup wiring. Each command declares `var Version = "dev"` which release builds overwrite via ldflags.
 - `internal/app/` initializes config, Ollama, required models, vector store, document processor, RAG chain, research mode, task/chat stores, updater, and the shared HTTP server.
 - `internal/config/` loads settings from environment variables. Key fields: `OllamaURL`, `OllamaKeepAlive`, `ChatModel`, `EmbeddingModel`, `VisionModel`, `GitHubRepo`, `GitHubToken`, `AppName`, `SupportEmail`, `SupportSubject`, and `SupportURL`.
-- `internal/ollama/` wraps the Ollama Go client for embeddings, chat streaming, and image description.
+- `internal/gemma/` owns Gemma 4 model profiles, capability metadata, recommended sampling options, thinking prompts, and thought-block cleanup. Keep this package pure Go and dependency-free.
+- `internal/ollama/` wraps the Ollama Go client for embeddings, chat streaming, and image description. It uses Gemma 4 defaults when the selected chat model is Gemma 4.
 - `internal/document/` handles file loading (PDF, DOCX, XLSX, PPTX, images, code, and unknown text-like files), URL fetching, text chunking, and the processing pipeline. Images are described by the vision model before embedding. Folder indexing skips unchanged files by comparing size and modification time. `web.go` handles HTML-to-text extraction for fetched URLs using `golang.org/x/net/html`.
 - Clear indexed files must clear the vector store and remove only Jarvis-owned uploaded copies inside `DataDir`. It must not delete external source files that were indexed from a folder path, and it must preserve app state files such as chats, task state, and workspace maps.
 - `internal/vectorstore/` is the in-memory vector store with hybrid retrieval, cosine vector similarity plus BM25 keyword scoring, and disk persistence.
@@ -85,7 +86,9 @@ The GitHub updater only runs on proper semver builds. When creating a release, b
 
 ## Key Design Decisions
 
-- Ollama handles chat, embeddings (nomic-embed-text), and vision (llava). This avoids needing Python or PyTorch.
+- Ollama currently handles chat, embeddings (nomic-embed-text), and vision (llava). This avoids needing Python or PyTorch while the direct llama.cpp adapter is still planned.
+- Gemma 4 is the primary model family. Treat Google's official Gemma 4 model card as the capability source of truth and Unsloth as the local runtime reference. Gemma 4 is a text-output multimodal understanding stack: E2B/E4B support text, image, audio, and short video understanding; 26B-A4B/31B support text and image understanding. It also supports thinking, system prompts, function calling, coding, multilingual use, and long context. Do not claim native image, audio, or video generation without adding separate generation models.
+- Keep the future llama.cpp path pure Go at the Jarvis layer. Prefer a Go-managed external `llama-server` or bundled runtime process before considering CGo bindings.
 - The vector store is in-memory with gob persistence. This avoids CGo and works cleanly on Windows.
 - RAG retrieval uses hybrid search. Keep BM25 pure Go and dependency-free so exact identifiers, error codes, function names, and config keys rank well alongside semantic matches.
 - Folder ingest builds a lightweight workspace map for regular files and code. It classifies documents, PDFs, spreadsheets, presentations, images, data, config, text, and code files. It extracts symbols/imports only for supported text/code files. Keep scanners fast and dependency-free unless the roadmap explicitly moves to tree-sitter.
@@ -113,7 +116,7 @@ The GitHub updater only runs on proper semver builds. When creating a release, b
 - The sidebar owns folder indexing. The chat header owns indexed files. The main input bar owns message attachments: paper clip for files and a code snippet toggle with automatic language detection and syntax-highlighted preview. Avoid reintroducing large upload, folder path, URL fetch panels, or duplicate document buttons in the composer.
 - Pasted images in the chat input must show a compact preview before send. On send, upload them through the normal document pipeline so the vision model describes and indexes them before the chat request runs.
 - The `web/` folder is embedded via `go:embed`. No external files are needed to run the exe.
-- Research mode uses DuckDuckGo HTML scraping (no API key). The LLM generates 2-3 search queries, results are fetched and indexed, then the RAG chain answers with a research-specific prompt emphasising source citations. Research progress must be sent as structured SSE progress events, not markdown status text mixed into the answer.
+- Research mode uses DuckDuckGo HTML scraping (no API key). The LLM generates 2-3 search queries, results are fetched and indexed, then the RAG chain answers with a research-specific prompt emphasising source citations. Research progress must be sent as structured SSE progress events, not markdown status text mixed into the answer. Gemma 4 research mode may enable `<|think|>`, but hidden thinking must never be shown to the user or written back into chat history.
 - Prompt templates were removed from the composer. Keep the main chat input direct and uncluttered.
 - The Wails desktop target starts a hidden loopback API server on `127.0.0.1` and injects that API base into the frontend. Keep this path for streaming endpoints because Wails' asset server can buffer response-body streaming on Windows.
 - Build the Wails desktop target with `wails build` or `go build -tags "desktop,production" ./cmd/desktop`. A plain `go build ./cmd/desktop` binary shows Wails' missing build-tags error dialog.

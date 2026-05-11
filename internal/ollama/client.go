@@ -11,6 +11,7 @@ import (
 	"github.com/ollama/ollama/api"
 
 	"go-chatbot/internal/config"
+	"go-chatbot/internal/gemma"
 )
 
 type Client struct {
@@ -113,9 +114,7 @@ func (c *Client) ChatStreamWithModel(ctx context.Context, model string, messages
 		Messages:  messages,
 		Stream:    &stream,
 		KeepAlive: c.keepAlive(),
-		Options: map[string]interface{}{
-			"temperature": 0.0,
-		},
+		Options:   gemma.Options(model, false),
 	}
 
 	return c.api.Chat(ctx, req, func(resp api.ChatResponse) error {
@@ -142,9 +141,7 @@ func (c *Client) ChatOnceWithModel(ctx context.Context, model string, messages [
 		Messages:  messages,
 		Stream:    &stream,
 		KeepAlive: c.keepAlive(),
-		Options: map[string]interface{}{
-			"temperature": 0.0,
-		},
+		Options:   gemma.Options(model, true),
 	}
 
 	var result string

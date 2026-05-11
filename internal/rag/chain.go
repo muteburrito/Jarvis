@@ -8,6 +8,7 @@ import (
 	ollamaapi "github.com/ollama/ollama/api"
 
 	"go-chatbot/internal/config"
+	"go-chatbot/internal/gemma"
 	"go-chatbot/internal/ollama"
 	"go-chatbot/internal/vectorstore"
 	"go-chatbot/internal/workbench"
@@ -69,12 +70,12 @@ func (c *Chain) Query(ctx context.Context, question string, history []ollamaapi.
 		sources = buildSourceList(results)
 
 		if opts.ResearchMode {
-			systemContent = fmt.Sprintf(researchPromptTemplate, ragContext)
+			systemContent = buildSystemPrompt(opts.ChatModel, gemma.ProfileResearch, fmt.Sprintf(researchPromptTemplate, ragContext))
 		} else {
-			systemContent = fmt.Sprintf(systemPromptTemplate, ragContext)
+			systemContent = buildSystemPrompt(opts.ChatModel, gemma.ProfileChat, fmt.Sprintf(systemPromptTemplate, ragContext))
 		}
 	} else {
-		systemContent = directChatPrompt
+		systemContent = buildSystemPrompt(opts.ChatModel, gemma.ProfileChat, directChatPrompt)
 	}
 
 	if opts.Locale != "" || opts.Timezone != "" {
@@ -102,7 +103,16 @@ func (c *Chain) Query(ctx context.Context, question string, history []ollamaapi.
 		Content: question,
 	})
 
-	if err := c.ollama.ChatStreamWithModel(ctx, opts.ChatModel, messages, onToken); err != nil {
+	tokenHandler := onToken
+	if gemma.IsGemma4(opts.ChatModel) {
+		filter := gemma.NewThinkingFilter(onToken)
+		tokenHandler = filter.Write
+		defer func() {
+			_ = filter.Flush()
+		}()
+	}
+
+	if err := c.ollama.ChatStreamWithModel(ctx, opts.ChatModel, messages, tokenHandler); err != nil {
 		return nil, fmt.Errorf("chat stream: %w", err)
 	}
 

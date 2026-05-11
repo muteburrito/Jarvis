@@ -23,7 +23,9 @@ Recent coding-agent tools point toward a few patterns worth copying:
 - Continue.dev is strong at IDE-style roles: chat, edit, apply, autocomplete, embeddings, and reranking. Jarvis should adopt the role separation even if it stays web-based.
 - Aider is a useful reference for git-aware editing, workspace maps, focused multi-file patches, automatic test runs, and commit-message generation.
 - Localforge is a good UI reference for local tasks, visual diffs, model switching, task tracking, and expert/review modes.
+- Google's official Gemma 4 31B Hugging Face card is the source of truth for model capabilities: image-text-to-text, Apache 2.0 license, text generation output, text/image input across the family, audio on E2B/E4B, 128K/256K context tiers, configurable thinking, system role support, native function calling, coding, multilingual support, and agentic workflows. Reference: https://huggingface.co/google/gemma-4-31B
 - Unsloth's Gemma 4 local guide is a good runtime reference: Gemma 4 GGUFs, llama.cpp execution, `temperature=1.0`, `top_p=0.95`, `top_k=64`, explicit `<|think|>` thinking control, multimodal settings, and the rule to keep only final visible answers in multi-turn history. Reference: https://unsloth.ai/docs/models/gemma-4
+- Gemma 4 should be treated as a multimodal understanding model family, not a native media generation stack. E2B and E4B support text, image, and audio input. 26B-A4B and 31B support text and image input. Image generation, audio generation, and video generation should be separate optional model integrations if Jarvis adds creator features later.
 
 ## Gemma 4 Runtime Direction
 
@@ -35,7 +37,8 @@ Jarvis should become Gemma-native over time instead of being tightly coupled to 
 | **llama.cpp runtime** | Add a direct llama.cpp backend for GGUF models, model download/cache management, streaming, cancellation, context sizing, and platform-specific acceleration. Keep Ollama as fallback during migration. |
 | **Gemma chat template** | Implement Gemma 4 turn formatting, end-of-sentence handling with `<turn|>`, recommended sampling defaults, and history cleanup so thought blocks are never fed back into later turns. |
 | **Thinking profiles** | Add role-aware system prompts: fast chat without thinking, research/reasoning with `<|think|>`, coding-agent planning with thinking, and final-answer cleanup that hides internal reasoning from the UI. |
-| **Gemma multimodal path** | Use E2B/E4B for text, image, and audio features on small machines. Use 26B-A4B or 31B for stronger text/image reasoning when hardware allows. |
+| **Gemma multimodal understanding** | Use E2B/E4B for text, image, audio, and short video understanding on small machines. Use 26B-A4B or 31B for stronger text/image reasoning when hardware allows. Keep generation features separate unless a dedicated image/audio model is added. |
+| **Gemma prompt library** | Keep Gemma prompt profiles in Go code, not Python scripts: direct chat, research, query generation, coding-agent planning, command output analysis, patch review, OCR/document understanding, multimodal comparison, ASR, and speech translation. |
 | **Agentic Gemma loop** | Tune project tools, command approvals, patch generation, review mode, and test loops specifically for Gemma 4 tool-use behavior. |
 
 ## Phase 3 - Power Features
@@ -58,6 +61,7 @@ Jarvis should become Gemma-native over time instead of being tightly coupled to 
 | **Code-aware retrieval** | Add code-specific chunking, symbol metadata, exact identifier search, dependency-aware boosting, and optional reranking. |
 | **Model role profiles** | Split model config by role: chat, edit, apply, autocomplete, embedding, reranker, and vision. |
 | **Gemma 4 runtime research** | Define the Gemma-native model ladder, llama.cpp backend plan, thinking profiles, and migration away from mandatory Ollama. |
+| **Gemma capability matrix** | In progress. Track text generation, text/image/audio/video input, thinking, function calling, coding, multilingual support, system prompt support, context length, memory guidance, and explicit non-support for native image/audio generation in Go so the UI and installer do not overpromise. |
 | **Frontend modularization** | In progress. Chat behavior is split into focused message modules. Next split the large HTML template into embedded partials and organize CSS by component. |
 
 ## v2.1.0 Release Scope
@@ -99,6 +103,7 @@ Included:
 | **GitHub issue and pull request flow** | Pull issue context from GitHub, create a task from it, push a branch, and draft a pull request with summary and tests. |
 | **Skills and project rules** | Support reusable local skills and repo instructions through `AGENTS.md` and optional `skills/*/SKILL.md` files. |
 | **Gemma-tuned agent prompts** | Add role-specific Gemma 4 prompts for research, planning, coding, patch review, and command output analysis, with thinking enabled only where it helps. |
+| **Direct llama.cpp adapter** | Add a Go-managed llama.cpp runtime adapter before removing Ollama: discover/download GGUF models, launch `llama-server` or a bundled runtime safely, stream responses, cancel requests, and map Gemma role profiles to llama.cpp options. Keep the code pure Go by treating llama.cpp as an external runtime process unless the project deliberately accepts CGo later. |
 
 ## Agent Workflow Architecture
 

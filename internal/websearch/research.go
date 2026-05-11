@@ -11,6 +11,7 @@ import (
 
 	"go-chatbot/internal/config"
 	"go-chatbot/internal/document"
+	"go-chatbot/internal/gemma"
 	"go-chatbot/internal/ollama"
 	"go-chatbot/internal/vectorstore"
 )
@@ -203,6 +204,7 @@ func (r *Researcher) generateQueries(ctx context.Context, question, chatModel st
 	today := time.Now().Format("January 2, 2006")
 	prompt := fmt.Sprintf(queryGenPrompt, today, maxSearchQueries, question)
 	messages := []ollamaapi.Message{
+		{Role: "system", Content: queryGenerationSystemPrompt(chatModel)},
 		{Role: "user", Content: prompt},
 	}
 
@@ -232,4 +234,12 @@ func (r *Researcher) generateQueries(ctx context.Context, question, chatModel st
 	}
 
 	return queries, nil
+}
+
+func queryGenerationSystemPrompt(model string) string {
+	prompt := "You generate concise web search queries. Return only search queries, one per line. Do not include analysis, bullets, numbering, or commentary."
+	if guidance := gemma.SystemGuidance(model, gemma.ProfileChat); guidance != "" {
+		return prompt + "\n\n" + guidance
+	}
+	return prompt
 }

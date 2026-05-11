@@ -6,6 +6,7 @@ import (
 	"strings"
 	"time"
 
+	"go-chatbot/internal/gemma"
 	"go-chatbot/internal/vectorstore"
 	"go-chatbot/internal/workbench"
 )
@@ -130,6 +131,18 @@ These are strict:
 
 ### Web research excerpts:
 %s`
+
+func buildSystemPrompt(model string, profile gemma.PromptProfile, body string) string {
+	var sections []string
+	if prefix := gemma.SystemPrefix(model, profile); prefix != "" {
+		sections = append(sections, strings.TrimSpace(prefix))
+	}
+	sections = append(sections, body)
+	if guidance := gemma.SystemGuidance(model, profile); guidance != "" {
+		sections = append(sections, guidance)
+	}
+	return strings.Join(sections, "\n\n")
+}
 
 func buildLocaleContext(locale, timezone string) string {
 	var parts []string
