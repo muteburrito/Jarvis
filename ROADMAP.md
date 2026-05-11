@@ -45,15 +45,6 @@ Jarvis should become Gemma-native over time instead of being tightly coupled to 
 
 | Feature | What it adds |
 |---|---|
-| **Workbench activity panel** | Done. Shows task traces, retrieval events, selected model, message count, edit count, and a polished activity timeline. |
-| **Workspace map** | Done. Folder ingest maps regular documents, PDFs, images, spreadsheets, presentations, data files, source files, and code symbols. |
-| **Reply and focused file context** | Done. Users can reply to a specific message and use `@file` or `#file` mentions to focus retrieval on indexed files. |
-| **Windows installer bootstrap** | Done for Windows. Manual NSIS installs check/install Ollama and pull Jarvis models. Silent auto-updates skip bootstrap. |
-| **Scheduled folder re-indexing** | Done. Folder ingest saves watched folders and refreshes new or modified files in the background while keeping workspace maps current. |
-| **Codex-style chat workspace** | Done. Neutral desktop theme, queued follow-ups, editable/reorderable queue, response copy/rating/fork controls, response timing, and expanded in-app Help. |
-| **Natural live context** | Done. Normal chat quietly uses current local time, locale, timezone, pasted URLs, and live web context when available. Research mode remains the transparent source-heavy path. |
-| **Project foundation** | Done. Indexed folders become persisted projects with an active project, workspace map, watched re-indexing, and a per-project vector-store path for folder indexes. |
-| **Local diff review** | Done. The Workbench shows changed-file totals, additions, deletions, statuses, and expandable text patches for the active git project. |
 | **Multiple named workspaces** | Save and switch between named document sets. Each workspace should have its own vector store, documents, and chat history. |
 | **Vector compression research** | Evaluate TurboQuant, QJL, and PolarQuant ideas for compressing Jarvis embeddings or adding an approximate search tier. Reference: https://research.google/blog/turboquant-redefining-ai-efficiency-with-extreme-compression/ |
 | **Workspace map depth** | Add richer document metadata, media dimensions, Office document summaries, package boundaries, tests, and better file grouping. |
@@ -64,13 +55,9 @@ Jarvis should become Gemma-native over time instead of being tightly coupled to 
 | **Gemma capability matrix** | In progress. Track text generation, text/image/audio/video input, thinking, function calling, coding, multilingual support, system prompt support, context length, memory guidance, and explicit non-support for native image/audio generation in Go so the UI and installer do not overpromise. |
 | **Frontend modularization** | In progress. Chat behavior is split into focused message modules. Next split the large HTML template into embedded partials and organize CSS by component. |
 
-## v2.1.0 Release Scope
+## Recently Completed
 
-Target tag: `v2.1.0`, assuming the last public release was `v2.0.1`.
-
-This should be a minor release because it adds backward-compatible product features without requiring users to reconfigure Jarvis.
-
-Included:
+These features are already implemented and should not be treated as active roadmap work:
 
 - Wails desktop-first app path with browser server kept for development and fallback
 - GitHub Releases updater path and Windows installer packaging
@@ -87,15 +74,23 @@ Included:
 - Watched folder background re-indexing
 - Safe clear-index behavior that preserves external source files
 - Neutral Codex-style UI theme and updated Help modal
+- Gemma 4 capability metadata, prompt guidance, sampling defaults, and thinking-output cleanup
+- Project-scoped folder indexes, project-preferred RAG retrieval, and project-tagged chats
+
+## Release Planning
+
+The next public tag can stay `v2.1.0`, assuming the last public release was `v2.0.1` and no breaking change is introduced before tagging.
+
+This should be a minor release because it adds backward-compatible product features without requiring users to reconfigure Jarvis.
 
 ## Phase 4 - Local Coding Agent
 
 | Feature | What it adds |
 |---|---|
-| **Project-scoped indexes** | In progress. Folder indexing now writes to the active project's vector store and RAG prefers the active project store when it exists. New chats are tagged to the active project while legacy global chats remain visible. Next isolate command policy and edit history per project. |
 | **Agent tool loop** | Let the model call tools mid-task: search files, read files, inspect symbols, list directories, summarize files, fetch URLs, and ask for approval. |
-| **Read-only project tools** | In progress. Search active-project files, read safe text previews, summarize symbols/imports, and record tool traces. Next wire these tools into the model loop. |
-| **Safe local command runner** | In progress. Runs only allowlisted, approved commands in the active project with timeouts, output caps, exit code, and task traces. |
+| **Project-scoped command policy and edit history** | Move command approvals, command history, edit history, and future patch state into the active project's storage boundary. |
+| **Read-only project tools in model loop** | Search active-project files, read safe text previews, summarize symbols/imports, and record tool traces from model-requested tool calls. |
+| **Safe local command runner in model loop** | Let the agent request allowlisted commands, ask for approval when needed, run with timeouts/output caps, and summarize results. |
 | **Patch generation and apply flow** | Generate unified diffs, preview changes in the UI, apply approved patches, and support discard per file. |
 | **Test and fix loop** | Let the agent run tests, parse failures, update the patch, and repeat within a bounded iteration count. |
 | **Git worktree and branch support** | Create isolated worktrees or branches per task so multiple agents can work without overwriting each other. |
@@ -109,11 +104,10 @@ Included:
 
 The Codex-like workflow is possible, but it should land in careful layers:
 
-1. **Projects:** a folder becomes a persisted project with a root path, active state, workspace map, watched re-indexing, and a reserved vector-store location.
-2. **Project-scoped storage:** each project gets its own vector store, chat state, workspace map, command policy, and edit history. This prevents one project from polluting another project's retrieval.
-3. **Read-only tools:** list files, search files, read files, inspect symbols, summarize files, and fetch project context. Search, read, and summarize endpoints now exist for active-project files.
-4. **Command tools:** run approved commands with working directory controls, timeouts, output capture, and allowlists. The first allowlisted command runner is available for git status/diff and Go test checks.
-5. **Patch tools:** propose file edits as diffs, show review UI, apply only approved patches, and record edit history. The first read-only diff review surface is now available in the Workbench.
-6. **Review and test loop:** run tests, parse failures, update patches, and produce a final review summary.
+1. **Project storage:** finish isolating command policy, command history, edit history, and future patch state per project.
+2. **Model tool loop:** let the model request read-only tools, fetch context, and ask for approval through structured tool calls.
+3. **Command tools:** connect the existing allowlisted runner to the model loop with working directory controls, timeouts, output capture, and approval gates.
+4. **Patch tools:** propose file edits as diffs, show review UI, apply only approved patches, and record edit history.
+5. **Review and test loop:** run tests, parse failures, update patches, and produce a final review summary.
 
 Scheduled folder re-indexing helps this directly because it keeps the active project's local context current while the agent works.

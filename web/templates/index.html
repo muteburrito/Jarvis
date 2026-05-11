@@ -1100,20 +1100,16 @@
                     <h3 class="mb-3 text-sm font-semibold text-zinc-300">Phase 3 - Power Features</h3>
                     <div class="space-y-2">
                         <div class="rounded-lg bg-slate-700/40 p-3">
-                            <p class="font-medium text-slate-200">Scheduled folder re-indexing</p>
-                            <p class="mt-0.5 text-xs text-slate-400">Watch folders for file changes and re-index modified or new files in the background.</p>
-                        </div>
-                        <div class="rounded-lg bg-slate-700/40 p-3">
                             <p class="font-medium text-slate-200">Multiple named workspaces</p>
                             <p class="mt-0.5 text-xs text-slate-400">Save and switch between document sets, each with its own index and chat history.</p>
                         </div>
                         <div class="rounded-lg bg-slate-700/40 p-3">
-                            <p class="font-medium text-slate-200">Vector compression research</p>
-                            <p class="mt-0.5 text-xs text-slate-400">Evaluate TurboQuant-style vector compression to reduce local vector-store memory use.</p>
+                            <p class="font-medium text-slate-200">Workspace map depth</p>
+                            <p class="mt-0.5 text-xs text-slate-400">Add richer metadata, media dimensions, Office summaries, package boundaries, tests, and better grouping.</p>
                         </div>
                         <div class="rounded-lg bg-slate-700/40 p-3">
-                            <p class="font-medium text-slate-200">Codebase map</p>
-                            <p class="mt-0.5 text-xs text-slate-400">Build a repo map with files, symbols, imports, modules, and tests.</p>
+                            <p class="font-medium text-slate-200">Vector compression research</p>
+                            <p class="mt-0.5 text-xs text-slate-400">Evaluate TurboQuant-style vector compression to reduce local vector-store memory use.</p>
                         </div>
                         <div class="rounded-lg bg-slate-700/40 p-3">
                             <p class="font-medium text-slate-200">Context picker</p>
@@ -1126,6 +1122,10 @@
                         <div class="rounded-lg bg-slate-700/40 p-3">
                             <p class="font-medium text-slate-200">Model role profiles</p>
                             <p class="mt-0.5 text-xs text-slate-400">Split model config by role: chat, edit, apply, autocomplete, embedding, reranker, and vision.</p>
+                        </div>
+                        <div class="rounded-lg bg-slate-700/40 p-3">
+                            <p class="font-medium text-slate-200">Gemma capability matrix</p>
+                            <p class="mt-0.5 text-xs text-slate-400">Track Gemma 4 capabilities, context limits, thinking support, and non-generation boundaries in the app.</p>
                         </div>
                         <div class="rounded-lg bg-slate-700/40 p-3">
                             <p class="font-medium text-slate-200">Frontend modularization</p>
@@ -1142,8 +1142,16 @@
                             <p class="mt-0.5 text-xs text-slate-400">Let the model search files, inspect symbols, summarize files, fetch URLs, and ask for approval mid-task.</p>
                         </div>
                         <div class="rounded-lg bg-slate-700/40 p-3">
-                            <p class="font-medium text-slate-200">Safe local command runner</p>
-                            <p class="mt-0.5 text-xs text-slate-400">Run approved commands with working directory controls, timeouts, and captured output.</p>
+                            <p class="font-medium text-slate-200">Project command policy and edit history</p>
+                            <p class="mt-0.5 text-xs text-slate-400">Move command approvals, command history, edit history, and patch state into each project.</p>
+                        </div>
+                        <div class="rounded-lg bg-slate-700/40 p-3">
+                            <p class="font-medium text-slate-200">Read-only tools in model loop</p>
+                            <p class="mt-0.5 text-xs text-slate-400">Let the model call existing safe project search, read, and summarize tools.</p>
+                        </div>
+                        <div class="rounded-lg bg-slate-700/40 p-3">
+                            <p class="font-medium text-slate-200">Command runner in model loop</p>
+                            <p class="mt-0.5 text-xs text-slate-400">Let the agent request approved commands with timeouts, output caps, and summarized results.</p>
                         </div>
                         <div class="rounded-lg bg-slate-700/40 p-3">
                             <p class="font-medium text-slate-200">Patch generation and apply flow</p>
@@ -1169,11 +1177,15 @@
                             <p class="font-medium text-slate-200">Skills and project rules</p>
                             <p class="mt-0.5 text-xs text-slate-400">Load reusable local skills and repo instructions only when they are relevant.</p>
                         </div>
+                        <div class="rounded-lg bg-slate-700/40 p-3">
+                            <p class="font-medium text-slate-200">Direct llama.cpp adapter</p>
+                            <p class="mt-0.5 text-xs text-slate-400">Add a Go-managed local runtime path for GGUF models while keeping Ollama as fallback.</p>
+                        </div>
                     </div>
                 </div>
 
                 <div class="pt-2 border-t border-slate-700 text-xs text-slate-500">
-                    <p>Future work stays local-first and keeps user approval at the center.</p>
+                    <p>Recently completed: desktop release path, GitHub updater, Ollama bootstrap, workspace map, watched folders, reply and file focus, project-scoped folder indexes, project-tagged chats, local diff review, read-only project tools, command runner foundations, Gemma 4 profiles, and the polished chat workspace.</p>
                 </div>
             </div>
         </div>
