@@ -124,6 +124,23 @@ func (c *Chain) Query(ctx context.Context, question string, history []ollamaapi.
 	return &QueryResult{Sources: sources}, nil
 }
 
+func (c *Chain) PlanToolCalls(ctx context.Context, model string, systemPrompt string, userPrompt string) (string, error) {
+	if strings.TrimSpace(model) == "" {
+		model = c.cfg.ChatModel
+	}
+	messages := []ollamaapi.Message{
+		{
+			Role:    "system",
+			Content: buildSystemPrompt(model, gemma.ProfileChat, systemPrompt),
+		},
+		{
+			Role:    "user",
+			Content: userPrompt,
+		},
+	}
+	return c.ollama.ChatOnceWithModel(ctx, model, messages)
+}
+
 func filterUserVisibleResults(results []vectorstore.SearchResult) []vectorstore.SearchResult {
 	filtered := make([]vectorstore.SearchResult, 0, len(results))
 	for _, result := range results {

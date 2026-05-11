@@ -20,6 +20,7 @@ No data leaves your machine. No API keys needed. Single binary, runs anywhere.
 - **Workspace map:** folder ingest maps regular files, Office documents, PDFs, images, data files, source files, and code symbols
 - **Project foundation:** indexed folders are saved as projects with an active project, workspace map, watched re-indexing, and a project vector store for folder-scoped retrieval
 - **Workbench activity:** inspect the active project, workspace map summary, local git changes, and recent task activity without crowding the chat UI
+- **Read-only agent tools:** normal chat can let the model request safe project search, file summaries, and file previews before answering
 - **Image support:** upload standalone images (PNG, JPG, etc.) or PDFs with embedded images. A vision model describes each image so it becomes searchable and queryable
 - **Gemma 4 profiles:** Gemma-specific prompt guidance, sampling defaults, research thinking mode cleanup, and capability metadata are kept in Go code
 - **Live context:** normal chat uses current date/time, browser locale, timezone, pasted URLs, and selective web context for current questions when available, without searching every message
@@ -106,7 +107,7 @@ Suggested highlights:
 - Watched folder background re-indexing for new and modified files
 - Simplified Workbench panel for project summary, workspace map counts, local changes, and recent activity
 - Local changes panel with changed-file totals and expandable git diffs for the active project
-- Agent foundations for project-scoped folder indexes, read-only project tools, and approved command execution, kept out of the default Workbench surface
+- Agent foundations for project-scoped folder indexes, model-planned read-only project tools, and approved command execution, kept out of the default Workbench surface
 - Safer clear-index behavior that preserves external source files
 - Neutral Codex-style UI theme and expanded in-app Help guide
 
@@ -265,7 +266,7 @@ Jarvis is being prepared for a Codex-like local agent workflow. The current rele
 The next layers are:
 
 - project-scoped vector stores are now used for folder indexes. New chats are tagged to the active project, while legacy global chats remain visible. Approved command policy, command history, edit history, and patch state are stored per project.
-- read-only tools for listing, searching, reading, and summarizing project files. The first deterministic read-only tool pass can gather project file summaries before normal chat answers.
+- read-only tools for listing, searching, reading, and summarizing project files. Normal chat can now ask the model for a bounded JSON tool plan, run safe active-project file tools, trace the calls, and fall back to deterministic file summaries when planning fails.
 - safe command execution with approvals, timeouts, and captured output. The first allowlisted command runner is available in the Workbench.
 - patch generation, review, apply, and discard flows. The current Workbench already shows read-only local diffs for the active git project.
 - test and fix loops that keep all changes visible and reversible
