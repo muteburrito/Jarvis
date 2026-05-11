@@ -71,6 +71,7 @@ The GitHub updater only runs on proper semver builds. When creating a release, b
 - `internal/workbench/diff.go` owns the read-only local git diff summary used by the Workbench. Keep it project-scoped, timeout-bound, and safe for binary or large files.
 - `internal/workbench/tools.go` owns read-only active-project tools: search files, read safe text previews, and summarize metadata, symbols, imports, and excerpts. Keep paths confined to the active project root.
 - `internal/workbench/commands.go` owns the safe command runner. Keep it shell-free, allowlisted, approval-gated, timeout-bound, and output-capped.
+- `internal/server/agent_tools.go` owns the first deterministic read-only tool pre-pass for chat. Keep it bounded, read-only, project-scoped, and traceable until structured model-requested tool calls land.
 - `internal/workbench/project_activity.go` owns per-project command policy, command history, edit history, and patch-state storage. Approved command runs and proposed edits must be recorded there before they are exposed to future model tool loops.
 - `web/` contains the single-page frontend (HTML template, JS, CSS). Keep Alpine app state and initialization in `web/static/js/app.js`, with feature behavior in focused files under `web/static/js/modules/`. Embedded into the binary via `go:embed` in `web/embed.go`, so the exe is self-contained.
 - `web/static/js/modules/messages.js` composes focused chat modules: `message_composer.js`, `message_streaming.js`, `message_queue.js`, `message_context.js`, `message_attachments.js`, and `message_actions.js`.
@@ -132,7 +133,7 @@ The GitHub updater only runs on proper semver builds. When creating a release, b
 A Codex-like local agent is possible, but it must stay layered and approval-driven:
 
 - Start with project-scoped state: vector store, chat history, workspace map, command policy, and edit history per project. Project vector stores, project-tagged chats, command history, edit history, and patch-state storage are in place.
-- Add read-only tools first: list files, search files, read files, inspect symbols, summarize files, and fetch context. Active-project file search, read, and summarize endpoints are now available.
+- Add read-only tools first: list files, search files, read files, inspect symbols, summarize files, and fetch context. Active-project file search, read, summarize endpoints, and the first deterministic chat pre-pass are now available.
 - Add command execution only with working directory controls, timeouts, output capture, and user approvals or allowlists. Do not add a raw shell endpoint.
 - Add file edits as proposed patches. Show diffs and apply only after review. The current diff panel is read-only and should remain the review foundation for future apply flows.
 - Scheduled folder re-indexing should keep project context fresh, but it must not overwrite user files or hide edits from review.

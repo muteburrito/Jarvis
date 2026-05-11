@@ -169,6 +169,17 @@ func buildLocaleContext(locale, timezone string) string {
 	)
 }
 
+func buildToolContext(context string) string {
+	context = strings.TrimSpace(context)
+	if context == "" {
+		return ""
+	}
+	if len(context) > 12000 {
+		context = context[:12000] + "\n... tool context truncated ..."
+	}
+	return context
+}
+
 func buildContext(results []vectorstore.SearchResult) string {
 	var sb strings.Builder
 	for i, r := range results {

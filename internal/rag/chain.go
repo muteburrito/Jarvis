@@ -33,6 +33,7 @@ type QueryOptions struct {
 	Locale           string
 	Timezone         string
 	ChatModel        string
+	ToolContext      string
 	FocusDocumentIDs []string
 	FocusFiles       []string
 	ReplyTo          *ReplyContext
@@ -91,6 +92,9 @@ func (c *Chain) Query(ctx context.Context, question string, history []ollamaapi.
 	}
 	if repoCtx := c.repoContext(question); repoCtx != "" {
 		systemContent += "\n\n" + repoCtx
+	}
+	if toolCtx := buildToolContext(opts.ToolContext); toolCtx != "" {
+		systemContent += "\n\n" + toolCtx
 	}
 
 	messages := make([]ollamaapi.Message, 0, len(history)+2)

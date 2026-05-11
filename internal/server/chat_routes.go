@@ -141,11 +141,16 @@ func (s *Server) handleChat(w http.ResponseWriter, r *http.Request) {
 	}
 
 	focusIDs, focusFiles := s.resolveFocusedDocuments(req.FocusDocumentIDs, req.FocusFiles)
+	toolContext := ""
+	if !req.Research && strings.TrimSpace(codeSnippet) == "" {
+		toolContext = s.gatherReadOnlyToolContext(effectiveQuery)
+	}
 	queryOpts := &rag.QueryOptions{
 		ResearchMode:     req.Research,
 		Locale:           req.Locale,
 		Timezone:         req.Timezone,
 		ChatModel:        chatModel,
+		ToolContext:      toolContext,
 		FocusDocumentIDs: focusIDs,
 		FocusFiles:       focusFiles,
 		ReplyTo:          req.ReplyTo,

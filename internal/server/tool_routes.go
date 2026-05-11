@@ -116,22 +116,30 @@ func (s *Server) handleRunProjectCommand(w http.ResponseWriter, r *http.Request)
 func (s *Server) activeProjectWorkspace(w http.ResponseWriter) (string, *workbench.RepoMap, bool) {
 	root, ok := s.activeProjectPath()
 	if !ok {
-		writeError(w, http.StatusNotFound, "open a project before using project tools")
+		if w != nil {
+			writeError(w, http.StatusNotFound, "open a project before using project tools")
+		}
 		return "", nil, false
 	}
 	repoMap, err := workbench.LoadRepoMap(s.cfg.DataDir)
 	if err != nil {
 		if os.IsNotExist(err) {
-			writeError(w, http.StatusNotFound, "workspace map not available yet")
+			if w != nil {
+				writeError(w, http.StatusNotFound, "workspace map not available yet")
+			}
 			return "", nil, false
 		}
-		writeError(w, http.StatusInternalServerError, "failed to load workspace map")
+		if w != nil {
+			writeError(w, http.StatusInternalServerError, "failed to load workspace map")
+		}
 		return "", nil, false
 	}
 	if !sameCleanPath(root, repoMap.Root) {
 		freshMap, err := workbench.ScanRepository(root)
 		if err != nil {
-			writeError(w, http.StatusInternalServerError, "failed to scan active project")
+			if w != nil {
+				writeError(w, http.StatusInternalServerError, "failed to scan active project")
+			}
 			return "", nil, false
 		}
 		_ = workbench.SaveRepoMap(s.cfg.DataDir, freshMap)

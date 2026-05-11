@@ -78,6 +78,7 @@ These features are already implemented and should not be treated as active roadm
 - Project-scoped folder indexes, project-preferred RAG retrieval, and project-tagged chats
 - Project-scoped command policy and command history for approved local commands
 - Project-scoped edit history and patch-state storage
+- First read-only model tool pass that gathers project file summaries before normal chat answers
 
 ## Release Planning
 
@@ -90,7 +91,7 @@ This should be a minor release because it adds backward-compatible product featu
 | Feature | What it adds |
 |---|---|
 | **Agent tool loop** | Let the model call tools mid-task: search files, read files, inspect symbols, list directories, summarize files, fetch URLs, and ask for approval. |
-| **Read-only project tools in model loop** | Search active-project files, read safe text previews, summarize symbols/imports, and record tool traces from model-requested tool calls. |
+| **Structured model tool calls** | Move from the current deterministic read-only pre-pass to model-requested tool calls with explicit tool names, arguments, traces, and approval prompts. |
 | **Safe local command runner in model loop** | Let the agent request allowlisted commands, ask for approval when needed, run with timeouts/output caps, and summarize results. |
 | **Patch generation and apply flow** | Generate unified diffs, preview changes in the UI, apply approved patches, and support discard per file. |
 | **Test and fix loop** | Let the agent run tests, parse failures, update the patch, and repeat within a bounded iteration count. |
@@ -105,7 +106,7 @@ This should be a minor release because it adds backward-compatible product featu
 
 The Codex-like workflow is possible, but it should land in careful layers:
 
-1. **Model tool loop:** let the model request read-only tools, fetch context, and ask for approval through structured tool calls.
+1. **Structured model tool calls:** let the model request read-only tools, fetch context, and ask for approval through explicit tool calls.
 2. **Command tools:** connect the existing allowlisted runner to the model loop with working directory controls, timeouts, output capture, and approval gates.
 3. **Patch tools:** propose file edits as diffs, show review UI, apply only approved patches, and record edit history.
 4. **Review and test loop:** run tests, parse failures, update patches, and produce a final review summary.
