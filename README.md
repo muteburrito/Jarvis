@@ -18,7 +18,7 @@ No data leaves your machine. No API keys needed. Single binary, runs anywhere.
 - **Wide file support:** PDF, DOCX, XLSX, PPTX, images, known source files, and unknown text-like files. Binary files are rejected
 - **Hybrid retrieval:** combines vector similarity with BM25 keyword scoring for better exact matches on code symbols, error codes, and config keys
 - **Workspace map:** folder ingest maps regular files, Office documents, PDFs, images, data files, source files, and code symbols
-- **Project foundation:** indexed folders are saved as projects with an active project, workspace map, watched re-indexing, and a reserved project vector-store path for future agent workflows
+- **Project foundation:** indexed folders are saved as projects with an active project, workspace map, watched re-indexing, and a project vector store for folder-scoped retrieval
 - **Workbench activity:** inspect the active project, workspace map summary, local git changes, and recent task activity without crowding the chat UI
 - **Image support:** upload standalone images (PNG, JPG, etc.) or PDFs with embedded images. A vision model describes each image so it becomes searchable and queryable
 - **Gemma 4 profiles:** Gemma-specific prompt guidance, sampling defaults, research thinking mode cleanup, and capability metadata are kept in Go code
@@ -106,7 +106,7 @@ Suggested highlights:
 - Watched folder background re-indexing for new and modified files
 - Simplified Workbench panel for project summary, workspace map counts, local changes, and recent activity
 - Local changes panel with changed-file totals and expandable git diffs for the active project
-- Agent foundations for read-only project tools and approved command execution, kept out of the default Workbench surface
+- Agent foundations for project-scoped folder indexes, read-only project tools, and approved command execution, kept out of the default Workbench surface
 - Safer clear-index behavior that preserves external source files
 - Neutral Codex-style UI theme and expanded in-app Help guide
 
@@ -248,7 +248,7 @@ packaging/
 The Workbench panel surfaces local task and workspace state:
 
 - task traces from chat, research, retrieval, workspace map updates, and future tools
-- active project metadata and reserved per-project vector-store path
+- active project metadata and per-project vector-store path
 - selected model, message count, trace count, and edit count
 - workspace map root, file count, symbol count, and file type breakdown
 - local git change summary with per-file additions, deletions, status, and expandable text patches
@@ -260,11 +260,11 @@ This is the bridge from document chat toward a local coding and knowledge workbe
 
 ### Agent workflow direction
 
-Jarvis is being prepared for a Codex-like local agent workflow. The current release adds the project foundation: indexed folders become active projects with workspace maps and watched re-indexing. The reserved per-project vector-store path is the storage boundary for a future project-scoped index.
+Jarvis is being prepared for a Codex-like local agent workflow. The current release adds the project foundation: indexed folders become active projects with workspace maps, watched re-indexing, and a per-project vector store for folder-scoped retrieval.
 
 The next layers are:
 
-- project-scoped vector stores, chat history, workspace maps, command policy, and edit history
+- project-scoped vector stores are now used for folder indexes. New chats are tagged to the active project, while legacy global chats remain visible. Command policy and edit history are next.
 - read-only tools for listing, searching, reading, and summarizing project files. The first tool endpoints and Workbench preview UI are available now.
 - safe command execution with approvals, timeouts, and captured output. The first allowlisted command runner is available in the Workbench.
 - patch generation, review, apply, and discard flows. The current Workbench already shows read-only local diffs for the active git project.

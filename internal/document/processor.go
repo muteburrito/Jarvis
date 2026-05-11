@@ -65,6 +65,19 @@ func NewProcessor(registry *Registry, chunker *Chunker, ollamaClient *ollama.Cli
 	}
 }
 
+func (p *Processor) WithStore(store *vectorstore.Store, vectorStoreDir string) *Processor {
+	cfg := *p.cfg
+	cfg.VectorStoreDir = vectorStoreDir
+	return &Processor{
+		registry:    p.registry,
+		chunker:     p.chunker,
+		ollama:      p.ollama,
+		store:       store,
+		cfg:         &cfg,
+		visionReady: p.visionReady,
+	}
+}
+
 func (p *Processor) ProcessFile(ctx context.Context, filePath string) (string, int, error) {
 	docs, err := p.registry.Load(filePath)
 	if err != nil {
@@ -388,6 +401,10 @@ func (p *Processor) describeImages(ctx context.Context, docs []Document) []Docum
 
 func (p *Processor) CanLoad(filePath string) bool {
 	return p.registry.CanLoad(filePath)
+}
+
+func (p *Processor) StoreDimension() int {
+	return p.store.Dimension()
 }
 
 func fileBaseName(path string) string {

@@ -9,6 +9,7 @@ import (
 
 	"go-chatbot/internal/config"
 	"go-chatbot/internal/document"
+	"go-chatbot/internal/vectorstore"
 	"go-chatbot/internal/workbench"
 )
 
@@ -74,7 +75,8 @@ func reindexWatchedFolders(
 			continue
 		}
 
-		processed, chunks, err := processor.ProcessDirectory(ctx, folder.Path)
+		indexProcessor := processorForWatchedFolder(processor, cfg, folder.Path)
+		processed, chunks, err := indexProcessor.ProcessDirectory(ctx, folder.Path)
 		if err != nil {
 			slog.Warn("failed to re-index watched folder", "path", folder.Path, "error", err)
 			continue
@@ -99,6 +101,31 @@ func reindexWatchedFolders(
 			slog.Warn("failed to save watched folders", "error", err)
 		}
 	}
+}
+
+func processorForWatchedFolder(
+	processor *document.Processor,
+	cfg *config.Config,
+	folderPath string,
+) *document.Processor {
+	state, err := workbench.LoadProjectState(cfg.DataDir)
+	if err != nil {
+		return processor
+	}
+	project, ok := workbench.FindProjectByPath(state, folderPath)
+	if !ok {
+		return processor
+	}
+	dir := workbench.ResolveProjectVectorStoreDir(cfg.DataDir, project)
+	store, err := vectorstore.LoadFromDisk(dir)
+	if err != nil {
+		slog.Warn("could not load project vectorstore for re-index", "path", folderPath, "error", err)
+		return processor
+	}
+	if store == nil {
+		store = vectorstore.New(processor.StoreDimension())
+	}
+	return processor.WithStore(store, dir)
 }
 
 func recordFolderReindexTrace(tasks *workbench.TaskStore, path string, processed int, chunks int) {

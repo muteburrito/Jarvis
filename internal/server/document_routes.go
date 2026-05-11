@@ -69,6 +69,10 @@ func (s *Server) handleUpload(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) handleListDocuments(w http.ResponseWriter, r *http.Request) {
+	if store, _, ok := s.activeProjectStore(); ok && store.DocumentCount() > 0 {
+		writeJSON(w, http.StatusOK, store.ListDocuments())
+		return
+	}
 	docs := s.store.ListDocuments()
 	writeJSON(w, http.StatusOK, docs)
 }
@@ -120,7 +124,19 @@ func (s *Server) handleIngestPath(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	processed, chunks, err := s.processor.ProcessDirectory(r.Context(), req.Path)
+	_, project, err := workbench.UpsertProject(s.cfg.DataDir, req.Path, "")
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "failed to save project")
+		return
+	}
+
+	processor, projectStore, projectVectorDir, err := s.projectProcessor(project)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "failed to initialize project vectorstore")
+		return
+	}
+
+	processed, chunks, err := processor.ProcessDirectory(r.Context(), req.Path)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "failed to process directory: "+err.Error())
 		return
@@ -140,20 +156,20 @@ func (s *Server) handleIngestPath(w http.ResponseWriter, r *http.Request) {
 	if err := workbench.SaveWatchedFolder(s.cfg.DataDir, req.Path); err != nil {
 		slog.Warn("failed to save watched folder", "path", req.Path, "error", err)
 	}
-	if _, project, err := workbench.UpsertProject(s.cfg.DataDir, req.Path, ""); err != nil {
-		slog.Warn("failed to save project", "path", req.Path, "error", err)
-	} else {
-		s.recordTaskTrace("project_open", "Opened project", map[string]string{
-			"name":             project.Name,
-			"path":             project.Path,
-			"vector_store_dir": project.VectorStoreDir,
-		})
-	}
+	s.recordTaskTrace("project_open", "Opened project", map[string]string{
+		"name":             project.Name,
+		"path":             project.Path,
+		"vector_store_dir": projectVectorDir,
+		"documents":        fmt.Sprintf("%d", projectStore.DocumentCount()),
+	})
 
 	writeJSON(w, http.StatusOK, map[string]interface{}{
-		"processed": processed,
-		"chunks":    chunks,
-		"path":      req.Path,
+		"processed":        processed,
+		"chunks":           chunks,
+		"path":             req.Path,
+		"project":          project,
+		"documents":        projectStore.DocumentCount(),
+		"vector_store_dir": projectVectorDir,
 	})
 }
 
@@ -166,6 +182,13 @@ func (s *Server) handleRepoMap(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, repoMap)
 }
 func (s *Server) handleClearAll(w http.ResponseWriter, r *http.Request) {
+	if store, dir, ok := s.activeProjectStore(); ok {
+		store.Clear()
+		if err := store.Save(dir); err != nil {
+			writeError(w, http.StatusInternalServerError, "failed to clear project vectorstore")
+			return
+		}
+	}
 	if err := s.processor.ClearAll(r.Context()); err != nil {
 		writeError(w, http.StatusInternalServerError, "failed to clear vectorstore")
 		return

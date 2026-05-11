@@ -63,9 +63,15 @@ func (s *Server) handleOpenProject(w http.ResponseWriter, r *http.Request) {
 		"vector_store_dir": project.VectorStoreDir,
 	})
 
+	documentCount := 0
+	if store, _, err := s.projectStore(project); err == nil && store != nil {
+		documentCount = store.DocumentCount()
+	}
+
 	writeJSON(w, http.StatusOK, map[string]interface{}{
-		"state":   state,
-		"project": project,
-		"note":    fmt.Sprintf("Project %s is active. Dedicated vector stores will use %s in the agent workflow.", project.Name, project.VectorStoreDir),
+		"state":     state,
+		"project":   project,
+		"documents": documentCount,
+		"note":      fmt.Sprintf("Project %s is active with %d project documents indexed.", project.Name, documentCount),
 	})
 }

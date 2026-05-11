@@ -55,7 +55,8 @@ func (c *Chain) Query(ctx context.Context, question string, history []ollamaapi.
 	var sources []map[string]string
 	var systemContent string
 
-	if c.store.EntryCount() > 0 {
+	searchStore := c.searchStore()
+	if searchStore.EntryCount() > 0 {
 		embeddings, err := c.ollama.Embed(ctx, []string{question})
 		if err != nil {
 			return nil, fmt.Errorf("embed question: %w", err)
@@ -64,7 +65,7 @@ func (c *Chain) Query(ctx context.Context, question string, history []ollamaapi.
 			return nil, fmt.Errorf("no embedding returned for question")
 		}
 
-		results := c.searchRelevantEntries(embeddings[0], question, opts)
+		results := c.searchRelevantEntries(searchStore, embeddings[0], question, opts)
 		results = filterUserVisibleResults(results)
 		ragContext := buildContext(results)
 		sources = buildSourceList(results)
@@ -150,16 +151,40 @@ func isInternalStateSource(source string) bool {
 	return false
 }
 
-func (c *Chain) searchRelevantEntries(query []float32, question string, opts *QueryOptions) []vectorstore.SearchResult {
+func (c *Chain) searchRelevantEntries(store *vectorstore.Store, query []float32, question string, opts *QueryOptions) []vectorstore.SearchResult {
 	if len(opts.FocusDocumentIDs) == 0 {
-		return c.store.HybridSearch(query, question, c.cfg.TopK)
+		return store.HybridSearch(query, question, c.cfg.TopK)
 	}
 
-	results := c.store.HybridSearchByDocumentIDs(query, question, c.cfg.TopK, opts.FocusDocumentIDs)
+	results := store.HybridSearchByDocumentIDs(query, question, c.cfg.TopK, opts.FocusDocumentIDs)
 	if len(results) > 0 {
 		return results
 	}
-	return c.store.HybridSearch(query, question, c.cfg.TopK)
+	return store.HybridSearch(query, question, c.cfg.TopK)
+}
+
+func (c *Chain) searchStore() *vectorstore.Store {
+	store, ok := c.activeProjectStore()
+	if ok && store.EntryCount() > 0 {
+		return store
+	}
+	return c.store
+}
+
+func (c *Chain) activeProjectStore() (*vectorstore.Store, bool) {
+	state, err := workbench.LoadProjectState(c.cfg.DataDir)
+	if err != nil {
+		return nil, false
+	}
+	project, ok := workbench.ActiveProject(state)
+	if !ok {
+		return nil, false
+	}
+	store, err := vectorstore.LoadFromDisk(workbench.ResolveProjectVectorStoreDir(c.cfg.DataDir, project))
+	if err != nil || store == nil {
+		return nil, false
+	}
+	return store, true
 }
 
 func buildFocusContext(files []string) string {

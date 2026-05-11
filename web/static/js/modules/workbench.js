@@ -24,6 +24,8 @@ window.jarvisWorkbench = {
                 const resp = await fetch(this.apiURL('/api/v1/projects'));
                 if (resp.ok) {
                     this.projectState = await resp.json();
+                    await this.loadDocuments();
+                    await this.refreshChatList();
                 }
             } catch {}
         },
@@ -155,10 +157,13 @@ window.jarvisWorkbench = {
             const state = this.projectState || {};
             const projects = state.projects || [];
             const active = projects.find(project => project.active) || null;
+            const activeDocumentCount = active ? (this.documents || []).length : 0;
             return {
                 count: projects.length,
                 active,
-                vectorStoreDir: active?.vector_store_dir || ''
+                vectorStoreDir: active?.vector_store_dir || '',
+                activeDocumentCount,
+                retrievalScope: activeDocumentCount > 0 ? 'Project index active' : 'Global index fallback'
             };
         },
 

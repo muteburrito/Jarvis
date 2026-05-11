@@ -67,7 +67,7 @@ The GitHub updater only runs on proper semver builds. When creating a release, b
 - `internal/updater/` polls GitHub Releases, compares semver tags, and can download and silently launch the Windows NSIS installer. Release builds bake the GitHub repository into `builtinRepo` via ldflags so end users do not need repository configuration.
 - `internal/websearch/` contains the DuckDuckGo scraper (`duckduckgo.go`) and the research orchestrator (`research.go`). Research mode emits structured progress events while it searches, fetches, and indexes pages. Normal chat may use the same pipeline quietly only for clearly time-sensitive live-context questions.
 - `internal/workbench/` contains the Codex-style memory layer: chat sessions, watched folders, workspace maps, symbol indexes, local git diff summaries, task messages, traces, and edit history persisted as JSON under the data directory. Workspace maps include regular documents, PDFs, images, spreadsheets, presentations, data files, source files, and code symbols.
-- `internal/workbench/projects.go` owns persisted project metadata. A project is a local folder root with active state and a reserved per-project vector-store path. The current vector store is still global, but future agent work should move retrieval into project-scoped stores.
+- `internal/workbench/projects.go` owns persisted project metadata. A project is a local folder root with active state and a per-project vector-store path. Folder indexing writes to the active project's store, and RAG prefers the active project store when it has indexed documents. Uploaded files and fetched URLs still use the global store.
 - `internal/workbench/diff.go` owns the read-only local git diff summary used by the Workbench. Keep it project-scoped, timeout-bound, and safe for binary or large files.
 - `internal/workbench/tools.go` owns read-only active-project tools: search files, read safe text previews, and summarize metadata, symbols, imports, and excerpts. Keep paths confined to the active project root.
 - `internal/workbench/commands.go` owns the safe command runner. Keep it shell-free, allowlisted, approval-gated, timeout-bound, and output-capped.
@@ -105,6 +105,7 @@ The GitHub updater only runs on proper semver builds. When creating a release, b
 - Jarvis picks the chat model automatically when `CHAT_MODEL` is unset: use `gemma4:e2b` for very low-end machines and `gemma4:e4b` for everyone else. Do not auto-select `gemma4:26b`; it is opt-in through `CHAT_MODEL` only because Jarvis is local and RAG-first, and speed matters for daily use. Keep the main chat UI free of model-picker controls unless the roadmap explicitly reintroduces advanced model settings.
 - Startup auto-pulls missing required Ollama models through the Go Ollama API as a fallback. Keep chat and embedding models required. Keep the vision model optional unless product requirements change. Do not remove startup verification just because the Windows installer bootstraps Ollama.
 - Chat sessions are persisted server-side as JSON in the data directory and listed in the sidebar. Do not move primary chat history back to browser-only `localStorage`.
+- Chat sessions can carry `project_id`. New chats created while a project is active should be tagged to that project. Legacy global chats have no project id and should remain visible so old history does not disappear after a project is opened.
 - Folder indexing walks directories recursively and skips common build output (bin, obj, node_modules, .git, vendor, etc), Jarvis app storage directories, and Jarvis app-state JSON files.
 - Vision model is optional. If not installed, the app still works but skips image processing.
 - Images (standalone or extracted from PDFs) are described by the vision model. The description is embedded and stored like any other text chunk, making images searchable.
@@ -129,7 +130,7 @@ The GitHub updater only runs on proper semver builds. When creating a release, b
 
 A Codex-like local agent is possible, but it must stay layered and approval-driven:
 
-- Start with project-scoped state: vector store, chat history, workspace map, command policy, and edit history per project.
+- Start with project-scoped state: vector store, chat history, workspace map, command policy, and edit history per project. Project vector stores are now used for folder indexing; chat history, command policy, and edit history still need project isolation.
 - Add read-only tools first: list files, search files, read files, inspect symbols, summarize files, and fetch context. Active-project file search, read, and summarize endpoints are now available.
 - Add command execution only with working directory controls, timeouts, output capture, and user approvals or allowlists. Do not add a raw shell endpoint.
 - Add file edits as proposed patches. Show diffs and apply only after review. The current diff panel is read-only and should remain the review foundation for future apply flows.

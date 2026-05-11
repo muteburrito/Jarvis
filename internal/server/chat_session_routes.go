@@ -14,7 +14,7 @@ func (s *Server) handleListChats(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusNotFound, "chat store not available")
 		return
 	}
-	writeJSON(w, http.StatusOK, s.chats.List())
+	writeJSON(w, http.StatusOK, s.chats.List(s.activeProjectID()))
 }
 
 func (s *Server) handleCreateChat(w http.ResponseWriter, r *http.Request) {
@@ -26,7 +26,7 @@ func (s *Server) handleCreateChat(w http.ResponseWriter, r *http.Request) {
 		Title string `json:"title"`
 	}
 	_ = json.NewDecoder(r.Body).Decode(&req)
-	session, err := s.chats.Create(req.Title)
+	session, err := s.chats.Create(req.Title, s.activeProjectID())
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "failed to create chat")
 		return

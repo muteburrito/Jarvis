@@ -140,6 +140,7 @@
                                     <p class="truncate text-sm font-medium" x-text="chatTitle(chat)"></p>
                                     <p class="mt-0.5 truncate text-xs text-slate-500">
                                         <span x-text="chat.message_count + ' messages'"></span>
+                                        <span x-show="chat.project_id" class="text-slate-400"> , project</span>
                                         <span x-show="chatTimestamp(chat)" x-text="' , ' + chatTimestamp(chat)"></span>
                                     </p>
                                 </div>
@@ -806,6 +807,13 @@
                                 <div>
                                     <p class="mt-1 truncate text-sm font-medium text-slate-200" x-text="projectSummary().active.name"></p>
                                     <p class="mt-1 truncate text-xs text-slate-500" x-text="projectSummary().active.path"></p>
+                                    <div class="mt-2 flex flex-wrap items-center gap-2 text-xs text-slate-500">
+                                        <span class="workspace-count-pill">
+                                            <span x-text="projectSummary().activeDocumentCount"></span>
+                                            <span>project docs</span>
+                                        </span>
+                                        <span x-text="projectSummary().retrievalScope"></span>
+                                    </div>
                                 </div>
                             </template>
                             <p x-show="!projectSummary().active" class="mt-1 text-xs text-slate-500">Index or open a folder to make it the active project.</p>
@@ -1255,7 +1263,7 @@
                     <ul class="list-disc list-inside space-y-1 text-slate-400 ml-2">
                         <li>Click the indexed count in the chat header to view indexed documents</li>
                         <li>Delete a single indexed file when you no longer want it in retrieval</li>
-                        <li>Use <strong class="text-slate-300">Clear all</strong> to clear the vector store and Jarvis-owned upload copies</li>
+                        <li>Use <strong class="text-slate-300">Clear all</strong> to clear the active project index, the global index, and Jarvis-owned upload copies</li>
                         <li>External files indexed from folders are preserved on disk when you delete or clear the index</li>
                         <li>Images are described by the vision model when available, then stored as searchable text</li>
                     </ul>

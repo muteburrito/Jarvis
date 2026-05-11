@@ -9,7 +9,7 @@ func TestChatStorePersistsSessions(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	session, err := store.Create("First question")
+	session, err := store.Create("First question", "")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -37,5 +37,45 @@ func TestChatStorePersistsSessions(t *testing.T) {
 	}
 	if loaded.Title != "How does indexing work?" {
 		t.Fatalf("expected derived title, got %q", loaded.Title)
+	}
+}
+
+func TestChatStoreFiltersByProject(t *testing.T) {
+	dir := t.TempDir()
+	store, err := NewChatStore(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	global, err := store.Create("Global chat", "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	project, err := store.Create("Project chat", "proj_123")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	globalOnlyList := store.List("")
+	if len(globalOnlyList) != 1 || globalOnlyList[0].ID != global.ID {
+		t.Fatalf("expected only global chat without active project, got %#v", globalOnlyList)
+	}
+
+	projectList := store.List("proj_123")
+	if len(projectList) != 2 {
+		t.Fatalf("expected project chat plus legacy global chat, got %#v", projectList)
+	}
+	foundProject := false
+	foundGlobal := false
+	for _, summary := range projectList {
+		if summary.ID == project.ID && summary.ProjectID == "proj_123" {
+			foundProject = true
+		}
+		if summary.ID == global.ID && summary.ProjectID == "" {
+			foundGlobal = true
+		}
+	}
+	if !foundProject || !foundGlobal {
+		t.Fatalf("expected project and global summaries, got %#v", projectList)
 	}
 }

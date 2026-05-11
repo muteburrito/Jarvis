@@ -63,3 +63,32 @@ func TestUpsertProjectDedupesByPath(t *testing.T) {
 		t.Fatalf("expected one deduped project, got %d", len(state.Projects))
 	}
 }
+
+func TestActiveProjectAndVectorStorePath(t *testing.T) {
+	dataDir := t.TempDir()
+	projectDir := filepath.Join(t.TempDir(), "Project")
+	if err := os.MkdirAll(projectDir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+
+	state, project, err := UpsertProject(dataDir, projectDir, "")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	active, ok := ActiveProject(state)
+	if !ok {
+		t.Fatal("expected active project")
+	}
+	if active.ID != project.ID {
+		t.Fatalf("active project = %q, want %q", active.ID, project.ID)
+	}
+
+	found, ok := FindProjectByPath(state, projectDir)
+	if !ok {
+		t.Fatal("expected project by path")
+	}
+	if got := ResolveProjectVectorStoreDir(dataDir, found); !filepath.IsAbs(got) {
+		t.Fatalf("expected absolute vector store path, got %q", got)
+	}
+}

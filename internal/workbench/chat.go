@@ -14,6 +14,7 @@ import (
 
 type ChatSession struct {
 	ID        string        `json:"id"`
+	ProjectID string        `json:"project_id,omitempty"`
 	Title     string        `json:"title"`
 	Messages  []ChatMessage `json:"messages"`
 	CreatedAt time.Time     `json:"created_at"`
@@ -62,6 +63,7 @@ type FocusedDocument struct {
 
 type ChatSummary struct {
 	ID           string    `json:"id"`
+	ProjectID    string    `json:"project_id,omitempty"`
 	Title        string    `json:"title"`
 	MessageCount int       `json:"message_count"`
 	UpdatedAt    time.Time `json:"updated_at"`
@@ -87,14 +89,23 @@ func NewChatStore(dir string) (*ChatStore, error) {
 	return store, nil
 }
 
-func (s *ChatStore) List() []ChatSummary {
+func (s *ChatStore) List(projectID string) []ChatSummary {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
 	summaries := make([]ChatSummary, 0, len(s.sessions))
+	filterProjectID := cleanProjectID(projectID)
 	for _, session := range s.sessions {
+		sessionProjectID := cleanProjectID(session.ProjectID)
+		if filterProjectID == "" && sessionProjectID != "" {
+			continue
+		}
+		if filterProjectID != "" && sessionProjectID != "" && sessionProjectID != filterProjectID {
+			continue
+		}
 		summaries = append(summaries, ChatSummary{
 			ID:           session.ID,
+			ProjectID:    session.ProjectID,
 			Title:        session.Title,
 			MessageCount: len(session.Messages),
 			UpdatedAt:    session.UpdatedAt,
@@ -106,13 +117,14 @@ func (s *ChatStore) List() []ChatSummary {
 	return summaries
 }
 
-func (s *ChatStore) Create(title string) (ChatSession, error) {
+func (s *ChatStore) Create(title string, projectID string) (ChatSession, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
 	now := time.Now()
 	session := ChatSession{
 		ID:        "chat_" + uuid.New().String()[:8],
+		ProjectID: cleanProjectID(projectID),
 		Title:     cleanChatTitle(title),
 		Messages:  []ChatMessage{},
 		CreatedAt: now,
@@ -206,4 +218,8 @@ func cleanChatTitle(title string) string {
 		return title[:57] + "..."
 	}
 	return title
+}
+
+func cleanProjectID(projectID string) string {
+	return strings.TrimSpace(projectID)
 }

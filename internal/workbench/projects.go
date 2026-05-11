@@ -89,6 +89,31 @@ func UpsertProject(dataDir string, projectPath string, name string) (ProjectStat
 	return state, project, nil
 }
 
+func ActiveProject(state ProjectState) (Project, bool) {
+	for _, project := range state.Projects {
+		if project.ID == state.ActiveProjectID {
+			return project, true
+		}
+	}
+	return Project{}, false
+}
+
+func FindProjectByPath(state ProjectState, projectPath string) (Project, bool) {
+	for _, project := range state.Projects {
+		if sameProjectPath(project.Path, projectPath) {
+			return project, true
+		}
+	}
+	return Project{}, false
+}
+
+func ResolveProjectVectorStoreDir(dataDir string, project Project) string {
+	if filepath.IsAbs(project.VectorStoreDir) {
+		return filepath.Clean(project.VectorStoreDir)
+	}
+	return filepath.Join(dataDir, project.VectorStoreDir)
+}
+
 func SaveProjectState(dataDir string, state ProjectState) error {
 	if err := os.MkdirAll(dataDir, 0o755); err != nil {
 		return err

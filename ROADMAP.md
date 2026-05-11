@@ -52,7 +52,7 @@ Jarvis should become Gemma-native over time instead of being tightly coupled to 
 | **Scheduled folder re-indexing** | Done. Folder ingest saves watched folders and refreshes new or modified files in the background while keeping workspace maps current. |
 | **Codex-style chat workspace** | Done. Neutral desktop theme, queued follow-ups, editable/reorderable queue, response copy/rating/fork controls, response timing, and expanded in-app Help. |
 | **Natural live context** | Done. Normal chat quietly uses current local time, locale, timezone, pasted URLs, and live web context when available. Research mode remains the transparent source-heavy path. |
-| **Project foundation** | Done. Indexed folders become persisted projects with an active project, workspace map, watched re-indexing, and a reserved per-project vector-store path for the agent workflow. |
+| **Project foundation** | Done. Indexed folders become persisted projects with an active project, workspace map, watched re-indexing, and a per-project vector-store path for folder indexes. |
 | **Local diff review** | Done. The Workbench shows changed-file totals, additions, deletions, statuses, and expandable text patches for the active git project. |
 | **Multiple named workspaces** | Save and switch between named document sets. Each workspace should have its own vector store, documents, and chat history. |
 | **Vector compression research** | Evaluate TurboQuant, QJL, and PolarQuant ideas for compressing Jarvis embeddings or adding an approximate search tier. Reference: https://research.google/blog/turboquant-redefining-ai-efficiency-with-extreme-compression/ |
@@ -92,7 +92,7 @@ Included:
 
 | Feature | What it adds |
 |---|---|
-| **Project-scoped indexes** | Move from one global vector store to project/document-set scoped stores. Keep each project isolated for retrieval, chat history, workspace map, command policy, and future edits. |
+| **Project-scoped indexes** | In progress. Folder indexing now writes to the active project's vector store and RAG prefers the active project store when it exists. New chats are tagged to the active project while legacy global chats remain visible. Next isolate command policy and edit history per project. |
 | **Agent tool loop** | Let the model call tools mid-task: search files, read files, inspect symbols, list directories, summarize files, fetch URLs, and ask for approval. |
 | **Read-only project tools** | In progress. Search active-project files, read safe text previews, summarize symbols/imports, and record tool traces. Next wire these tools into the model loop. |
 | **Safe local command runner** | In progress. Runs only allowlisted, approved commands in the active project with timeouts, output caps, exit code, and task traces. |
