@@ -21,7 +21,7 @@ No data leaves your machine. No API keys needed. Single binary, runs anywhere.
 - **Project foundation:** indexed folders are saved as projects with an active project, workspace map, watched re-indexing, and a reserved project vector-store path for future agent workflows
 - **Workbench activity:** inspect the active project, workspace map summary, local git changes, and recent task activity without crowding the chat UI
 - **Image support:** upload standalone images (PNG, JPG, etc.) or PDFs with embedded images. A vision model describes each image so it becomes searchable and queryable
-- **Live context:** normal chat quietly uses current date/time, browser locale, timezone, pasted URLs, and web context when available, without showing search progress
+- **Live context:** normal chat uses current date/time, browser locale, timezone, pasted URLs, and selective web context for current questions when available, without searching every message
 - **Deep research mode:** toggle research mode when you want visible search progress, fetched sources, citations, and links. No API key needed
 - **URL fetching:** paste a website link directly in chat. Jarvis auto-detects URLs in normal chat messages, fetches the page, and indexes it quietly. URLs inside the code snippet box are treated as code and are not fetched
 - **Regional awareness:** automatically detects your locale and timezone from the browser. Answers use your local currency, date formats, and regionally relevant context
@@ -273,7 +273,7 @@ The chat UI supports a few context controls that make local models more useful:
 - reply to a message to anchor a follow-up to that exact turn
 - type `@` or `#` to focus retrieval on a specific indexed file
 - paste images into the composer so they are indexed before the question runs
-- ask current questions naturally. Normal chat can quietly refresh live web context when internet is available
+- ask current questions naturally. Normal chat can quietly refresh live web context when the question is clearly time-sensitive
 - queue follow-up messages while the current response streams
 - edit or reorder queued follow-ups before Jarvis sends them
 - fork a conversation from an assistant response when you want a new branch of thought

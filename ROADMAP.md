@@ -8,7 +8,7 @@ Jarvis should grow from a private document chatbot into an open-source, web-base
 
 The key product bets:
 
-- **Local-first and open-source**: run with Ollama or other local model servers first. Cloud models can be optional later, but never required.
+- **Gemma-native and local-first**: build Jarvis around Gemma 4 as the primary model family. Use local inference first, with Ollama kept as a transition/fallback path while llama.cpp support lands.
 - **Workspace, not only chat**: keep the browser and desktop UI shared, but evolve Jarvis into a workbench with files, tasks, workspace maps, diffs, terminals, tests, and review output.
 - **Trust through visibility**: every agent action should be visible, interruptible, and reversible. Show plans, file reads, commands, patches, test output, retrieval traces, and final diffs.
 - **Small models with good context**: use retrieval, workspace maps, symbols, BM25, reranking, and compact task state so local models can perform well without huge memory needs.
@@ -23,6 +23,20 @@ Recent coding-agent tools point toward a few patterns worth copying:
 - Continue.dev is strong at IDE-style roles: chat, edit, apply, autocomplete, embeddings, and reranking. Jarvis should adopt the role separation even if it stays web-based.
 - Aider is a useful reference for git-aware editing, workspace maps, focused multi-file patches, automatic test runs, and commit-message generation.
 - Localforge is a good UI reference for local tasks, visual diffs, model switching, task tracking, and expert/review modes.
+- Unsloth's Gemma 4 local guide is a good runtime reference: Gemma 4 GGUFs, llama.cpp execution, `temperature=1.0`, `top_p=0.95`, `top_k=64`, explicit `<|think|>` thinking control, multimodal settings, and the rule to keep only final visible answers in multi-turn history. Reference: https://unsloth.ai/docs/models/gemma-4
+
+## Gemma 4 Runtime Direction
+
+Jarvis should become Gemma-native over time instead of being tightly coupled to Ollama.
+
+| Workstream | What it adds |
+|---|---|
+| **Gemma 4 model ladder** | Standardize on Gemma 4 E2B for very small machines, E4B as the default fast local model, 26B-A4B for the best speed/quality workstation profile, and 31B for maximum local quality. |
+| **llama.cpp runtime** | Add a direct llama.cpp backend for GGUF models, model download/cache management, streaming, cancellation, context sizing, and platform-specific acceleration. Keep Ollama as fallback during migration. |
+| **Gemma chat template** | Implement Gemma 4 turn formatting, end-of-sentence handling with `<turn|>`, recommended sampling defaults, and history cleanup so thought blocks are never fed back into later turns. |
+| **Thinking profiles** | Add role-aware system prompts: fast chat without thinking, research/reasoning with `<|think|>`, coding-agent planning with thinking, and final-answer cleanup that hides internal reasoning from the UI. |
+| **Gemma multimodal path** | Use E2B/E4B for text, image, and audio features on small machines. Use 26B-A4B or 31B for stronger text/image reasoning when hardware allows. |
+| **Agentic Gemma loop** | Tune project tools, command approvals, patch generation, review mode, and test loops specifically for Gemma 4 tool-use behavior. |
 
 ## Phase 3 - Power Features
 
@@ -43,6 +57,7 @@ Recent coding-agent tools point toward a few patterns worth copying:
 | **Context picker** | Let users pin files, folders, symbols, diffs, terminal output, URLs, and documents into the next task. Show context budget impact before sending. |
 | **Code-aware retrieval** | Add code-specific chunking, symbol metadata, exact identifier search, dependency-aware boosting, and optional reranking. |
 | **Model role profiles** | Split model config by role: chat, edit, apply, autocomplete, embedding, reranker, and vision. |
+| **Gemma 4 runtime research** | Define the Gemma-native model ladder, llama.cpp backend plan, thinking profiles, and migration away from mandatory Ollama. |
 | **Frontend modularization** | In progress. Chat behavior is split into focused message modules. Next split the large HTML template into embedded partials and organize CSS by component. |
 
 ## v2.1.0 Release Scope
@@ -83,6 +98,7 @@ Included:
 | **Code review mode** | Review a local diff or branch and produce findings with severity, file, line, risk, and test gaps. |
 | **GitHub issue and pull request flow** | Pull issue context from GitHub, create a task from it, push a branch, and draft a pull request with summary and tests. |
 | **Skills and project rules** | Support reusable local skills and repo instructions through `AGENTS.md` and optional `skills/*/SKILL.md` files. |
+| **Gemma-tuned agent prompts** | Add role-specific Gemma 4 prompts for research, planning, coding, patch review, and command output analysis, with thinking enabled only where it helps. |
 
 ## Agent Workflow Architecture
 

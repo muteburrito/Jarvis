@@ -240,9 +240,40 @@ func buildChatQuery(query, codeSnippet, codeLang string) string {
 }
 
 func shouldGatherLiveContext(query string, codeSnippet string) bool {
-	query = strings.TrimSpace(query)
-	if query == "" || strings.TrimSpace(codeSnippet) != "" {
+	query = strings.ToLower(strings.TrimSpace(query))
+	if query == "" || strings.TrimSpace(codeSnippet) != "" || len(extractURLs(query)) > 0 {
 		return false
 	}
-	return true
+	currentTerms := []string{
+		"current",
+		"currently",
+		"latest",
+		"today",
+		"tonight",
+		"yesterday",
+		"tomorrow",
+		"this week",
+		"this month",
+		"news",
+		"weather",
+		"temperature",
+		"forecast",
+		"stock",
+		"share price",
+		"exchange rate",
+		"price of",
+		"who is the",
+		"president of",
+		"prime minister",
+		"ceo of",
+		"release date",
+		"version",
+		"changelog",
+	}
+	for _, term := range currentTerms {
+		if strings.Contains(query, term) {
+			return true
+		}
+	}
+	return false
 }
