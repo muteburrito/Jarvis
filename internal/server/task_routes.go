@@ -60,11 +60,18 @@ func (s *Server) handleAddTaskEdit(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadRequest, "path and action are required")
 		return
 	}
-	s.tasks.AddEdit(workbench.EditRecord{
+	edit := workbench.EditRecord{
 		Path:    strings.TrimSpace(req.Path),
 		Action:  strings.TrimSpace(req.Action),
 		Summary: strings.TrimSpace(req.Summary),
-	})
+	}
+	s.tasks.AddEdit(edit)
+	if project, ok := s.activeProject(); ok {
+		if err := workbench.RecordProjectEdit(s.cfg.DataDir, project, edit); err != nil {
+			writeError(w, http.StatusInternalServerError, "failed to record project edit history")
+			return
+		}
+	}
 	s.recordTaskTrace("edit", "Recorded edit history", map[string]string{
 		"path":   strings.TrimSpace(req.Path),
 		"action": strings.TrimSpace(req.Action),

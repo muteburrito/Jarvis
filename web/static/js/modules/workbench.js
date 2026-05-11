@@ -181,6 +181,8 @@ window.jarvisWorkbench = {
                 activeDocumentCount,
                 commandCount: (activity.command_history || []).length,
                 approvedCommandCount: (activity.command_policy?.approved_commands || []).length,
+                editCount: (activity.edit_history || []).length,
+                patchCount: (activity.patch_history || []).length,
                 retrievalScope: activeDocumentCount > 0 ? 'Project index active' : 'Global index fallback'
             };
         },

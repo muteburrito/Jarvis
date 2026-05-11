@@ -820,6 +820,14 @@
                                             <span x-text="projectSummary().approvedCommandCount"></span>
                                             <span>approvals</span>
                                         </span>
+                                        <span class="workspace-count-pill">
+                                            <span x-text="projectSummary().editCount"></span>
+                                            <span>edits</span>
+                                        </span>
+                                        <span class="workspace-count-pill">
+                                            <span x-text="projectSummary().patchCount"></span>
+                                            <span>patches</span>
+                                        </span>
                                         <span x-text="projectSummary().retrievalScope"></span>
                                     </div>
                                 </div>
@@ -1150,10 +1158,6 @@
                             <p class="mt-0.5 text-xs text-slate-400">Let the model search files, inspect symbols, summarize files, fetch URLs, and ask for approval mid-task.</p>
                         </div>
                         <div class="rounded-lg bg-slate-700/40 p-3">
-                            <p class="font-medium text-slate-200">Project edit history and patch state</p>
-                            <p class="mt-0.5 text-xs text-slate-400">Move edit history and future patch state into each project.</p>
-                        </div>
-                        <div class="rounded-lg bg-slate-700/40 p-3">
                             <p class="font-medium text-slate-200">Read-only tools in model loop</p>
                             <p class="mt-0.5 text-xs text-slate-400">Let the model call existing safe project search, read, and summarize tools.</p>
                         </div>
@@ -1193,7 +1197,7 @@
                 </div>
 
                 <div class="pt-2 border-t border-slate-700 text-xs text-slate-500">
-                    <p>Recently completed: desktop release path, GitHub updater, Ollama bootstrap, workspace map, watched folders, reply and file focus, project-scoped folder indexes, project-tagged chats, project command policy and history, local diff review, read-only project tools, command runner foundations, Gemma 4 profiles, and the polished chat workspace.</p>
+                    <p>Recently completed: desktop release path, GitHub updater, Ollama bootstrap, workspace map, watched folders, reply and file focus, project-scoped folder indexes, project-tagged chats, project command policy/history, edit history and patch-state storage, local diff review, read-only project tools, command runner foundations, Gemma 4 profiles, and the polished chat workspace.</p>
                 </div>
             </div>
         </div>

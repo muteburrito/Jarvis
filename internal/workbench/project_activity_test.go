@@ -78,3 +78,61 @@ func TestRecordProjectCommandUpdatesApprovalUseCount(t *testing.T) {
 		t.Fatalf("expected use count 2, got %d", activity.CommandPolicy.ApprovedCommands[0].UseCount)
 	}
 }
+
+func TestRecordProjectEditPersistsEditHistory(t *testing.T) {
+	dataDir := t.TempDir()
+	project := Project{
+		ID:             "proj_test",
+		Name:           "Test",
+		Path:           t.TempDir(),
+		VectorStoreDir: "projects/proj_test/vectorstore",
+	}
+
+	if err := RecordProjectEdit(dataDir, project, EditRecord{
+		Path:    "README.md",
+		Action:  "proposed",
+		Summary: "Updated docs",
+	}); err != nil {
+		t.Fatal(err)
+	}
+
+	activity, err := LoadProjectActivity(dataDir, project)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(activity.EditHistory) != 1 {
+		t.Fatalf("expected one edit, got %d", len(activity.EditHistory))
+	}
+	if activity.EditHistory[0].Path != "README.md" {
+		t.Fatalf("unexpected edit history: %#v", activity.EditHistory[0])
+	}
+}
+
+func TestRecordProjectPatchPersistsPatchState(t *testing.T) {
+	dataDir := t.TempDir()
+	project := Project{
+		ID:             "proj_test",
+		Name:           "Test",
+		Path:           t.TempDir(),
+		VectorStoreDir: "projects/proj_test/vectorstore",
+	}
+
+	if err := RecordProjectPatch(dataDir, project, PatchRecord{
+		Path:    "main.go",
+		Summary: "Proposed change",
+		Patch:   "@@ -1 +1 @@",
+	}); err != nil {
+		t.Fatal(err)
+	}
+
+	activity, err := LoadProjectActivity(dataDir, project)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(activity.PatchHistory) != 1 {
+		t.Fatalf("expected one patch, got %d", len(activity.PatchHistory))
+	}
+	if activity.PatchHistory[0].Status != "proposed" || activity.PatchHistory[0].ID == "" {
+		t.Fatalf("unexpected patch state: %#v", activity.PatchHistory[0])
+	}
+}

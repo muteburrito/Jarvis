@@ -77,6 +77,7 @@ These features are already implemented and should not be treated as active roadm
 - Gemma 4 capability metadata, prompt guidance, sampling defaults, and thinking-output cleanup
 - Project-scoped folder indexes, project-preferred RAG retrieval, and project-tagged chats
 - Project-scoped command policy and command history for approved local commands
+- Project-scoped edit history and patch-state storage
 
 ## Release Planning
 
@@ -89,7 +90,6 @@ This should be a minor release because it adds backward-compatible product featu
 | Feature | What it adds |
 |---|---|
 | **Agent tool loop** | Let the model call tools mid-task: search files, read files, inspect symbols, list directories, summarize files, fetch URLs, and ask for approval. |
-| **Project-scoped edit history and patch state** | Move edit history and future patch state into the active project's storage boundary. Command policy and command history are already project-scoped. |
 | **Read-only project tools in model loop** | Search active-project files, read safe text previews, summarize symbols/imports, and record tool traces from model-requested tool calls. |
 | **Safe local command runner in model loop** | Let the agent request allowlisted commands, ask for approval when needed, run with timeouts/output caps, and summarize results. |
 | **Patch generation and apply flow** | Generate unified diffs, preview changes in the UI, apply approved patches, and support discard per file. |
@@ -105,10 +105,9 @@ This should be a minor release because it adds backward-compatible product featu
 
 The Codex-like workflow is possible, but it should land in careful layers:
 
-1. **Project storage:** finish isolating edit history and future patch state per project.
-2. **Model tool loop:** let the model request read-only tools, fetch context, and ask for approval through structured tool calls.
-3. **Command tools:** connect the existing allowlisted runner to the model loop with working directory controls, timeouts, output capture, and approval gates.
-4. **Patch tools:** propose file edits as diffs, show review UI, apply only approved patches, and record edit history.
-5. **Review and test loop:** run tests, parse failures, update patches, and produce a final review summary.
+1. **Model tool loop:** let the model request read-only tools, fetch context, and ask for approval through structured tool calls.
+2. **Command tools:** connect the existing allowlisted runner to the model loop with working directory controls, timeouts, output capture, and approval gates.
+3. **Patch tools:** propose file edits as diffs, show review UI, apply only approved patches, and record edit history.
+4. **Review and test loop:** run tests, parse failures, update patches, and produce a final review summary.
 
 Scheduled folder re-indexing helps this directly because it keeps the active project's local context current while the agent works.
