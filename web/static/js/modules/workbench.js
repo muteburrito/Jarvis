@@ -25,9 +25,23 @@ window.jarvisWorkbench = {
                 if (resp.ok) {
                     this.projectState = await resp.json();
                     await this.loadDocuments();
+                    await this.loadProjectActivity();
                     await this.refreshChatList();
                 }
             } catch {}
+        },
+
+        async loadProjectActivity() {
+            try {
+                const resp = await fetch(this.apiURL('/api/v1/projects/activity'));
+                if (resp.ok) {
+                    this.projectActivity = await resp.json();
+                } else if (resp.status === 404) {
+                    this.projectActivity = null;
+                }
+            } catch {
+                this.projectActivity = null;
+            }
         },
 
         async loadDiffSummary() {
@@ -126,6 +140,7 @@ window.jarvisWorkbench = {
                 this.loadTaskState(),
                 this.loadRepoMap(),
                 this.loadProjects(),
+                this.loadProjectActivity(),
                 this.loadDiffSummary()
             ]);
             this.showWorkbenchPanel = true;
@@ -158,11 +173,14 @@ window.jarvisWorkbench = {
             const projects = state.projects || [];
             const active = projects.find(project => project.active) || null;
             const activeDocumentCount = active ? (this.documents || []).length : 0;
+            const activity = this.projectActivity || {};
             return {
                 count: projects.length,
                 active,
                 vectorStoreDir: active?.vector_store_dir || '',
                 activeDocumentCount,
+                commandCount: (activity.command_history || []).length,
+                approvedCommandCount: (activity.command_policy?.approved_commands || []).length,
                 retrievalScope: activeDocumentCount > 0 ? 'Project index active' : 'Global index fallback'
             };
         },

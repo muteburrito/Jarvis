@@ -16,6 +16,7 @@ function chatApp() {
         taskState: null,
         repoMap: null,
         projectState: null,
+        projectActivity: null,
         diffSummary: null,
         expandedDiffs: {},
         toolSearch: '',

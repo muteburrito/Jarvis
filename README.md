@@ -264,7 +264,7 @@ Jarvis is being prepared for a Codex-like local agent workflow. The current rele
 
 The next layers are:
 
-- project-scoped vector stores are now used for folder indexes. New chats are tagged to the active project, while legacy global chats remain visible. Command policy and edit history are next.
+- project-scoped vector stores are now used for folder indexes. New chats are tagged to the active project, while legacy global chats remain visible. Approved command policy and command history are also stored per project. Edit history and patch state are next.
 - read-only tools for listing, searching, reading, and summarizing project files. The first tool endpoints and Workbench preview UI are available now.
 - safe command execution with approvals, timeouts, and captured output. The first allowlisted command runner is available in the Workbench.
 - patch generation, review, apply, and discard flows. The current Workbench already shows read-only local diffs for the active git project.

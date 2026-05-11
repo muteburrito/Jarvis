@@ -84,11 +84,12 @@ func (s *Server) handleSummarizeProjectFile(w http.ResponseWriter, r *http.Reque
 }
 
 func (s *Server) handleRunProjectCommand(w http.ResponseWriter, r *http.Request) {
-	root, ok := s.activeProjectPath()
+	project, ok := s.activeProject()
 	if !ok {
 		writeError(w, http.StatusNotFound, "open a project before running commands")
 		return
 	}
+	root := project.Path
 
 	var req workbench.CommandRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -98,6 +99,10 @@ func (s *Server) handleRunProjectCommand(w http.ResponseWriter, r *http.Request)
 	result, err := workbench.RunApprovedCommand(root, req)
 	if err != nil {
 		writeError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+	if err := workbench.RecordProjectCommand(s.cfg.DataDir, project, result); err != nil {
+		writeError(w, http.StatusInternalServerError, "failed to record project command")
 		return
 	}
 	s.recordTaskTrace("tool_command", "Ran approved project command", map[string]string{

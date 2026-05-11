@@ -29,6 +29,7 @@ func (s *Server) registerRoutes() {
 	s.router.Get("/api/v1/models", s.handleListModels)
 	s.router.Get("/api/v1/projects", s.handleListProjects)
 	s.router.Post("/api/v1/projects", s.handleOpenProject)
+	s.router.Get("/api/v1/projects/activity", s.handleProjectActivity)
 	s.router.Get("/api/v1/diff", s.handleDiffSummary)
 	s.router.Get("/api/v1/repo-map", s.handleRepoMap)
 	s.router.Get("/api/v1/tools/files", s.handleSearchProjectFiles)

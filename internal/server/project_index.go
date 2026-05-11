@@ -45,13 +45,21 @@ func (s *Server) activeProjectStore() (*vectorstore.Store, string, bool) {
 }
 
 func (s *Server) activeProjectID() string {
-	state, err := workbench.LoadProjectState(s.cfg.DataDir)
-	if err != nil {
-		return ""
-	}
-	project, ok := workbench.ActiveProject(state)
+	project, ok := s.activeProject()
 	if !ok {
 		return ""
 	}
 	return project.ID
+}
+
+func (s *Server) activeProject() (workbench.Project, bool) {
+	state, err := workbench.LoadProjectState(s.cfg.DataDir)
+	if err != nil {
+		return workbench.Project{}, false
+	}
+	project, ok := workbench.ActiveProject(state)
+	if !ok {
+		return workbench.Project{}, false
+	}
+	return project, true
 }

@@ -75,3 +75,21 @@ func (s *Server) handleOpenProject(w http.ResponseWriter, r *http.Request) {
 		"note":      fmt.Sprintf("Project %s is active with %d project documents indexed.", project.Name, documentCount),
 	})
 }
+
+func (s *Server) handleProjectActivity(w http.ResponseWriter, r *http.Request) {
+	project, ok := s.activeProject()
+	if !ok {
+		writeError(w, http.StatusNotFound, "open a project before viewing project activity")
+		return
+	}
+	activity, err := workbench.LoadProjectActivity(s.cfg.DataDir, project)
+	if err != nil {
+		if os.IsNotExist(err) {
+			writeJSON(w, http.StatusOK, workbench.ProjectActivity{ProjectID: project.ID})
+			return
+		}
+		writeError(w, http.StatusInternalServerError, "failed to load project activity")
+		return
+	}
+	writeJSON(w, http.StatusOK, activity)
+}
