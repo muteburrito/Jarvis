@@ -3,7 +3,7 @@ window.jarvisUi = {
             if (!text) return '';
             try {
                 const html = marked.parse(text);
-                return DOMPurify.sanitize(html);
+                return DOMPurify.sanitize(html, { ADD_ATTR: ['target', 'rel'] });
             } catch {
                 return DOMPurify.sanitize(text);
             }
@@ -241,5 +241,29 @@ window.jarvisUi = {
 
         closeSourcePreview() {
             this.sourceModal = { show: false, source: null };
+        },
+
+        sourceURL(source) {
+            const value = source?.source || '';
+            return /^https?:\/\//i.test(value) ? value : '';
+        },
+
+        openSourceWebPage(source) {
+            const url = this.sourceURL(source);
+            if (!url) return;
+            this.openWebSource(url, this.sourceLabel(source));
+        },
+
+        openWebSource(url, title = '') {
+            if (!/^https?:\/\//i.test(url || '')) return;
+            this.webSourceModal = {
+                show: true,
+                url,
+                title: title || url
+            };
+        },
+
+        closeWebSource() {
+            this.webSourceModal = { show: false, url: '', title: '' };
         },
 };

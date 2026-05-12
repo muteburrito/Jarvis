@@ -730,12 +730,63 @@
             <div class="p-5 overflow-y-auto">
                 <pre class="whitespace-pre-wrap text-sm leading-6 text-slate-200 bg-slate-900 border border-slate-700 rounded-xl p-4" x-text="sourceModal.source?.excerpt || 'No excerpt available.'"></pre>
             </div>
-            <div class="flex justify-end border-t border-slate-700 bg-slate-800 px-5 py-4">
+            <div class="flex items-center justify-between gap-3 border-t border-slate-700 bg-slate-800 px-5 py-4">
+                <button x-show="sourceURL(sourceModal.source)"
+                        x-cloak
+                        @click="openSourceWebPage(sourceModal.source)"
+                        type="button"
+                        class="workbench-secondary-button">
+                    Open web page
+                </button>
                 <button @click="closeSourcePreview()" type="button" class="workbench-secondary-button">
                     Close
                 </button>
             </div>
         </div>
+    </div>
+
+    <!-- Source web page viewer -->
+    <div x-show="webSourceModal.show"
+         x-cloak
+         x-transition:enter="transition ease-out duration-200"
+         x-transition:enter-start="opacity-0"
+         x-transition:enter-end="opacity-100"
+         x-transition:leave="transition ease-in duration-150"
+         x-transition:leave-start="opacity-100"
+         x-transition:leave-end="opacity-0"
+         class="source-web-viewer"
+         role="dialog"
+         aria-modal="true"
+         aria-label="Source web page"
+         @keydown.escape.window="closeWebSource()">
+        <div class="source-web-toolbar">
+            <div class="min-w-0">
+                <p class="source-web-title" x-text="webSourceModal.title || 'Source web page'"></p>
+                <p class="source-web-url" x-text="webSourceModal.url"></p>
+            </div>
+            <div class="source-web-actions">
+                <a :href="webSourceModal.url"
+                   target="_blank"
+                   rel="noopener noreferrer"
+                   class="workbench-secondary-button">
+                    Open in browser
+                </a>
+                <button @click="closeWebSource()"
+                        type="button"
+                        class="source-web-close"
+                        title="Close source web page"
+                        aria-label="Close source web page">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                </button>
+            </div>
+        </div>
+        <iframe x-show="webSourceModal.url"
+                x-cloak
+                class="source-web-frame"
+                :src="webSourceModal.show ? webSourceModal.url : 'about:blank'"
+                title="Source web page"></iframe>
     </div>
 
     <!-- Indexed files modal -->

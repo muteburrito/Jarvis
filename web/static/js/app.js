@@ -59,6 +59,7 @@ function chatApp() {
         updateApplying: false,
         notesModal: { show: false, tag: '', content: '' },
         sourceModal: { show: false, source: null },
+        webSourceModal: { show: false, url: '', title: '' },
         showRoadmap: false,
 
         init() {
@@ -78,6 +79,19 @@ function chatApp() {
                 gfm: true,
             });
             const renderer = new marked.Renderer();
+            renderer.link = (href, title, text) => {
+                if (typeof href === 'object' && href !== null) {
+                    title = href.title || '';
+                    text = href.text || href.href || '';
+                    href = href.href || '';
+                }
+                const safeHref = this.escapeHtml(href || '');
+                const safeTitle = title ? ` title="${this.escapeHtml(title)}"` : '';
+                const safeText = text || safeHref;
+                const isExternal = /^https?:\/\//i.test(href || '');
+                const targetAttrs = isExternal ? ' target="_blank" rel="noopener noreferrer"' : '';
+                return `<a href="${safeHref}"${safeTitle}${targetAttrs}>${safeText}</a>`;
+            };
             renderer.code = (code, infoString) => {
                 if (typeof code === 'object' && code !== null) {
                     infoString = code.lang || '';
@@ -101,8 +115,15 @@ function chatApp() {
 
             document.addEventListener('click', (event) => {
                 const button = event.target.closest('.code-copy-button');
-                if (!button) return;
-                this.copyCodeBlock(button);
+                if (button) {
+                    this.copyCodeBlock(button);
+                    return;
+                }
+
+                const link = event.target.closest('.chat-message a[href]');
+                if (!link || !/^https?:\/\//i.test(link.href)) return;
+                event.preventDefault();
+                this.openWebSource(link.href, link.textContent || link.href);
             });
         },
 
