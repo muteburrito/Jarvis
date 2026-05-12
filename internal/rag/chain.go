@@ -30,6 +30,7 @@ func NewChain(ollamaClient *ollama.Client, store *vectorstore.Store, cfg *config
 
 type QueryOptions struct {
 	ResearchMode     bool
+	ThinkingMode     bool
 	Locale           string
 	Timezone         string
 	ChatModel        string
@@ -71,13 +72,9 @@ func (c *Chain) Query(ctx context.Context, question string, history []ollamaapi.
 		ragContext := buildContext(results)
 		sources = buildSourceList(results)
 
-		if opts.ResearchMode {
-			systemContent = buildSystemPrompt(opts.ChatModel, gemma.ProfileResearch, fmt.Sprintf(researchPromptTemplate, ragContext))
-		} else {
-			systemContent = buildSystemPrompt(opts.ChatModel, gemma.ProfileChat, fmt.Sprintf(systemPromptTemplate, ragContext))
-		}
+		systemContent = buildSystemPromptWithThinking(opts.ChatModel, promptProfile(opts), promptBody(opts, ragContext), opts.ThinkingMode)
 	} else {
-		systemContent = buildSystemPrompt(opts.ChatModel, gemma.ProfileChat, directChatPrompt)
+		systemContent = buildSystemPromptWithThinking(opts.ChatModel, promptProfile(opts), directChatPrompt, opts.ThinkingMode)
 	}
 
 	if opts.Locale != "" || opts.Timezone != "" {
@@ -122,6 +119,23 @@ func (c *Chain) Query(ctx context.Context, question string, history []ollamaapi.
 	}
 
 	return &QueryResult{Sources: sources}, nil
+}
+
+func promptProfile(opts *QueryOptions) gemma.PromptProfile {
+	if opts.ResearchMode {
+		return gemma.ProfileResearch
+	}
+	if opts.ThinkingMode {
+		return gemma.ProfileThinking
+	}
+	return gemma.ProfileChat
+}
+
+func promptBody(opts *QueryOptions, ragContext string) string {
+	if opts.ResearchMode {
+		return fmt.Sprintf(researchPromptTemplate, ragContext)
+	}
+	return fmt.Sprintf(systemPromptTemplate, ragContext)
 }
 
 func (c *Chain) PlanToolCalls(ctx context.Context, model string, systemPrompt string, userPrompt string) (string, error) {

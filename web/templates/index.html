@@ -473,6 +473,8 @@
                                                 <p class="truncate" x-text="queuedMessageLabel(queued)"></p>
                                                 <div class="message-queue-meta">
                                                     <span x-show="queued.researchMode">research</span>
+                                                    <span x-show="queued.thinkingMode">thinking</span>
+                                                    <span x-show="queued.model" x-text="queued.model"></span>
                                                     <span x-show="queued.codeSnippet">code</span>
                                                     <span x-show="queued.imageAttachments.length" x-text="queued.imageAttachments.length + ' image' + (queued.imageAttachments.length === 1 ? '' : 's')"></span>
                                                     <span x-show="queued.focusDocuments.length" x-text="queued.focusDocuments.length + ' focused'"></span>
@@ -572,19 +574,68 @@
                                 style="max-height: 120px; overflow-y: auto;">
                             </textarea>
                         </div>
-                        <button @click="researchMode = !researchMode"
-                                :title="researchMode ? 'Research mode ON (click to disable)' : 'Enable research mode (searches the web)'"
-                                class="composer-icon-button"
-                                :class="researchMode ? 'is-research' : ''">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
-                            </svg>
-                        </button>
+                        <div class="composer-model-menu-wrap">
+                            <button @click="modelMenuOpen = !modelMenuOpen"
+                                    type="button"
+                                    class="composer-model-button"
+                                    :class="researchMode || thinkingMode ? 'is-active' : ''"
+                                    title="Model and mode options">
+                                <span class="truncate" x-text="selectedModelLabel()"></span>
+                                <svg class="h-4 w-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                                </svg>
+                            </button>
+                            <div x-show="modelMenuOpen"
+                                 x-cloak
+                                 @click.outside="modelMenuOpen = false"
+                                 class="composer-model-menu">
+                                <div class="composer-menu-section">
+                                    <p class="composer-menu-label">Gemma 4 model</p>
+                                    <template x-for="option in gemmaModelOptions()" :key="option.value">
+                                        <button type="button"
+                                                class="composer-menu-option"
+                                                :class="sameModelName(selectedChatModel, option.value) ? 'is-selected' : ''"
+                                                @click="selectChatModel(option.value)">
+                                            <span>
+                                                <span class="block" x-text="option.label"></span>
+                                                <span class="block text-[11px] text-zinc-500" x-text="isModelInstalled(option.value) ? option.hint : option.hint + ', not installed'"></span>
+                                            </span>
+                                            <svg x-show="sameModelName(selectedChatModel, option.value)" class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                                            </svg>
+                                        </button>
+                                    </template>
+                                </div>
+                                <div class="composer-menu-section">
+                                    <p class="composer-menu-label">Mode</p>
+                                    <button type="button"
+                                            class="composer-menu-option"
+                                            :class="researchMode ? 'is-selected' : ''"
+                                            @click="researchMode = !researchMode">
+                                        <span>
+                                            <span class="block">Research mode</span>
+                                            <span class="block text-[11px] text-zinc-500">shows web search progress and sources</span>
+                                        </span>
+                                        <span class="composer-toggle-dot" :class="researchMode ? 'is-on' : ''"></span>
+                                    </button>
+                                    <button type="button"
+                                            class="composer-menu-option"
+                                            :class="thinkingMode ? 'is-selected' : ''"
+                                            @click="thinkingMode = !thinkingMode">
+                                        <span>
+                                            <span class="block">Thinking mode</span>
+                                            <span class="block text-[11px] text-zinc-500">uses Gemma 4 hidden reasoning prompt</span>
+                                        </span>
+                                        <span class="composer-toggle-dot" :class="thinkingMode ? 'is-on' : ''"></span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
                         <button @click="sendMessage()"
                                 type="button"
                                 :disabled="!input.trim() && !codeSnippet.trim() && imageAttachments.length === 0"
                                 class="composer-send-button disabled:opacity-50 disabled:cursor-not-allowed"
-                                :class="researchMode ? 'is-research' : ''">
+                                :class="researchMode || thinkingMode ? 'is-research' : ''">
                             <svg x-show="!isStreaming" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/>
                             </svg>
@@ -593,14 +644,15 @@
                             </svg>
                         </button>
                     </div>
-                    <p class="text-xs mt-2 text-center" :class="researchMode ? 'text-zinc-300' : 'text-slate-500'">
-                        <span x-show="researchMode">Research mode: shows web search progress and sources before answering</span>
-                        <span x-show="!researchMode && isStreaming">Press Enter to queue a follow-up while the current answer streams.</span>
-                        <span x-show="!researchMode && !isStreaming && !codeSnippet.trim() && imageAttachments.length === 0">Press Enter to send, Shift+Enter for new line. Paste an image to attach it.</span>
-                        <span x-show="!researchMode && !isStreaming && codeSnippet.trim()">
+                    <p class="text-xs mt-2 text-center" :class="researchMode || thinkingMode ? 'text-zinc-300' : 'text-slate-500'">
+                        <span x-show="researchMode">Research mode uses local time, locale, web search progress, and cited sources.</span>
+                        <span x-show="!researchMode && thinkingMode">Thinking mode: Gemma reasons privately before answering.</span>
+                        <span x-show="!researchMode && !thinkingMode && isStreaming">Press Enter to queue a follow-up while the current answer streams.</span>
+                        <span x-show="!researchMode && !thinkingMode && !isStreaming && !codeSnippet.trim() && imageAttachments.length === 0">Press Enter to send, Shift+Enter for new line. Paste an image to attach it.</span>
+                        <span x-show="!researchMode && !thinkingMode && !isStreaming && codeSnippet.trim()">
                             Code snippet attached as <span x-text="detectedCodeLanguage()"></span>. Press Enter to send.
                         </span>
-                        <span x-show="!researchMode && !isStreaming && !codeSnippet.trim() && imageAttachments.length > 0">
+                        <span x-show="!researchMode && !thinkingMode && !isStreaming && !codeSnippet.trim() && imageAttachments.length > 0">
                             Image attached. Press Enter to send.
                         </span>
                     </p>
@@ -854,6 +906,14 @@
                                     <span x-text="repoSummary().symbols"></span>
                                     <span> symbols</span>
                                 </span>
+                                <span x-show="repoMap" class="workspace-count-pill">
+                                    <span x-text="repoSummary().packages"></span>
+                                    <span> packages</span>
+                                </span>
+                                <span x-show="repoMap" class="workspace-count-pill">
+                                    <span x-text="repoSummary().tests"></span>
+                                    <span> tests</span>
+                                </span>
                             </div>
                             <p x-show="repoMap" class="mt-1 truncate text-xs text-slate-500" x-text="repoSummary().root"></p>
                             <p x-show="!repoMap" class="mt-1 text-xs text-slate-500">Index a local folder path to map documents, media, data, and code.</p>
@@ -865,13 +925,51 @@
                     </div>
 
                     <template x-if="repoMap">
-                        <div class="flex flex-wrap gap-2">
-                            <template x-for="item in workspaceTypeBreakdown(6)" :key="item.type">
-                                <span class="repo-language-chip">
-                                    <span x-text="item.type"></span>
-                                    <strong x-text="item.count"></strong>
-                                </span>
-                            </template>
+                        <div class="space-y-3">
+                            <div class="flex flex-wrap gap-2">
+                                <template x-for="item in workspaceTypeBreakdown(6)" :key="item.type">
+                                    <span class="repo-language-chip">
+                                        <span x-text="item.type"></span>
+                                        <strong x-text="item.count"></strong>
+                                    </span>
+                                </template>
+                            </div>
+                            <div class="grid gap-2 lg:grid-cols-2">
+                                <div>
+                                    <p class="mb-1 text-xs font-medium text-slate-400">Top folders</p>
+                                    <div class="space-y-1">
+                                        <template x-for="group in topWorkspaceGroups(4)" :key="group.path">
+                                            <div class="workspace-map-row">
+                                                <span class="truncate" x-text="group.path"></span>
+                                                <span class="text-slate-500">
+                                                    <span x-text="group.file_count || 0"></span> files
+                                                    <span x-show="group.test_count">, <span x-text="group.test_count"></span> tests</span>
+                                                </span>
+                                            </div>
+                                        </template>
+                                    </div>
+                                </div>
+                                <div>
+                                    <p class="mb-1 text-xs font-medium text-slate-400">Packages</p>
+                                    <div class="space-y-1">
+                                        <template x-if="topWorkspacePackages(4).length === 0">
+                                            <div class="workspace-map-row text-slate-500">No code packages detected</div>
+                                        </template>
+                                        <template x-for="pkg in topWorkspacePackages(4)" :key="pkg.language + pkg.path + pkg.name">
+                                            <div class="workspace-map-row">
+                                                <span class="truncate">
+                                                    <span x-text="pkg.name"></span>
+                                                    <span class="text-slate-500" x-show="pkg.path"> in <span x-text="pkg.path"></span></span>
+                                                </span>
+                                                <span class="text-slate-500">
+                                                    <span x-text="pkg.language"></span>,
+                                                    <span x-text="pkg.file_count || 0"></span> files
+                                                </span>
+                                            </div>
+                                        </template>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </template>
                 </div>
@@ -1121,7 +1219,7 @@
                         </div>
                         <div class="rounded-lg bg-slate-700/40 p-3">
                             <p class="font-medium text-slate-200">Workspace map depth</p>
-                            <p class="mt-0.5 text-xs text-slate-400">Add richer metadata, media dimensions, Office summaries, package boundaries, tests, and better grouping.</p>
+                            <p class="mt-0.5 text-xs text-slate-400">Package boundaries, tests, and folder groups are in. Next: media dimensions and Office summaries.</p>
                         </div>
                         <div class="rounded-lg bg-slate-700/40 p-3">
                             <p class="font-medium text-slate-200">Vector compression research</p>
@@ -1137,7 +1235,7 @@
                         </div>
                         <div class="rounded-lg bg-slate-700/40 p-3">
                             <p class="font-medium text-slate-200">Model role profiles</p>
-                            <p class="mt-0.5 text-xs text-slate-400">Split model config by role: chat, edit, apply, autocomplete, embedding, reranker, and vision.</p>
+                            <p class="mt-0.5 text-xs text-slate-400">Chat can switch Gemma 4 2B, 4B, and 26B. Next: edit, apply, autocomplete, reranker, and vision roles.</p>
                         </div>
                         <div class="rounded-lg bg-slate-700/40 p-3">
                             <p class="font-medium text-slate-200">Gemma capability matrix</p>
@@ -1193,7 +1291,7 @@
                 </div>
 
                 <div class="pt-2 border-t border-slate-700 text-xs text-slate-500">
-                    <p>Recently completed: desktop release path, GitHub updater, Ollama bootstrap, workspace map, watched folders, reply and file focus, project-scoped folder indexes, project-tagged chats, project command policy/history, edit history and patch-state storage, local diff review, read-only project tools, structured read-only chat tool calls, command runner foundations, Gemma 4 profiles, and the polished chat workspace.</p>
+                    <p>Recently completed: desktop release path, GitHub updater, Ollama bootstrap, workspace map, package and test map depth, watched folders, reply and file focus, project-scoped folder indexes, project-tagged chats, project command policy/history, edit history and patch-state storage, local diff review, read-only project tools, structured read-only chat tool calls, composer model and mode dropdown, locale-aware research queries, command runner foundations, Gemma 4 profiles, and the polished chat workspace.</p>
                 </div>
             </div>
         </div>
@@ -1258,10 +1356,10 @@
 
                 <div>
                     <h3 class="help-section-title">4. Research mode</h3>
-                    <p class="mb-2">Click the <strong class="text-slate-200">magnifying glass</strong> button next to the chat input when you want to see the web search process.</p>
+                    <p class="mb-2">Open the model and mode dropdown next to the chat input, then enable <strong class="text-slate-200">Research mode</strong> when you want to see the web search process.</p>
                     <p class="mb-1">In research mode, <span x-text="appConfig.app_name || 'Jarvis'">Jarvis</span> will:</p>
                     <ul class="list-disc list-inside space-y-1 text-slate-400 ml-2">
-                        <li>Generate search queries from your question</li>
+                        <li>Generate search queries from your question using local date, local time, locale, and timezone</li>
                         <li>Search the web using DuckDuckGo</li>
                         <li>Fetch and read the top articles</li>
                         <li>Index useful pages locally, then answer with citations and links</li>
@@ -1296,7 +1394,7 @@
                     <ul class="list-disc list-inside space-y-1 text-slate-400 ml-2">
                         <li>Task traces from chat, retrieval, research, folder indexing, and workspace map updates</li>
                         <li>Read-only tool traces when chat searches, summarizes, or previews active-project files</li>
-                        <li>Workspace map root, file counts, type breakdown, files, and code symbols</li>
+                        <li>Workspace map root, file counts, package counts, tests, type breakdown, folder groups, files, and code symbols</li>
                         <li>Useful context for codebases and regular folders with Office files, PDFs, images, logs, and data</li>
                     </ul>
                 </div>
@@ -1310,7 +1408,7 @@
                         <li><strong class="text-slate-300">gemma4:e4b</strong> is the default for most machines</li>
                         <li><strong class="text-slate-300">llava</strong> is optional and enables image descriptions</li>
                     </ul>
-                    <p class="mt-2 text-slate-500">Set CHAT_MODEL before starting Jarvis if you want to force another local model. Larger models are opt-in because speed matters for daily use.</p>
+                    <p class="mt-2 text-slate-500">Use the composer dropdown to choose Gemma 4 2B, 4B, or 26B for a request. Thinking mode adds Gemma 4 private reasoning prompting and keeps hidden thought text out of saved chat history.</p>
                 </div>
 
                 <div>

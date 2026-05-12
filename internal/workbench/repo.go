@@ -5,25 +5,33 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"sort"
 	"strings"
 	"time"
 )
 
 type RepoMap struct {
-	Root        string       `json:"root"`
-	Files       []RepoFile   `json:"files"`
-	Symbols     []SymbolInfo `json:"symbols"`
-	UpdatedAt   time.Time    `json:"updated_at"`
-	FileCount   int          `json:"file_count"`
-	SymbolCount int          `json:"symbol_count"`
+	Root        string        `json:"root"`
+	Files       []RepoFile    `json:"files"`
+	Symbols     []SymbolInfo  `json:"symbols"`
+	Packages    []PackageInfo `json:"packages,omitempty"`
+	Groups      []FileGroup   `json:"groups,omitempty"`
+	UpdatedAt   time.Time     `json:"updated_at"`
+	FileCount   int           `json:"file_count"`
+	SymbolCount int           `json:"symbol_count"`
+	TestCount   int           `json:"test_count"`
 }
 
 type RepoFile struct {
 	Path      string   `json:"path"`
+	Directory string   `json:"directory,omitempty"`
+	Extension string   `json:"extension,omitempty"`
 	Kind      string   `json:"kind"`
 	Language  string   `json:"language"`
+	Package   string   `json:"package,omitempty"`
 	Imports   []string `json:"imports,omitempty"`
 	SizeBytes int64    `json:"size_bytes"`
+	IsTest    bool     `json:"is_test,omitempty"`
 }
 
 type SymbolInfo struct {
@@ -32,6 +40,23 @@ type SymbolInfo struct {
 	FilePath string `json:"file_path"`
 	Line     int    `json:"line"`
 	Language string `json:"language"`
+}
+
+type PackageInfo struct {
+	Name        string `json:"name"`
+	Path        string `json:"path"`
+	Language    string `json:"language"`
+	FileCount   int    `json:"file_count"`
+	TestCount   int    `json:"test_count"`
+	SymbolCount int    `json:"symbol_count"`
+}
+
+type FileGroup struct {
+	Path      string         `json:"path"`
+	FileCount int            `json:"file_count"`
+	TestCount int            `json:"test_count"`
+	SizeBytes int64          `json:"size_bytes"`
+	Kinds     map[string]int `json:"kinds,omitempty"`
 }
 
 var ignoredRepoDirs = map[string]bool{
@@ -104,18 +129,26 @@ func ScanRepository(root string) (*RepoMap, error) {
 			relPath = path
 		}
 		relPath = filepath.ToSlash(relPath)
+		directory := filepath.ToSlash(filepath.Dir(relPath))
+		if directory == "." {
+			directory = ""
+		}
 
 		file := RepoFile{
 			Path:      relPath,
+			Directory: directory,
+			Extension: strings.TrimPrefix(strings.ToLower(filepath.Ext(relPath)), "."),
 			Kind:      kind,
 			Language:  language,
 			SizeBytes: info.Size(),
+			IsTest:    isTestPath(relPath, language),
 		}
 
 		if isTextReadable(kind, language) {
 			content, err := os.ReadFile(path)
 			if err == nil {
 				text := string(content)
+				file.Package = extractPackageName(text, language)
 				file.Imports = extractImports(text, language)
 				repo.Symbols = append(repo.Symbols, extractSymbols(text, relPath, language)...)
 			}
@@ -130,6 +163,7 @@ func ScanRepository(root string) (*RepoMap, error) {
 
 	repo.FileCount = len(repo.Files)
 	repo.SymbolCount = len(repo.Symbols)
+	repo.Packages, repo.Groups, repo.TestCount = buildWorkspaceMetadata(repo.Files, repo.Symbols)
 	return repo, nil
 }
 
@@ -234,6 +268,159 @@ func isTextReadable(kind, language string) bool {
 	default:
 		return false
 	}
+}
+
+func buildWorkspaceMetadata(files []RepoFile, symbols []SymbolInfo) ([]PackageInfo, []FileGroup, int) {
+	symbolCounts := make(map[string]int, len(symbols))
+	for _, symbol := range symbols {
+		symbolCounts[symbol.FilePath]++
+	}
+
+	type packageAccumulator struct {
+		PackageInfo
+		files map[string]bool
+	}
+	packageMap := map[string]*packageAccumulator{}
+	groupMap := map[string]*FileGroup{}
+	testCount := 0
+
+	for _, file := range files {
+		if file.IsTest {
+			testCount++
+		}
+
+		groupPath := topLevelGroup(file.Path)
+		group := groupMap[groupPath]
+		if group == nil {
+			group = &FileGroup{Path: groupPath, Kinds: map[string]int{}}
+			groupMap[groupPath] = group
+		}
+		group.FileCount++
+		group.SizeBytes += file.SizeBytes
+		if file.IsTest {
+			group.TestCount++
+		}
+		if file.Kind != "" {
+			group.Kinds[file.Kind]++
+		}
+
+		if file.Kind != "code" {
+			continue
+		}
+		packageName := file.Package
+		if packageName == "" {
+			packageName = packageNameFromPath(file.Directory)
+		}
+		packagePath := file.Directory
+		key := file.Language + "|" + packagePath + "|" + packageName
+		pkg := packageMap[key]
+		if pkg == nil {
+			pkg = &packageAccumulator{
+				PackageInfo: PackageInfo{
+					Name:     packageName,
+					Path:     packagePath,
+					Language: file.Language,
+				},
+				files: map[string]bool{},
+			}
+			packageMap[key] = pkg
+		}
+		if !pkg.files[file.Path] {
+			pkg.files[file.Path] = true
+			pkg.FileCount++
+			pkg.SymbolCount += symbolCounts[file.Path]
+			if file.IsTest {
+				pkg.TestCount++
+			}
+		}
+	}
+
+	packages := make([]PackageInfo, 0, len(packageMap))
+	for _, pkg := range packageMap {
+		packages = append(packages, pkg.PackageInfo)
+	}
+	sort.Slice(packages, func(i, j int) bool {
+		if packages[i].Path != packages[j].Path {
+			return packages[i].Path < packages[j].Path
+		}
+		if packages[i].Language != packages[j].Language {
+			return packages[i].Language < packages[j].Language
+		}
+		return packages[i].Name < packages[j].Name
+	})
+
+	groups := make([]FileGroup, 0, len(groupMap))
+	for _, group := range groupMap {
+		groups = append(groups, *group)
+	}
+	sort.Slice(groups, func(i, j int) bool {
+		if groups[i].FileCount != groups[j].FileCount {
+			return groups[i].FileCount > groups[j].FileCount
+		}
+		return groups[i].Path < groups[j].Path
+	})
+
+	return packages, groups, testCount
+}
+
+func topLevelGroup(path string) string {
+	path = filepath.ToSlash(filepath.Clean(path))
+	if path == "." || path == "" {
+		return "root"
+	}
+	parts := strings.Split(path, "/")
+	if len(parts) <= 1 {
+		return "root"
+	}
+	return parts[0]
+}
+
+func packageNameFromPath(path string) string {
+	path = strings.Trim(filepath.ToSlash(path), "/")
+	if path == "" || path == "." {
+		return "root"
+	}
+	return filepath.Base(path)
+}
+
+func isTestPath(path string, language string) bool {
+	lower := strings.ToLower(filepath.ToSlash(path))
+	base := filepath.Base(lower)
+	if strings.Contains(lower, "/test/") || strings.Contains(lower, "/tests/") {
+		return true
+	}
+	switch language {
+	case "go":
+		return strings.HasSuffix(base, "_test.go")
+	case "javascript", "typescript":
+		return strings.Contains(base, ".test.") || strings.Contains(base, ".spec.")
+	case "python":
+		return strings.HasPrefix(base, "test_") || strings.HasSuffix(base, "_test.py")
+	case "csharp":
+		return strings.Contains(base, "test")
+	default:
+		return strings.Contains(base, "test") || strings.Contains(base, "spec")
+	}
+}
+
+func extractPackageName(text, language string) string {
+	switch language {
+	case "go":
+		for _, line := range strings.Split(text, "\n") {
+			line = strings.TrimSpace(line)
+			if strings.HasPrefix(line, "package ") {
+				fields := strings.Fields(line)
+				if len(fields) >= 2 {
+					return fields[1]
+				}
+			}
+		}
+	case "python":
+		return ""
+	case "javascript", "typescript":
+		return ""
+	}
+	return ""
 }
 
 func extractSymbols(text, filePath, language string) []SymbolInfo {

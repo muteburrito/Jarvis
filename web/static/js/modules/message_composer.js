@@ -9,6 +9,8 @@ window.jarvisMessageComposer = {
                 replyTo: this.safeReplyContext(),
                 focusDocuments: this.safeFocusDocuments(query),
                 researchMode: Boolean(this.researchMode),
+                thinkingMode: Boolean(this.thinkingMode),
+                model: this.selectedChatModel || '',
                 queuedAt: new Date().toISOString()
             };
         },
@@ -46,6 +48,8 @@ window.jarvisMessageComposer = {
                 code_snippet: draft.codeSnippet,
                 code_language: this.detectCodeLanguage(draft.codeSnippet),
                 research: draft.researchMode,
+                thinking: draft.thinkingMode,
+                model: draft.model,
                 reply_to: draft.replyTo,
                 focus_document_ids: draft.focusDocuments.map(doc => doc.id),
                 focus_files: draft.focusDocuments.map(doc => doc.filename),

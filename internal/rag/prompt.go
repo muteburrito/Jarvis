@@ -133,9 +133,13 @@ These are strict:
 %s`
 
 func buildSystemPrompt(model string, profile gemma.PromptProfile, body string) string {
+	return buildSystemPromptWithThinking(model, profile, body, gemma.ThinkingEnabled(profile))
+}
+
+func buildSystemPromptWithThinking(model string, profile gemma.PromptProfile, body string, thinking bool) string {
 	var sections []string
-	if prefix := gemma.SystemPrefix(model, profile); prefix != "" {
-		sections = append(sections, strings.TrimSpace(prefix))
+	if thinking && gemma.IsGemma4(model) {
+		sections = append(sections, gemma.ThinkingToken)
 	}
 	sections = append(sections, body)
 	if guidance := gemma.SystemGuidance(model, profile); guidance != "" {
@@ -216,7 +220,27 @@ func buildRepoContext(repoMap *workbench.RepoMap, question string) string {
 	}
 
 	var sb strings.Builder
-	fmt.Fprintf(&sb, "## Codebase map\nRoot: %s\nFiles indexed: %d\nSymbols indexed: %d\n\n", repoMap.Root, repoMap.FileCount, repoMap.SymbolCount)
+	fmt.Fprintf(&sb, "## Codebase map\nRoot: %s\nFiles indexed: %d\nSymbols indexed: %d\nTests detected: %d\nPackages detected: %d\n\n", repoMap.Root, repoMap.FileCount, repoMap.SymbolCount, repoMap.TestCount, len(repoMap.Packages))
+
+	if len(repoMap.Groups) > 0 {
+		sb.WriteString("Top workspace folders:\n")
+		for _, group := range repoMap.Groups[:min(len(repoMap.Groups), 6)] {
+			fmt.Fprintf(&sb, "- %s: %d files, %d tests\n", group.Path, group.FileCount, group.TestCount)
+		}
+		sb.WriteString("\n")
+	}
+
+	if len(repoMap.Packages) > 0 {
+		sb.WriteString("Packages:\n")
+		for _, pkg := range repoMap.Packages[:min(len(repoMap.Packages), 8)] {
+			fmt.Fprintf(&sb, "- %s", pkg.Name)
+			if pkg.Path != "" {
+				fmt.Fprintf(&sb, " in %s", pkg.Path)
+			}
+			fmt.Fprintf(&sb, " (%s, %d files, %d tests)\n", pkg.Language, pkg.FileCount, pkg.TestCount)
+		}
+		sb.WriteString("\n")
+	}
 
 	files := repoMap.Files
 	if len(files) > 12 {

@@ -9,6 +9,9 @@ func TestSystemPrefixOnlyEnablesThinkingForGemmaResearchOrAgent(t *testing.T) {
 	if got := SystemPrefix("gemma-4-26b-a4b", ProfileAgent); got != ThinkingToken+"\n" {
 		t.Fatalf("agent prefix = %q", got)
 	}
+	if got := SystemPrefix("gemma4:e4b", ProfileThinking); got != ThinkingToken+"\n" {
+		t.Fatalf("thinking prefix = %q", got)
+	}
 	if got := SystemPrefix("gemma4:e4b", ProfileChat); got != "" {
 		t.Fatalf("chat prefix = %q", got)
 	}

@@ -43,6 +43,12 @@ func Start() {
 	if !names["Runner"] || !names["Start"] {
 		t.Fatalf("missing expected symbols: %#v", names)
 	}
+	if len(repoMap.Packages) != 1 {
+		t.Fatalf("expected 1 package, got %d", len(repoMap.Packages))
+	}
+	if repoMap.Packages[0].Name != "demo" || repoMap.Packages[0].SymbolCount != 2 {
+		t.Fatalf("unexpected package metadata: %#v", repoMap.Packages[0])
+	}
 }
 
 func TestScanRepositoryMapsRegularWorkspaceFiles(t *testing.T) {
@@ -82,5 +88,50 @@ func TestScanRepositoryMapsRegularWorkspaceFiles(t *testing.T) {
 	}
 	if repoMap.FileCount != 6 {
 		t.Fatalf("expected 6 mappable files, got %d", repoMap.FileCount)
+	}
+}
+
+func TestScanRepositoryBuildsWorkspaceGroupsAndTestCounts(t *testing.T) {
+	root := t.TempDir()
+	files := map[string]string{
+		"cmd/app/main.go":             "package main\n\nfunc main() {}\n",
+		"cmd/app/main_test.go":        "package main\n\nfunc TestMain() {}\n",
+		"internal/api/routes.ts":      "export function route() {}\n",
+		"internal/api/routes.spec.ts": "export const spec = true\n",
+		"README.md":                   "# Project\n",
+	}
+	for name, content := range files {
+		fullPath := filepath.Join(root, name)
+		if err := os.MkdirAll(filepath.Dir(fullPath), 0o755); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(fullPath, []byte(content), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	repoMap, err := ScanRepository(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if repoMap.TestCount != 2 {
+		t.Fatalf("expected 2 tests, got %d", repoMap.TestCount)
+	}
+	groups := map[string]FileGroup{}
+	for _, group := range repoMap.Groups {
+		groups[group.Path] = group
+	}
+	if groups["cmd"].TestCount != 1 || groups["internal"].TestCount != 1 {
+		t.Fatalf("unexpected groups: %#v", groups)
+	}
+	foundGoPackage := false
+	for _, pkg := range repoMap.Packages {
+		if pkg.Path == "cmd/app" && pkg.Name == "main" && pkg.TestCount == 1 {
+			foundGoPackage = true
+		}
+	}
+	if !foundGoPackage {
+		t.Fatalf("missing go package metadata: %#v", repoMap.Packages)
 	}
 }

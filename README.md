@@ -17,14 +17,14 @@ No data leaves your machine. No API keys needed. Single binary, runs anywhere.
 - **Watched folders:** indexed folders are remembered and checked in the background, so new and changed files are refreshed without clearing the index
 - **Wide file support:** PDF, DOCX, XLSX, PPTX, images, known source files, and unknown text-like files. Binary files are rejected
 - **Hybrid retrieval:** combines vector similarity with BM25 keyword scoring for better exact matches on code symbols, error codes, and config keys
-- **Workspace map:** folder ingest maps regular files, Office documents, PDFs, images, data files, source files, and code symbols
+- **Workspace map:** folder ingest maps regular files, Office documents, PDFs, images, data files, source files, code symbols, packages, tests, and folder groups
 - **Project foundation:** indexed folders are saved as projects with an active project, workspace map, watched re-indexing, and a project vector store for folder-scoped retrieval
 - **Workbench activity:** inspect the active project, workspace map summary, local git changes, and recent task activity without crowding the chat UI
 - **Read-only agent tools:** normal chat can let the model request safe project search, file summaries, and file previews before answering
 - **Image support:** upload standalone images (PNG, JPG, etc.) or PDFs with embedded images. A vision model describes each image so it becomes searchable and queryable
-- **Gemma 4 profiles:** Gemma-specific prompt guidance, sampling defaults, research thinking mode cleanup, and capability metadata are kept in Go code
+- **Gemma 4 controls:** choose Gemma 4 2B, 4B, or 26B from the composer dropdown, and enable optional thinking mode when deeper reasoning helps
 - **Live context:** normal chat uses current date/time, browser locale, timezone, pasted URLs, and selective web context for current questions when available, without searching every message
-- **Deep research mode:** toggle research mode when you want visible search progress, fetched sources, citations, and links. No API key needed
+- **Deep research mode:** toggle research mode from the composer dropdown when you want visible search progress, local date/time and locale-aware queries, fetched sources, citations, and links. No API key needed
 - **URL fetching:** paste a website link directly in chat. Jarvis auto-detects URLs in normal chat messages, fetches the page, and indexes it quietly. URLs inside the code snippet box are treated as code and are not fetched
 - **Regional awareness:** automatically detects your locale and timezone from the browser. Answers use your local currency, date formats, and regionally relevant context
 - **Document management:** upload, list, delete individual docs, or clear everything at once. Clearing indexed files removes Jarvis-owned upload copies and preserves external source files
@@ -50,9 +50,9 @@ ollama pull nomic-embed-text
 ollama pull llava              # optional, enables image support
 ```
 
-Jarvis picks the chat model automatically when `CHAT_MODEL` is not set. Very low-end machines use `gemma4:e2b`; everyone else uses `gemma4:e4b`. The larger `26b` model is not selected automatically because Jarvis is local and RAG-first, and speed matters more for daily use. If Ollama is running but the required chat or embedding model is missing, Jarvis downloads it automatically on startup. Manual pulls are still useful for preparing a machine ahead of time.
+Jarvis picks the chat model automatically when `CHAT_MODEL` is not set. Very low-end machines use `gemma4:e2b`; everyone else uses `gemma4:e4b`. The composer dropdown can switch a request between Gemma 4 2B, 4B, and 26B when those models are installed locally. The larger `26b` model is not selected automatically because Jarvis is local and RAG-first, and speed matters more for daily use. If Ollama is running but the required chat or embedding model is missing, Jarvis downloads it automatically on startup. Manual pulls are still useful for preparing a machine ahead of time.
 
-Gemma 4 is treated as the primary model family. Jarvis uses Gemma 4 defaults for chat quality, including `temperature=1.0`, `top_p=0.95`, and `top_k=64`. Query generation stays deterministic. Based on Google's official Gemma 4 model card and the local runtime guide, Jarvis treats Gemma as text-output multimodal understanding, not native media generation: E2B/E4B can handle text, image, audio, and short video understanding, while 26B-A4B/31B focus on stronger text and image reasoning. Gemma 4 also guides the agent roadmap through thinking mode, system prompts, function calling, coding, multilingual support, and long context. Image, audio, or video generation would need separate optional generation models.
+Gemma 4 is treated as the primary model family. Jarvis uses Gemma 4 defaults for chat quality, including `temperature=1.0`, `top_p=0.95`, and `top_k=64`. Query generation stays deterministic. Based on Google's official Gemma 4 model card and the local runtime guide, Jarvis treats Gemma as text-output multimodal understanding, not native media generation: E2B/E4B can handle text, image, audio, and short video understanding, while 26B-A4B/31B focus on stronger text and image reasoning. The optional thinking mode adds Gemma's `<|think|>` control token to the system prompt and Jarvis strips thought blocks before saving chat history. Image, audio, or video generation would need separate optional generation models.
 
 ## Quick Start
 
@@ -103,7 +103,7 @@ Suggested highlights:
 - Reply-to-message context and `@file` / `#file` focused retrieval
 - Queued follow-up prompts with edit, reorder, and remove controls
 - Copy, rate, fork, and response timing controls
-- Workspace map for regular folders, Office files, PDFs, images, data, text, config, and code symbols
+- Workspace map for regular folders, Office files, PDFs, images, data, text, config, code symbols, packages, tests, and folder groups
 - Watched folder background re-indexing for new and modified files
 - Simplified Workbench panel for project summary, workspace map counts, local changes, and recent activity
 - Local changes panel with changed-file totals and expandable git diffs for the active project
@@ -173,7 +173,7 @@ internal/
   workbench/
     chat.go                    Local chat session store
     folders.go                 Watched folder persistence for background re-indexing
-    repo.go                    Workspace map, file classification, and symbol scanning
+    repo.go                    Workspace map, file classification, package grouping, test detection, and symbol scanning
     task.go                    Task state, traces, and edit history
   rag/
     chain.go                   RAG pipeline: retrieve, prompt, stream
@@ -223,7 +223,7 @@ packaging/
 | `GET /api/v1/projects` | List persisted projects and the active project |
 | `POST /api/v1/projects` | Open a folder as the active project |
 | `GET /api/v1/diff` | Changed-file summary and text patches for the active git project |
-| `GET /api/v1/repo-map` | Current workspace map with files, file kinds, imports, and symbols |
+| `GET /api/v1/repo-map` | Current workspace map with files, file kinds, imports, symbols, packages, tests, and folder groups |
 | `GET /api/v1/tools/files` | Search active-project files by path, kind, language, or imports |
 | `POST /api/v1/tools/read-file` | Safely read a text file inside the active project |
 | `POST /api/v1/tools/summarize-file` | Return metadata, symbols, imports, and a short excerpt for one active-project file |
@@ -238,7 +238,7 @@ packaging/
 1. **Upload or index:** files are split into overlapping text chunks. Images (standalone or extracted from PDFs) are described by a vision model, and those descriptions become searchable text. URLs pasted in the main chat box are auto-detected and fetched. Indexed folders are remembered for background refreshes.
 2. **Embed:** each chunk is converted to a vector using `nomic-embed-text` via Ollama
 3. **Store:** vectors are kept in memory and persisted to disk in gob format
-4. **Map:** folder ingest also builds a workspace map for files, documents, images, data, code symbols, and imports
+4. **Map:** folder ingest also builds a workspace map for files, documents, images, data, code symbols, imports, packages, tests, and folder groups
 5. **Refresh:** watched folders are checked in the background. New and modified files are re-indexed, and the workspace map is refreshed.
 6. **Query:** your question is embedded, the most similar chunks are retrieved, and they are passed as context to the LLM. Reply context and focused `@file` mentions are included when present. Your locale, timezone, and current local date/time are included so answers use local conventions.
 7. **Stream:** the LLM response streams back token-by-token via Server-Sent Events. While it is streaming, you can queue, edit, reorder, or remove follow-up prompts.
@@ -251,7 +251,7 @@ The Workbench panel surfaces local task and workspace state:
 - task traces from chat, research, retrieval, workspace map updates, and future tools
 - active project metadata and per-project vector-store path
 - selected model, message count, trace count, and edit count
-- workspace map root, file count, symbol count, and file type breakdown
+- workspace map root, file count, symbol count, package count, test count, folder groups, and file type breakdown
 - local git change summary with per-file additions, deletions, status, and expandable text patches
 - recent task activity
 
@@ -288,10 +288,11 @@ The chat UI supports a few context controls that make local models more useful:
 Toggle the magnifying glass button next to the chat input. When active:
 
 1. The LLM generates 2-3 focused search queries from your question
-2. Each query is searched on DuckDuckGo (no API key needed)
-3. The top results are fetched and indexed through the same pipeline as uploaded files
-4. The LLM then answers using the fetched content, with citations and source links
-5. Fetched articles stay in your vector store, so follow-up questions reuse them without re-fetching
+2. Query generation includes your browser locale, timezone, local date, and local time for regional questions like currency, weather, pricing, and local rules
+3. Each query is searched on DuckDuckGo (no API key needed)
+4. The top results are fetched and indexed through the same pipeline as uploaded files
+5. The LLM then answers using the fetched content, with citations and source links
+6. Fetched articles stay in your vector store, so follow-up questions reuse them without re-fetching
 
 Research steps stream as a compact progress timeline while the answer is being prepared.
 

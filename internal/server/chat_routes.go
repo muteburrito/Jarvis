@@ -22,6 +22,7 @@ type chatRequest struct {
 	CodeLang         string              `json:"code_language"`
 	History          []ollamaapi.Message `json:"history"`
 	Research         bool                `json:"research"`
+	Thinking         bool                `json:"thinking"`
 	Locale           string              `json:"locale"`
 	Timezone         string              `json:"timezone"`
 	Model            string              `json:"model"`
@@ -122,16 +123,17 @@ func (s *Server) handleChat(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	researchCtx := websearch.LocaleContext{Locale: req.Locale, Timezone: req.Timezone}
 	if req.Research {
 		s.recordTaskTrace("research", "Started research mode", nil)
-		if err := s.researcher.Research(r.Context(), effectiveQuery, chatModel, onProgress); err != nil {
+		if err := s.researcher.Research(r.Context(), effectiveQuery, chatModel, researchCtx, onProgress); err != nil {
 			slog.Warn("research failed, continuing with existing context", "error", err)
 			s.recordTaskTrace("research", "Research failed", map[string]string{"error": err.Error()})
 		}
 	} else if shouldGatherLiveContext(query, codeSnippet) {
 		liveCtx, cancel := context.WithTimeout(r.Context(), 12*time.Second)
 		defer cancel()
-		fetched, err := s.researcher.GatherLiveContext(liveCtx, effectiveQuery, chatModel)
+		fetched, err := s.researcher.GatherLiveContext(liveCtx, effectiveQuery, chatModel, researchCtx)
 		if err != nil {
 			slog.Warn("quiet live context failed", "error", err)
 			s.recordTaskTrace("live_context", "Quiet live context failed", map[string]string{"error": err.Error()})
@@ -147,6 +149,7 @@ func (s *Server) handleChat(w http.ResponseWriter, r *http.Request) {
 	}
 	queryOpts := &rag.QueryOptions{
 		ResearchMode:     req.Research,
+		ThinkingMode:     req.Thinking,
 		Locale:           req.Locale,
 		Timezone:         req.Timezone,
 		ChatModel:        chatModel,

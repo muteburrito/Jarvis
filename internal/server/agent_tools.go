@@ -255,6 +255,32 @@ Rules:
 func readOnlyToolPlannerUserPrompt(repoMap *workbench.RepoMap, question string) string {
 	var b strings.Builder
 	fmt.Fprintf(&b, "User question:\n%s\n\n", strings.TrimSpace(question))
+	if len(repoMap.Groups) > 0 {
+		b.WriteString("Workspace folder groups:\n")
+		for i, group := range repoMap.Groups {
+			if i >= 12 {
+				fmt.Fprintf(&b, "... %d more groups omitted\n", len(repoMap.Groups)-i)
+				break
+			}
+			fmt.Fprintf(&b, "- %s: %d files, %d tests\n", group.Path, group.FileCount, group.TestCount)
+		}
+		b.WriteString("\n")
+	}
+	if len(repoMap.Packages) > 0 {
+		b.WriteString("Code packages:\n")
+		for i, pkg := range repoMap.Packages {
+			if i >= 20 {
+				fmt.Fprintf(&b, "... %d more packages omitted\n", len(repoMap.Packages)-i)
+				break
+			}
+			fmt.Fprintf(&b, "- %s", pkg.Name)
+			if pkg.Path != "" {
+				fmt.Fprintf(&b, " in %s", pkg.Path)
+			}
+			fmt.Fprintf(&b, " (%s, %d files, %d tests)\n", pkg.Language, pkg.FileCount, pkg.TestCount)
+		}
+		b.WriteString("\n")
+	}
 	b.WriteString("Workspace files available to read:\n")
 	for i, file := range repoMap.Files {
 		if i >= 80 {

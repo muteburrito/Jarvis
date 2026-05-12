@@ -33,6 +33,10 @@ function chatApp() {
         dragOver: false,
         isClearing: false,
         researchMode: false,
+        thinkingMode: false,
+        modelMenuOpen: false,
+        selectedChatModel: localStorage.getItem('jarvis:selectedChatModel') || 'gemma4:e4b',
+        availableChatModels: [],
         showHelp: false,
         codePanelOpen: false,
         codeSnippet: '',
@@ -63,6 +67,7 @@ function chatApp() {
             this.loadDocuments();
             this.loadTaskState();
             this.loadSystemInfo();
+            this.loadModelOptions();
             this.loadHardwareStatus();
             this.loadUpdateStatus();
             setInterval(() => this.loadUpdateStatus(), 60 * 60 * 1000);

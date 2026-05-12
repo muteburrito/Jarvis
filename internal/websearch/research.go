@@ -23,7 +23,12 @@ const maxQuietSearchQueries = 2
 const maxQuietResultsPerQuery = 5
 const maxQuietFetches = 2
 
-const queryGenPrompt = `Today's date is %s. Generate %d focused web search queries for answering this question. Use the current year in queries when the question is about recent or current events. Return only the queries, one per line, no numbering or bullet points.
+const queryGenPrompt = `Today's date is %s.
+User locale: %s.
+User timezone: %s.
+Local time: %s.
+
+Generate %d focused web search queries for answering this question. Use the current year in queries when the question is about recent or current events. If the question depends on country, currency, local time, weather, law, prices, or regional context, include the user's locale or likely region in the query. Return only the queries, one per line, no numbering or bullet points.
 
 Question: %s`
 
@@ -32,6 +37,11 @@ type Researcher struct {
 	processor *document.Processor
 	store     *vectorstore.Store
 	cfg       *config.Config
+}
+
+type LocaleContext struct {
+	Locale   string
+	Timezone string
 }
 
 type ProgressEvent struct {
@@ -50,7 +60,7 @@ func NewResearcher(ollamaClient *ollama.Client, processor *document.Processor, s
 	}
 }
 
-func (r *Researcher) Research(ctx context.Context, question, chatModel string, onProgress func(ProgressEvent) error) error {
+func (r *Researcher) Research(ctx context.Context, question, chatModel string, locale LocaleContext, onProgress func(ProgressEvent) error) error {
 	sendProgress := func(step, detail, status, url string) {
 		if onProgress == nil {
 			return
@@ -65,7 +75,7 @@ func (r *Researcher) Research(ctx context.Context, question, chatModel string, o
 
 	sendProgress("queries", "Generating search queries", "running", "")
 
-	queries, err := r.generateQueries(ctx, question, chatModel)
+	queries, err := r.generateQueries(ctx, question, chatModel, locale)
 	if err != nil {
 		slog.Warn("failed to generate search queries, using original question", "error", err)
 		queries = []string{question}
@@ -144,8 +154,8 @@ func (r *Researcher) Research(ctx context.Context, question, chatModel string, o
 	return nil
 }
 
-func (r *Researcher) GatherLiveContext(ctx context.Context, question, chatModel string) (int, error) {
-	queries, err := r.generateQueries(ctx, question, chatModel)
+func (r *Researcher) GatherLiveContext(ctx context.Context, question, chatModel string, locale LocaleContext) (int, error) {
+	queries, err := r.generateQueries(ctx, question, chatModel, locale)
 	if err != nil {
 		slog.Warn("quiet live context query generation failed, using original question", "error", err)
 		queries = []string{question}
@@ -200,9 +210,22 @@ func (r *Researcher) GatherLiveContext(ctx context.Context, question, chatModel 
 	return fetched, nil
 }
 
-func (r *Researcher) generateQueries(ctx context.Context, question, chatModel string) ([]string, error) {
-	today := time.Now().Format("January 2, 2006")
-	prompt := fmt.Sprintf(queryGenPrompt, today, maxSearchQueries, question)
+func (r *Researcher) generateQueries(ctx context.Context, question, chatModel string, locale LocaleContext) ([]string, error) {
+	now := time.Now()
+	if loc := loadUserLocation(locale.Timezone); loc != nil {
+		now = now.In(loc)
+	}
+	today := now.Format("January 2, 2006")
+	localTime := now.Format("3:04 PM MST")
+	prompt := fmt.Sprintf(
+		queryGenPrompt,
+		today,
+		displayLocale(locale.Locale),
+		displayTimezone(locale.Timezone),
+		localTime,
+		maxSearchQueries,
+		question,
+	)
 	messages := []ollamaapi.Message{
 		{Role: "system", Content: queryGenerationSystemPrompt(chatModel)},
 		{Role: "user", Content: prompt},
@@ -234,6 +257,34 @@ func (r *Researcher) generateQueries(ctx context.Context, question, chatModel st
 	}
 
 	return queries, nil
+}
+
+func loadUserLocation(timezone string) *time.Location {
+	timezone = strings.TrimSpace(timezone)
+	if timezone == "" {
+		return nil
+	}
+	loc, err := time.LoadLocation(timezone)
+	if err != nil {
+		return nil
+	}
+	return loc
+}
+
+func displayLocale(locale string) string {
+	locale = strings.TrimSpace(locale)
+	if locale == "" {
+		return "unknown"
+	}
+	return locale
+}
+
+func displayTimezone(timezone string) string {
+	timezone = strings.TrimSpace(timezone)
+	if timezone == "" {
+		return "unknown"
+	}
+	return timezone
 }
 
 func queryGenerationSystemPrompt(model string) string {

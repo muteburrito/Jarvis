@@ -193,6 +193,9 @@ window.jarvisWorkbench = {
                 root: repo.root || '',
                 files: repo.file_count || (repo.files || []).length || 0,
                 symbols: repo.symbol_count || (repo.symbols || []).length || 0,
+                tests: repo.test_count || 0,
+                packages: (repo.packages || []).length,
+                groups: (repo.groups || []).length,
                 updated: repo.updated_at || ''
             };
         },
@@ -259,6 +262,18 @@ window.jarvisWorkbench = {
             return Array.from(counts.entries())
                 .map(([type, count]) => ({ type, count }))
                 .sort((a, b) => b.count - a.count || a.type.localeCompare(b.type))
+                .slice(0, limit);
+        },
+
+        topWorkspaceGroups(limit = 5) {
+            return [...(this.repoMap?.groups || [])]
+                .sort((a, b) => (b.file_count || 0) - (a.file_count || 0) || (a.path || '').localeCompare(b.path || ''))
+                .slice(0, limit);
+        },
+
+        topWorkspacePackages(limit = 5) {
+            return [...(this.repoMap?.packages || [])]
+                .sort((a, b) => (b.file_count || 0) - (a.file_count || 0) || (a.path || '').localeCompare(b.path || ''))
                 .slice(0, limit);
         },
 

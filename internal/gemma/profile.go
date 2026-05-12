@@ -6,6 +6,7 @@ type PromptProfile string
 
 const (
 	ProfileChat     PromptProfile = "chat"
+	ProfileThinking PromptProfile = "thinking"
 	ProfileResearch PromptProfile = "research"
 	ProfileAgent    PromptProfile = "agent"
 )
@@ -37,7 +38,7 @@ func IsGemma4(model string) bool {
 }
 
 func ThinkingEnabled(profile PromptProfile) bool {
-	return profile == ProfileResearch || profile == ProfileAgent
+	return profile == ProfileThinking || profile == ProfileResearch || profile == ProfileAgent
 }
 
 func SystemPrefix(model string, profile PromptProfile) string {
@@ -60,6 +61,8 @@ func SystemGuidance(model string, profile PromptProfile) string {
 	b.WriteString("- Use temperature 1.0, top_p 0.95, and top_k 64 unless a deterministic tool task overrides them.\n")
 
 	switch profile {
+	case ProfileThinking:
+		b.WriteString("- Reason internally before answering, but only show the final user-facing answer.\n")
 	case ProfileResearch:
 		b.WriteString("- In research mode, reason carefully before the final answer, then cite only source-backed claims.\n")
 	case ProfileAgent:

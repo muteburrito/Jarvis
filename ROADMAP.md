@@ -36,7 +36,7 @@ Jarvis should become Gemma-native over time instead of being tightly coupled to 
 | **Gemma 4 model ladder** | Standardize on Gemma 4 E2B for very small machines, E4B as the default fast local model, 26B-A4B for the best speed/quality workstation profile, and 31B for maximum local quality. |
 | **llama.cpp runtime** | Add a direct llama.cpp backend for GGUF models, model download/cache management, streaming, cancellation, context sizing, and platform-specific acceleration. Keep Ollama as fallback during migration. |
 | **Gemma chat template** | Implement Gemma 4 turn formatting, end-of-sentence handling with `<turn|>`, recommended sampling defaults, and history cleanup so thought blocks are never fed back into later turns. |
-| **Thinking profiles** | Add role-aware system prompts: fast chat without thinking, research/reasoning with `<|think|>`, coding-agent planning with thinking, and final-answer cleanup that hides internal reasoning from the UI. |
+| **Thinking profiles** | In progress. Chat now has an optional thinking mode backed by Gemma 4 `<|think|>` prompting and final-answer cleanup. Remaining work: coding-agent and patch-review thinking profiles. |
 | **Gemma multimodal understanding** | Use E2B/E4B for text, image, audio, and short video understanding on small machines. Use 26B-A4B or 31B for stronger text/image reasoning when hardware allows. Keep generation features separate unless a dedicated image/audio model is added. |
 | **Gemma prompt library** | Keep Gemma prompt profiles in Go code, not Python scripts: direct chat, research, query generation, coding-agent planning, command output analysis, patch review, OCR/document understanding, multimodal comparison, ASR, and speech translation. |
 | **Agentic Gemma loop** | Tune project tools, command approvals, patch generation, review mode, and test loops specifically for Gemma 4 tool-use behavior. |
@@ -47,10 +47,10 @@ Jarvis should become Gemma-native over time instead of being tightly coupled to 
 |---|---|
 | **Multiple named workspaces** | Save and switch between named document sets. Each workspace should have its own vector store, documents, and chat history. |
 | **Vector compression research** | Evaluate TurboQuant, QJL, and PolarQuant ideas for compressing Jarvis embeddings or adding an approximate search tier. Reference: https://research.google/blog/turboquant-redefining-ai-efficiency-with-extreme-compression/ |
-| **Workspace map depth** | Add richer document metadata, media dimensions, Office document summaries, package boundaries, tests, and better file grouping. |
+| **Workspace map depth** | In progress. Package boundaries, test counts, extensions, directories, and top-level folder grouping are implemented. Remaining work: media dimensions, Office document summaries, and richer document metadata. |
 | **Context picker** | Let users pin files, folders, symbols, diffs, terminal output, URLs, and documents into the next task. Show context budget impact before sending. |
 | **Code-aware retrieval** | Add code-specific chunking, symbol metadata, exact identifier search, dependency-aware boosting, and optional reranking. |
-| **Model role profiles** | Split model config by role: chat, edit, apply, autocomplete, embedding, reranker, and vision. |
+| **Model role profiles** | In progress. The composer can switch between Gemma 4 2B, 4B, and 26B for chat requests. Remaining work: separate edit, apply, autocomplete, embedding, reranker, and vision roles. |
 | **Gemma 4 runtime research** | Define the Gemma-native model ladder, llama.cpp backend plan, thinking profiles, and migration away from mandatory Ollama. |
 | **Gemma capability matrix** | In progress. Track text generation, text/image/audio/video input, thinking, function calling, coding, multilingual support, system prompt support, context length, memory guidance, and explicit non-support for native image/audio generation in Go so the UI and installer do not overpromise. |
 | **Frontend modularization** | In progress. Chat behavior is split into focused message modules. Next split the large HTML template into embedded partials and organize CSS by component. |
@@ -64,6 +64,7 @@ These features are already implemented and should not be treated as active roadm
 - Windows Ollama bootstrap during manual install
 - Workbench activity and workspace map
 - Workspace map support for regular folders, Office documents, PDFs, images, spreadsheets, presentations, data, text, config, and code files
+- Workspace map package summaries, test counts, file extensions, directories, and top-level folder grouping
 - Reply-to-message context and focused `@file` / `#file` retrieval
 - Pasted image previews and image indexing through the normal document pipeline
 - Queued chat follow-ups with edit, reorder, and remove controls
@@ -75,6 +76,8 @@ These features are already implemented and should not be treated as active roadm
 - Safe clear-index behavior that preserves external source files
 - Neutral Codex-style UI theme and updated Help modal
 - Gemma 4 capability metadata, prompt guidance, sampling defaults, and thinking-output cleanup
+- Composer dropdown for Gemma 4 model selection, research mode, and optional thinking mode
+- Locale, timezone, local date, and local time-aware research query generation
 - Project-scoped folder indexes, project-preferred RAG retrieval, and project-tagged chats
 - Project-scoped command policy and command history for approved local commands
 - Project-scoped edit history and patch-state storage
