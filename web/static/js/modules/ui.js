@@ -238,4 +238,8 @@ window.jarvisUi = {
         openSourcePreview(source) {
             this.sourceModal = { show: true, source };
         },
+
+        closeSourcePreview() {
+            this.sourceModal = { show: false, source: null };
+        },
 };

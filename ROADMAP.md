@@ -47,7 +47,7 @@ Jarvis should become Gemma-native over time instead of being tightly coupled to 
 |---|---|
 | **Multiple named workspaces** | Save and switch between named document sets. Each workspace should have its own vector store, documents, and chat history. |
 | **Vector compression research** | Evaluate TurboQuant, QJL, and PolarQuant ideas for compressing Jarvis embeddings or adding an approximate search tier. Reference: https://research.google/blog/turboquant-redefining-ai-efficiency-with-extreme-compression/ |
-| **Workspace map depth** | In progress. Package boundaries, test counts, extensions, directories, and top-level folder grouping are implemented. Remaining work: media dimensions, Office document summaries, and richer document metadata. |
+| **Workspace map depth** | In progress. Package boundaries, test counts, extensions, directories, image dimensions, and top-level folder grouping are implemented. Remaining work: Office document summaries and richer document metadata. |
 | **Context picker** | Let users pin files, folders, symbols, diffs, terminal output, URLs, and documents into the next task. Show context budget impact before sending. |
 | **Code-aware retrieval** | Add code-specific chunking, symbol metadata, exact identifier search, dependency-aware boosting, and optional reranking. |
 | **Model role profiles** | In progress. The composer can switch between Gemma 4 2B, 4B, and 26B for chat requests. Remaining work: separate edit, apply, autocomplete, embedding, reranker, and vision roles. |
@@ -64,7 +64,7 @@ These features are already implemented and should not be treated as active roadm
 - Windows Ollama bootstrap during manual install
 - Workbench activity and workspace map
 - Workspace map support for regular folders, Office documents, PDFs, images, spreadsheets, presentations, data, text, config, and code files
-- Workspace map package summaries, test counts, file extensions, directories, and top-level folder grouping
+- Workspace map package summaries, test counts, image dimensions, file extensions, directories, and top-level folder grouping
 - Reply-to-message context and focused `@file` / `#file` retrieval
 - Pasted image previews and image indexing through the normal document pipeline
 - Queued chat follow-ups with edit, reorder, and remove controls

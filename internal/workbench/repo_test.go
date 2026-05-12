@@ -1,6 +1,9 @@
 package workbench
 
 import (
+	"image"
+	"image/color"
+	"image/png"
 	"os"
 	"path/filepath"
 	"testing"
@@ -133,5 +136,44 @@ func TestScanRepositoryBuildsWorkspaceGroupsAndTestCounts(t *testing.T) {
 	}
 	if !foundGoPackage {
 		t.Fatalf("missing go package metadata: %#v", repoMap.Packages)
+	}
+}
+
+func TestScanRepositoryExtractsImageDimensions(t *testing.T) {
+	root := t.TempDir()
+	imagePath := filepath.Join(root, "diagram.png")
+	writeTestPNG(t, imagePath, 12, 7)
+
+	repoMap, err := ScanRepository(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if repoMap.FileCount != 1 {
+		t.Fatalf("expected 1 file, got %d", repoMap.FileCount)
+	}
+	media := repoMap.Files[0].Media
+	if media == nil {
+		t.Fatal("expected image metadata")
+	}
+	if media.Width != 12 || media.Height != 7 || media.Format != "png" {
+		t.Fatalf("unexpected media metadata: %#v", media)
+	}
+}
+
+func writeTestPNG(t *testing.T, path string, width, height int) {
+	t.Helper()
+	img := image.NewRGBA(image.Rect(0, 0, width, height))
+	for y := 0; y < height; y++ {
+		for x := 0; x < width; x++ {
+			img.Set(x, y, color.RGBA{R: 40, G: 40, B: 40, A: 255})
+		}
+	}
+	file, err := os.Create(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer file.Close()
+	if err := png.Encode(file, img); err != nil {
+		t.Fatal(err)
 	}
 }

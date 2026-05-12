@@ -30,22 +30,24 @@ type FileReadRequest struct {
 }
 
 type FileSearchResult struct {
-	Path      string   `json:"path"`
-	Kind      string   `json:"kind"`
-	Language  string   `json:"language"`
-	SizeBytes int64    `json:"size_bytes"`
-	Imports   []string `json:"imports,omitempty"`
-	Score     int      `json:"score"`
+	Path      string     `json:"path"`
+	Kind      string     `json:"kind"`
+	Language  string     `json:"language"`
+	SizeBytes int64      `json:"size_bytes"`
+	Imports   []string   `json:"imports,omitempty"`
+	Media     *MediaInfo `json:"media,omitempty"`
+	Score     int        `json:"score"`
 }
 
 type FileReadResult struct {
-	Path      string `json:"path"`
-	Kind      string `json:"kind"`
-	Language  string `json:"language"`
-	SizeBytes int64  `json:"size_bytes"`
-	Content   string `json:"content,omitempty"`
-	Binary    bool   `json:"binary"`
-	Truncated bool   `json:"truncated"`
+	Path      string     `json:"path"`
+	Kind      string     `json:"kind"`
+	Language  string     `json:"language"`
+	SizeBytes int64      `json:"size_bytes"`
+	Media     *MediaInfo `json:"media,omitempty"`
+	Content   string     `json:"content,omitempty"`
+	Binary    bool       `json:"binary"`
+	Truncated bool       `json:"truncated"`
 }
 
 type FileSummary struct {
@@ -53,6 +55,7 @@ type FileSummary struct {
 	Kind        string       `json:"kind"`
 	Language    string       `json:"language"`
 	SizeBytes   int64        `json:"size_bytes"`
+	Media       *MediaInfo   `json:"media,omitempty"`
 	LineCount   int          `json:"line_count"`
 	Imports     []string     `json:"imports,omitempty"`
 	Symbols     []SymbolInfo `json:"symbols,omitempty"`
@@ -92,6 +95,7 @@ func SearchProjectFiles(repo *RepoMap, options FileSearchOptions) []FileSearchRe
 			Language:  file.Language,
 			SizeBytes: file.SizeBytes,
 			Imports:   file.Imports,
+			Media:     file.Media,
 			Score:     score,
 		})
 	}
@@ -140,6 +144,7 @@ func ReadProjectFile(root string, repo *RepoMap, req FileReadRequest) (FileReadR
 		Kind:      file.Kind,
 		Language:  file.Language,
 		SizeBytes: info.Size(),
+		Media:     file.Media,
 		Binary:    binary,
 		Truncated: truncated,
 	}
@@ -160,6 +165,7 @@ func SummarizeProjectFile(root string, repo *RepoMap, path string) (FileSummary,
 		Kind:        read.Kind,
 		Language:    read.Language,
 		SizeBytes:   read.SizeBytes,
+		Media:       file.Media,
 		Imports:     file.Imports,
 		Binary:      read.Binary,
 		Readable:    read.Content != "",
@@ -279,6 +285,13 @@ func isBinaryData(data []byte) bool {
 }
 
 func describeProjectFile(file FileReadResult) string {
+	if file.Media != nil && file.Media.Width > 0 && file.Media.Height > 0 {
+		format := file.Media.Format
+		if format == "" {
+			format = file.Language
+		}
+		return fmt.Sprintf("%s image, %dx%d pixels", format, file.Media.Width, file.Media.Height)
+	}
 	if file.Binary {
 		return fmt.Sprintf("%s file, binary content is not shown", file.Kind)
 	}

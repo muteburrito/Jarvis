@@ -2,6 +2,10 @@ package workbench
 
 import (
 	"encoding/json"
+	"image"
+	_ "image/gif"
+	_ "image/jpeg"
+	_ "image/png"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -23,15 +27,16 @@ type RepoMap struct {
 }
 
 type RepoFile struct {
-	Path      string   `json:"path"`
-	Directory string   `json:"directory,omitempty"`
-	Extension string   `json:"extension,omitempty"`
-	Kind      string   `json:"kind"`
-	Language  string   `json:"language"`
-	Package   string   `json:"package,omitempty"`
-	Imports   []string `json:"imports,omitempty"`
-	SizeBytes int64    `json:"size_bytes"`
-	IsTest    bool     `json:"is_test,omitempty"`
+	Path      string     `json:"path"`
+	Directory string     `json:"directory,omitempty"`
+	Extension string     `json:"extension,omitempty"`
+	Kind      string     `json:"kind"`
+	Language  string     `json:"language"`
+	Package   string     `json:"package,omitempty"`
+	Imports   []string   `json:"imports,omitempty"`
+	Media     *MediaInfo `json:"media,omitempty"`
+	SizeBytes int64      `json:"size_bytes"`
+	IsTest    bool       `json:"is_test,omitempty"`
 }
 
 type SymbolInfo struct {
@@ -57,6 +62,12 @@ type FileGroup struct {
 	TestCount int            `json:"test_count"`
 	SizeBytes int64          `json:"size_bytes"`
 	Kinds     map[string]int `json:"kinds,omitempty"`
+}
+
+type MediaInfo struct {
+	Width  int    `json:"width,omitempty"`
+	Height int    `json:"height,omitempty"`
+	Format string `json:"format,omitempty"`
 }
 
 var ignoredRepoDirs = map[string]bool{
@@ -142,6 +153,9 @@ func ScanRepository(root string) (*RepoMap, error) {
 			Language:  language,
 			SizeBytes: info.Size(),
 			IsTest:    isTestPath(relPath, language),
+		}
+		if kind == "image" {
+			file.Media = readImageMetadata(path)
 		}
 
 		if isTextReadable(kind, language) {
@@ -267,6 +281,24 @@ func isTextReadable(kind, language string) bool {
 		return language == "markdown"
 	default:
 		return false
+	}
+}
+
+func readImageMetadata(path string) *MediaInfo {
+	file, err := os.Open(path)
+	if err != nil {
+		return nil
+	}
+	defer file.Close()
+
+	cfg, format, err := image.DecodeConfig(file)
+	if err != nil {
+		return nil
+	}
+	return &MediaInfo{
+		Width:  cfg.Width,
+		Height: cfg.Height,
+		Format: format,
 	}
 }
 

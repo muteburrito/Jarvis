@@ -18,7 +18,7 @@ No data leaves your machine. No API keys needed. Single binary, runs anywhere.
 - **Watched folders:** indexed folders are remembered and checked in the background, so new and changed files are refreshed without clearing the index
 - **Wide file support:** PDF, DOCX, XLSX, PPTX, images, known source files, and unknown text-like files. Binary files are rejected
 - **Hybrid retrieval:** combines vector similarity with BM25 keyword scoring for better exact matches on code symbols, error codes, and config keys
-- **Workspace map:** folder ingest maps regular files, Office documents, PDFs, images, data files, source files, code symbols, packages, tests, and folder groups
+- **Workspace map:** folder ingest maps regular files, Office documents, PDFs, images with dimensions, data files, source files, code symbols, packages, tests, and folder groups
 - **Project foundation:** indexed folders are saved as projects with an active project, workspace map, watched re-indexing, and a project vector store for folder-scoped retrieval
 - **Workbench activity:** inspect the active project, workspace map summary, local git changes, and recent task activity without crowding the chat UI
 - **Read-only agent tools:** normal chat can let the model request safe project search, file summaries, and file previews before answering
@@ -104,7 +104,7 @@ Suggested highlights:
 - Reply-to-message context and `@file` / `#file` focused retrieval
 - Queued follow-up prompts with edit, reorder, and remove controls
 - Copy, rate, fork, and response timing controls
-- Workspace map for regular folders, Office files, PDFs, images, data, text, config, code symbols, packages, tests, and folder groups
+- Workspace map for regular folders, Office files, PDFs, image dimensions, data, text, config, code symbols, packages, tests, and folder groups
 - Watched folder background re-indexing for new and modified files
 - Simplified Workbench panel for project summary, workspace map counts, local changes, and recent activity
 - Local changes panel with changed-file totals and expandable git diffs for the active project
@@ -224,7 +224,7 @@ packaging/
 | `GET /api/v1/projects` | List persisted projects and the active project |
 | `POST /api/v1/projects` | Open a folder as the active project |
 | `GET /api/v1/diff` | Changed-file summary and text patches for the active git project |
-| `GET /api/v1/repo-map` | Current workspace map with files, file kinds, imports, symbols, packages, tests, and folder groups |
+| `GET /api/v1/repo-map` | Current workspace map with files, file kinds, imports, symbols, image dimensions, packages, tests, and folder groups |
 | `GET /api/v1/tools/files` | Search active-project files by path, kind, language, or imports |
 | `POST /api/v1/tools/read-file` | Safely read a text file inside the active project |
 | `POST /api/v1/tools/summarize-file` | Return metadata, symbols, imports, and a short excerpt for one active-project file |
@@ -239,7 +239,7 @@ packaging/
 1. **Upload or index:** files are split into overlapping text chunks. Images (standalone or extracted from PDFs) are described by a vision model, and those descriptions become searchable text. URLs pasted in the main chat box are auto-detected and fetched. Indexed folders are remembered for background refreshes.
 2. **Embed:** each chunk is converted to a vector using `nomic-embed-text` via Ollama
 3. **Store:** vectors are kept in memory and persisted to disk in gob format
-4. **Map:** folder ingest also builds a workspace map for files, documents, images, data, code symbols, imports, packages, tests, and folder groups
+4. **Map:** folder ingest also builds a workspace map for files, documents, image dimensions, data, code symbols, imports, packages, tests, and folder groups
 5. **Refresh:** watched folders are checked in the background. New and modified files are re-indexed, and the workspace map is refreshed.
 6. **Query:** your question is embedded, the most similar chunks are retrieved, and they are passed as context to the LLM. Reply context and focused `@file` mentions are included when present. Your locale, timezone, and current local date/time are included so answers use local conventions.
 7. **Stream:** the LLM response streams back token-by-token via Server-Sent Events. While it is streaming, you can queue, edit, reorder, or remove follow-up prompts.

@@ -49,3 +49,24 @@ func TestReadProjectFileRejectsTraversal(t *testing.T) {
 		t.Fatal("expected traversal path to be rejected")
 	}
 }
+
+func TestProjectToolsIncludeImageMetadata(t *testing.T) {
+	dir := t.TempDir()
+	writeTestPNG(t, filepath.Join(dir, "diagram.png"), 16, 9)
+
+	repo, err := ScanRepository(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	results := SearchProjectFiles(repo, FileSearchOptions{Query: "diagram", Limit: 10})
+	if len(results) != 1 || results[0].Media == nil {
+		t.Fatalf("expected image metadata in search result: %#v", results)
+	}
+	summary, err := SummarizeProjectFile(dir, repo, "diagram.png")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if summary.Media == nil || summary.Media.Width != 16 || summary.Media.Height != 9 {
+		t.Fatalf("unexpected image summary: %#v", summary)
+	}
+}
