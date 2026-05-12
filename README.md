@@ -7,6 +7,7 @@ No data leaves your machine. No API keys needed. Single binary, runs anywhere.
 ## Features
 
 - **Chat with documents:** upload files or index entire folders, then ask questions with source citations
+- **Natural context routing:** generic questions stay general even when files are indexed. Jarvis uses indexed context when you ask about documents, name a file, or focus a file with `@` or `#`
 - **Reply context:** reply to a specific prior message so follow-up questions carry the intended local context
 - **Focused file mentions:** type or select `@file` and `#file` mentions so retrieval prioritizes specific indexed files
 - **Message queue:** queue follow-up prompts while an answer is streaming, edit queued prompts inline, reorder them, or remove them before they run

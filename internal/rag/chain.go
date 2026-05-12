@@ -56,9 +56,11 @@ func (c *Chain) Query(ctx context.Context, question string, history []ollamaapi.
 
 	var sources []map[string]string
 	var systemContent string
+	useIndexedContext := false
 
 	searchStore := c.searchStore()
-	if searchStore.EntryCount() > 0 {
+	if searchStore.EntryCount() > 0 && ShouldUseIndexedContext(question, opts, searchStore.ListDocuments()) {
+		useIndexedContext = true
 		embeddings, err := c.ollama.Embed(ctx, []string{question})
 		if err != nil {
 			return nil, fmt.Errorf("embed question: %w", err)
@@ -87,11 +89,15 @@ func (c *Chain) Query(ctx context.Context, question string, history []ollamaapi.
 	if replyCtx := buildReplyContext(opts.ReplyTo); replyCtx != "" {
 		systemContent += "\n\n" + replyCtx
 	}
-	if repoCtx := c.repoContext(question); repoCtx != "" {
-		systemContent += "\n\n" + repoCtx
+	if useIndexedContext {
+		if repoCtx := c.repoContext(question); repoCtx != "" {
+			systemContent += "\n\n" + repoCtx
+		}
 	}
-	if toolCtx := buildToolContext(opts.ToolContext); toolCtx != "" {
-		systemContent += "\n\n" + toolCtx
+	if useIndexedContext {
+		if toolCtx := buildToolContext(opts.ToolContext); toolCtx != "" {
+			systemContent += "\n\n" + toolCtx
+		}
 	}
 
 	messages := make([]ollamaapi.Message, 0, len(history)+2)
@@ -164,6 +170,100 @@ func filterUserVisibleResults(results []vectorstore.SearchResult) []vectorstore.
 		filtered = append(filtered, result)
 	}
 	return filtered
+}
+
+func ShouldUseIndexedContext(question string, opts *QueryOptions, docs []vectorstore.DocumentInfo) bool {
+	if opts != nil {
+		if opts.ResearchMode || len(opts.FocusDocumentIDs) > 0 || len(opts.FocusFiles) > 0 {
+			return true
+		}
+	}
+
+	normalized := strings.ToLower(strings.TrimSpace(question))
+	if normalized == "" {
+		return false
+	}
+
+	documentPhrases := []string{
+		"this document",
+		"these documents",
+		"the document",
+		"the documents",
+		"indexed document",
+		"indexed documents",
+		"uploaded file",
+		"uploaded files",
+		"attached file",
+		"attached image",
+		"attached screenshot",
+		"based on the document",
+		"based on the docs",
+		"in the document",
+		"in the docs",
+		"in the file",
+		"in the pdf",
+		"in the spreadsheet",
+		"in the presentation",
+		"from the document",
+		"from the docs",
+		"from the file",
+		"summarize the document",
+		"summarize this file",
+		"summarize the file",
+		"what does the document",
+		"what does this file",
+		"what does the file",
+		"this codebase",
+		"the codebase",
+		"this project",
+		"the project",
+		"this repo",
+		"the repo",
+		"this repository",
+		"the repository",
+	}
+	for _, phrase := range documentPhrases {
+		if strings.Contains(normalized, phrase) {
+			return true
+		}
+	}
+
+	for _, doc := range docs {
+		if matchesDocumentName(normalized, doc) {
+			return true
+		}
+	}
+
+	return false
+}
+
+func matchesDocumentName(question string, doc vectorstore.DocumentInfo) bool {
+	candidates := []string{doc.Filename, doc.FilePath}
+	for _, candidate := range candidates {
+		candidate = strings.ToLower(strings.TrimSpace(candidate))
+		if candidate == "" {
+			continue
+		}
+		candidate = strings.ReplaceAll(candidate, "\\", "/")
+		parts := strings.Split(candidate, "/")
+		base := parts[len(parts)-1]
+		if base != "" && strings.Contains(question, strings.ToLower(base)) {
+			return true
+		}
+		withoutExt := strings.TrimSuffix(base, strings.ToLower(filepathExt(base)))
+		if len(withoutExt) >= 4 && strings.Contains(question, withoutExt) {
+			return true
+		}
+	}
+	return false
+}
+
+func filepathExt(path string) string {
+	index := strings.LastIndex(path, ".")
+	if index < 0 {
+		return ""
+	}
+	return path[index:]
 }
 
 func isInternalStateSource(source string) bool {

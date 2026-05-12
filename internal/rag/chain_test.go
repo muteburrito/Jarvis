@@ -70,3 +70,47 @@ func TestSearchStorePrefersActiveProjectStore(t *testing.T) {
 		t.Fatalf("expected project store, got documents %#v", docs)
 	}
 }
+
+func TestShouldUseIndexedContextRoutesGenericQuestionsToGeneralChat(t *testing.T) {
+	docs := []vectorstore.DocumentInfo{{Filename: "benefits-policy.pdf", FilePath: "docs/benefits-policy.pdf"}}
+
+	if ShouldUseIndexedContext("what is the capital of France?", nil, docs) {
+		t.Fatal("expected generic question to skip indexed context")
+	}
+}
+
+func TestShouldUseIndexedContextUsesFocusedOrDocumentQuestions(t *testing.T) {
+	docs := []vectorstore.DocumentInfo{{Filename: "benefits-policy.pdf", FilePath: "docs/benefits-policy.pdf"}}
+
+	cases := []struct {
+		name     string
+		question string
+		opts     *QueryOptions
+	}{
+		{
+			name:     "focused document",
+			question: "what does it say?",
+			opts:     &QueryOptions{FocusDocumentIDs: []string{"doc_1"}},
+		},
+		{
+			name:     "document phrase",
+			question: "summarize the document",
+		},
+		{
+			name:     "filename",
+			question: "what does benefits-policy.pdf say about coverage?",
+		},
+		{
+			name:     "filename without extension",
+			question: "summarize benefits-policy",
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			if !ShouldUseIndexedContext(tc.question, tc.opts, docs) {
+				t.Fatal("expected indexed context")
+			}
+		})
+	}
+}
