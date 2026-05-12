@@ -85,8 +85,17 @@ func (s *Server) handleChat(w http.ResponseWriter, r *http.Request) {
 	if chatModel == "" {
 		chatModel = s.chain.DefaultChatModel()
 	}
-	if !s.isChatModel(r.Context(), chatModel) {
-		data, _ := json.Marshal(sseEvent{Token: "\n\nError: selected model is not installed: " + chatModel, Done: true})
+	modelProgress := func(detail string) {
+		_ = onProgress(websearch.ProgressEvent{
+			Step:   "model",
+			Detail: detail,
+			Status: "running",
+		})
+	}
+	if err := s.ensureChatModel(r.Context(), chatModel, modelProgress); err != nil {
+		slog.Warn("selected chat model unavailable", "model", chatModel, "error", err)
+		s.recordTaskTrace("model", "Selected chat model unavailable", map[string]string{"model": chatModel, "error": err.Error()})
+		data, _ := json.Marshal(sseEvent{Token: "\n\nError: " + err.Error(), Done: true})
 		fmt.Fprintf(w, "data: %s\n\n", data)
 		flusher.Flush()
 		return

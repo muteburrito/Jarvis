@@ -598,7 +598,7 @@
                                                 @click="selectChatModel(option.value)">
                                             <span>
                                                 <span class="block" x-text="option.label"></span>
-                                                <span class="block text-[11px] text-zinc-500" x-text="isModelInstalled(option.value) ? option.hint : option.hint + ', not installed'"></span>
+                                                <span class="block text-[11px] text-zinc-500" x-text="isModelInstalled(option.value) ? option.hint : option.hint + ', auto-downloads'"></span>
                                             </span>
                                             <svg x-show="sameModelName(selectedChatModel, option.value)" class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
@@ -1408,7 +1408,7 @@
                         <li><strong class="text-slate-300">gemma4:e4b</strong> is the default for most machines</li>
                         <li><strong class="text-slate-300">llava</strong> is optional and enables image descriptions</li>
                     </ul>
-                    <p class="mt-2 text-slate-500">Use the composer dropdown to choose Gemma 4 2B, 4B, or 26B for a request. Thinking mode adds Gemma 4 private reasoning prompting and keeps hidden thought text out of saved chat history.</p>
+                    <p class="mt-2 text-slate-500">Use the composer dropdown to choose Gemma 4 2B, 4B, or 26B for a request. Missing dropdown models are downloaded automatically through Ollama. Thinking mode adds Gemma 4 private reasoning prompting and keeps hidden thought text out of saved chat history.</p>
                 </div>
 
                 <div>

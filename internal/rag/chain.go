@@ -279,6 +279,10 @@ func (c *Chain) HasModel(ctx context.Context, model string) bool {
 	return c.ollama.HasModel(ctx, model)
 }
 
+func (c *Chain) PullModel(ctx context.Context, model string, onProgress func(status string, completed, total int64)) error {
+	return c.ollama.PullModel(ctx, model, onProgress)
+}
+
 func (c *Chain) DefaultChatModel() string {
 	return c.cfg.ChatModel
 }

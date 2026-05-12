@@ -77,6 +77,7 @@ These features are already implemented and should not be treated as active roadm
 - Neutral Codex-style UI theme and updated Help modal
 - Gemma 4 capability metadata, prompt guidance, sampling defaults, and thinking-output cleanup
 - Composer dropdown for Gemma 4 model selection, research mode, and optional thinking mode
+- On-demand Ollama pulls for missing Gemma 4 dropdown chat models
 - Locale, timezone, local date, and local time-aware research query generation
 - Project-scoped folder indexes, project-preferred RAG retrieval, and project-tagged chats
 - Project-scoped command policy and command history for approved local commands

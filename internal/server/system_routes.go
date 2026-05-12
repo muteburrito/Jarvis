@@ -2,8 +2,11 @@ package server
 
 import (
 	"context"
+	"fmt"
+	"log/slog"
 	"net/http"
 	"strings"
+	"time"
 
 	"go-chatbot/internal/system"
 )
@@ -70,6 +73,48 @@ func (s *Server) isChatModel(ctx context.Context, model string) bool {
 		}
 	}
 	return false
+}
+
+func (s *Server) ensureChatModel(ctx context.Context, model string, onProgress func(string)) error {
+	if s.isChatModel(ctx, model) {
+		return nil
+	}
+	if !isAutoPullChatModel(model) {
+		return fmt.Errorf("selected model is not installed: %s", model)
+	}
+
+	slog.Info("downloading selected chat model", "model", model)
+	lastProgress := time.Time{}
+	if onProgress != nil {
+		onProgress("Downloading " + model)
+	}
+	err := s.chain.PullModel(ctx, model, func(status string, completed, total int64) {
+		if onProgress == nil || time.Since(lastProgress) < 2*time.Second {
+			return
+		}
+		lastProgress = time.Now()
+		message := status
+		if total > 0 && completed > 0 {
+			message = fmt.Sprintf("%s (%d%%)", status, completed*100/total)
+		}
+		onProgress(message)
+	})
+	if err != nil {
+		return fmt.Errorf("download selected model %q: %w", model, err)
+	}
+	if !s.isChatModel(ctx, model) {
+		return fmt.Errorf("selected model was not available after download: %s", model)
+	}
+	return nil
+}
+
+func isAutoPullChatModel(model string) bool {
+	switch normalizeModelName(strings.ToLower(strings.TrimSpace(model))) {
+	case "gemma4:e2b", "gemma4:e4b", "gemma4:26b":
+		return true
+	default:
+		return false
+	}
 }
 
 func sameModel(a, b string) bool {
