@@ -29,30 +29,8 @@
                 </svg>
             </button>
             <div class="flex items-center gap-2">
-                <svg class="w-6 h-6 shrink-0" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <circle cx="50" cy="50" r="44" stroke="url(#paint0_linear_nav)" stroke-width="3" stroke-linecap="round" stroke-dasharray="8 6" />
-                    <circle cx="50" cy="50" r="34" stroke="url(#paint1_linear_nav)" stroke-width="2.5" />
-                    <path d="M50 22V78M22 50H78M30 30L70 70M30 70L70 30" stroke="url(#paint2_linear_nav)" stroke-width="2.5" stroke-linecap="round" opacity="0.4" />
-                    <path d="M40 50C40 44.4772 44.4772 40 50 40C55.5228 40 60 44.4772 60 50C60 55.5228 55.5228 60 50 60C44.4772 60 40 55.5228 40 50Z" fill="url(#paint3_radial_nav)" />
-                    <defs>
-                        <linearGradient id="paint0_linear_nav" x1="6" y1="6" x2="94" y2="94" gradientUnits="userSpaceOnUse">
-                            <stop stop-color="#06b6d4" />
-                            <stop offset="0.5" stop-color="#6366f1" />
-                            <stop offset="1" stop-color="#8b5cf6" />
-                        </linearGradient>
-                        <linearGradient id="paint1_linear_nav" x1="16" y1="16" x2="84" y2="84" gradientUnits="userSpaceOnUse">
-                            <stop stop-color="#8b5cf6" />
-                            <stop offset="1" stop-color="#06b6d4" />
-                        </linearGradient>
-                        <linearGradient id="paint2_linear_nav" x1="22" y1="22" x2="78" y2="78" gradientUnits="userSpaceOnUse">
-                            <stop stop-color="#6366f1" />
-                            <stop offset="1" stop-color="#06b6d4" />
-                        </linearGradient>
-                        <radialGradient id="paint3_radial_nav" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(50 50) rotate(45) scale(14.1421)">
-                            <stop stop-color="#06b6d4" />
-                            <stop offset="1" stop-color="#6366f1" />
-                        </radialGradient>
-                    </defs>
+                <svg class="w-6 h-6 text-zinc-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/>
                 </svg>
                 <h1 class="text-sm font-semibold text-slate-100" x-text="appConfig.app_name || 'Jarvis'">Jarvis</h1>
             </div>
@@ -214,107 +192,12 @@
 
                 <!-- Welcome message -->
                 <template x-if="messages.length === 0">
-                    <div class="mx-auto flex h-full max-w-4xl flex-col items-center justify-center text-center px-4 py-8">
-                        
-                        <!-- Futuristic Glowing Emblem -->
-                        <div class="relative mb-6">
-                            <div class="absolute inset-0 rounded-full bg-gradient-to-tr from-indigo-500 via-purple-500 to-cyan-400 blur-2xl opacity-20 animate-pulse"></div>
-                            <svg class="relative w-20 h-20 text-slate-100" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                <circle cx="50" cy="50" r="44" stroke="url(#paint0_linear)" stroke-width="2" stroke-linecap="round" stroke-dasharray="8 6" />
-                                <circle cx="50" cy="50" r="34" stroke="url(#paint1_linear)" stroke-width="1.5" />
-                                <path d="M50 22V78M22 50H78M30 30L70 70M30 70L70 30" stroke="url(#paint2_linear)" stroke-width="1.5" stroke-linecap="round" opacity="0.3" />
-                                <path d="M40 50C40 44.4772 44.4772 40 50 40C55.5228 40 60 44.4772 60 50C60 55.5228 55.5228 60 50 60C44.4772 60 40 55.5228 40 50Z" fill="url(#paint3_radial)" />
-                                <defs>
-                                    <linearGradient id="paint0_linear" x1="6" y1="6" x2="94" y2="94" gradientUnits="userSpaceOnUse">
-                                        <stop stop-color="#06b6d4" />
-                                        <stop offset="0.5" stop-color="#6366f1" />
-                                        <stop offset="1" stop-color="#8b5cf6" />
-                                    </linearGradient>
-                                    <linearGradient id="paint1_linear" x1="16" y1="16" x2="84" y2="84" gradientUnits="userSpaceOnUse">
-                                        <stop stop-color="#8b5cf6" />
-                                        <stop offset="1" stop-color="#06b6d4" />
-                                    </linearGradient>
-                                    <linearGradient id="paint2_linear" x1="22" y1="22" x2="78" y2="78" gradientUnits="userSpaceOnUse">
-                                        <stop stop-color="#6366f1" />
-                                        <stop offset="1" stop-color="#06b6d4" />
-                                    </linearGradient>
-                                    <radialGradient id="paint3_radial" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(50 50) rotate(45) scale(14.1421)">
-                                        <stop stop-color="#06b6d4" />
-                                        <stop offset="1" stop-color="#6366f1" />
-                                    </radialGradient>
-                                </defs>
-                            </svg>
-                        </div>
-
-                        <h2 class="font-outfit text-4xl font-extrabold tracking-tight text-white mb-2">
-                            <span class="bg-gradient-to-r from-cyan-400 via-indigo-400 to-purple-400 bg-clip-text text-transparent">Jarvis</span>
-                        </h2>
-                        
-                        <p class="text-slate-400 max-w-xl text-sm mb-10 leading-relaxed">
-                            A secure, private-first agentic developer workbench and semantic retrieval core powered by Gemma 4.
-                        </p>
-
-                        <!-- Action Grid -->
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-2xl w-full text-left">
-                            
-                            <!-- Index Codebase Card -->
-                            <button @click="$refs.folderInput.click()"
-                                    class="glass-panel glass-panel-interactive p-4 rounded-xl flex items-start gap-4">
-                                <div class="p-2.5 rounded-lg bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 shrink-0">
-                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V7z"/>
-                                    </svg>
-                                </div>
-                                <div class="min-w-0">
-                                    <h3 class="font-outfit font-semibold text-white text-sm">Index Project Folder</h3>
-                                    <p class="text-xs text-slate-400 mt-1 leading-relaxed">Scan your local workspace to construct lightweight code & symbol maps.</p>
-                                </div>
-                            </button>
-
-                            <!-- Deep Research Card -->
-                            <button @click="researchMode = true; $refs.chatInput.focus()"
-                                    class="glass-panel glass-panel-interactive p-4 rounded-xl flex items-start gap-4">
-                                <div class="p-2.5 rounded-lg bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 shrink-0">
-                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
-                                    </svg>
-                                </div>
-                                <div class="min-w-0">
-                                    <h3 class="font-outfit font-semibold text-white text-sm">Autonomous Research</h3>
-                                    <p class="text-xs text-slate-400 mt-1 leading-relaxed">Execute DuckDuckGo queries, scrape content, and analyze findings locally.</p>
-                                </div>
-                            </button>
-
-                            <!-- Developer Workbench Card -->
-                            <button @click="openWorkbenchPanel()"
-                                    class="glass-panel glass-panel-interactive p-4 rounded-xl flex items-start gap-4">
-                                <div class="p-2.5 rounded-lg bg-purple-500/10 border border-purple-500/20 text-purple-400 shrink-0">
-                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 5h16M4 12h16M4 19h16M8 5v14"/>
-                                    </svg>
-                                </div>
-                                <div class="min-w-0">
-                                    <h3 class="font-outfit font-semibold text-white text-sm">Project Workbench</h3>
-                                    <p class="text-xs text-slate-400 mt-1 leading-relaxed">Access codebase stats, command consoles, watches, and local git diffs.</p>
-                                </div>
-                            </button>
-
-                            <!-- Interactive Help Card -->
-                            <button @click="showHelp = true"
-                                    class="glass-panel glass-panel-interactive p-4 rounded-xl flex items-start gap-4">
-                                <div class="p-2.5 rounded-lg bg-slate-500/10 border border-slate-500/20 text-slate-300 shrink-0">
-                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                                    </svg>
-                                </div>
-                                <div class="min-w-0">
-                                    <h3 class="font-outfit font-semibold text-white text-sm">System Guidance</h3>
-                                    <p class="text-xs text-slate-400 mt-1 leading-relaxed">Check local configuration, model capabilities, and usage tips.</p>
-                                </div>
-                            </button>
-
-                        </div>
-
+                    <div class="mx-auto flex h-full max-w-3xl flex-col items-center justify-center text-center">
+                        <svg class="w-12 h-12 text-slate-600 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/>
+                        </svg>
+                        <h2 class="text-xl font-semibold text-slate-200 mb-2">What are we working on?</h2>
+                        <p class="text-slate-500 max-w-md text-sm">Attach files or folders, ask about indexed code, or start a local research thread.</p>
                     </div>
                 </template>
 
@@ -471,7 +354,7 @@
 
                 <!-- Typing indicator -->
                 <div x-show="isStreaming && messages.length > 0 && messages[messages.length-1].content === ''" class="flex justify-start">
-                    <div class="bg-slate-800 border border-slate-700 rounded-2xl rounded-bl-md px-4 py-3 shadow-sm">
+                    <div class="typing-indicator-bubble px-4 py-3">
                         <div class="typing-indicator">
                             <span></span><span></span><span></span>
                         </div>
@@ -1022,9 +905,7 @@
             </div>
 
             <div class="workbench-body">
-                <!-- Left Column: Project panels & maps -->
-                <div class="workbench-col-main">
-                    <div class="workbench-map-panel">
+                <div class="workbench-map-panel">
                     <div class="mb-3 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                         <div class="min-w-0">
                             <div class="flex items-center gap-2">
@@ -1342,36 +1223,28 @@
                         </div>
                     </template>
                 </div>
-                </div>
 
-                <!-- Right Column: Recent Activity Traces -->
-                <div class="workbench-col-side">
-                    <div class="flex items-center justify-between mb-3 px-1">
-                        <h3 class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Recent Activity</h3>
-                        <span class="text-[10px] text-slate-500 font-mono" x-show="taskState" x-text="recentWorkbenchEvents().length + ' events'"></span>
-                    </div>
-                    <div class="flex-1 overflow-y-auto space-y-2 pr-1 custom-scrollbar">
-                        <template x-if="!taskState">
-                            <div class="workbench-empty-state">No workbench state loaded yet</div>
-                        </template>
-                        <template x-if="taskState && recentWorkbenchEvents().length === 0">
-                            <div class="workbench-empty-state">No activity recorded yet</div>
-                        </template>
-                        <template x-for="event in recentWorkbenchEvents()" :key="event.kind + event.type + event.title + event.created_at">
-                            <div class="workbench-event" :class="eventTone(event.type)">
-                                <div class="flex min-w-0 items-start justify-between gap-3">
-                                    <div class="min-w-0">
-                                        <div class="flex flex-wrap items-center gap-2">
-                                            <span class="workbench-event-type" x-text="event.type"></span>
-                                            <p class="truncate text-sm font-medium text-slate-100" x-text="event.title"></p>
-                                        </div>
-                                        <p x-show="event.detail" class="mt-1 text-xs text-slate-400" x-text="event.detail"></p>
+                <template x-if="!taskState">
+                    <div class="workbench-empty-state">No workbench state loaded yet</div>
+                </template>
+                <template x-if="taskState && recentWorkbenchEvents().length === 0">
+                    <div class="workbench-empty-state">No activity recorded yet</div>
+                </template>
+                <div class="space-y-2">
+                    <template x-for="event in recentWorkbenchEvents()" :key="event.kind + event.type + event.title + event.created_at">
+                        <div class="workbench-event" :class="eventTone(event.type)">
+                            <div class="flex min-w-0 items-start justify-between gap-3">
+                                <div class="min-w-0">
+                                    <div class="flex flex-wrap items-center gap-2">
+                                        <span class="workbench-event-type" x-text="event.type"></span>
+                                        <p class="truncate text-sm font-medium text-slate-100" x-text="event.title"></p>
                                     </div>
-                                    <span class="shrink-0 text-[11px] text-slate-500" x-text="eventTime(event.created_at)"></span>
+                                    <p x-show="event.detail" class="mt-1 text-xs text-slate-400" x-text="event.detail"></p>
                                 </div>
+                                <span class="shrink-0 text-[11px] text-slate-500" x-text="eventTime(event.created_at)"></span>
                             </div>
-                        </template>
-                    </div>
+                        </div>
+                    </template>
                 </div>
             </div>
         </div>
