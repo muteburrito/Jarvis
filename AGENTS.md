@@ -9,8 +9,6 @@ See [ROADMAP.md](ROADMAP.md) for planned features.
 ## Build and Run
 
 ```bash
-go build ./cmd/server/
-go run ./cmd/server/
 go build -tags "desktop,production" ./cmd/desktop/
 ```
 
@@ -20,13 +18,10 @@ To build with a version baked in:
 go build -tags "desktop,production" -ldflags="-X main.Version=v1.2.3" -o jarvis.exe ./cmd/desktop/
 ```
 
-The server starts on port 8080 by default. Ollama must be running locally for development. The Windows installer bootstraps Ollama and the Jarvis models during manual installs.
+The desktop app starts a secure loopback API server dynamically on `127.0.0.1:0` at runtime to serve the frontend and handle API calls. Ollama must be running locally for development. The Windows installer bootstraps Ollama and the Jarvis models during manual installs.
 
 Dependencies are resolved through Go modules. Do not commit `vendor/`; let CI download modules through `go mod download` or the normal `go` command.
 
-## Versioning
-
-Use semantic versioning for release tags: `vMAJOR.MINOR.PATCH`.
 
 - Bump **major** for breaking changes: incompatible config changes, vector store format changes without migration, removed APIs, changed install locations, or changes that require manual user action.
 - Bump **minor** for backward-compatible features: new loaders, new UI features, new API endpoints, new installer targets, new model options, or safe migrations.
@@ -34,7 +29,7 @@ Use semantic versioning for release tags: `vMAJOR.MINOR.PATCH`.
 
 The GitHub updater only runs on proper semver builds. When creating a release, bake the same tag into the binary with `-X main.Version=vMAJOR.MINOR.PATCH`.
 
-## Writing Style
+### Writing Style
 
 - Never use em dashes in code, comments, or documentation. Use commas, periods, or separate sentences instead.
 - Write in plain, human language. Sound like a senior staff engineer explaining tradeoffs to a teammate.
@@ -54,7 +49,7 @@ The GitHub updater only runs on proper semver builds. When creating a release, b
 
 ## Architecture
 
-- `cmd/server/main.go` is the browser/server entry point. `cmd/desktop/main.go` is the Wails desktop entry point. Both use `internal/app/runtime.go` for shared startup wiring. Each command declares `var Version = "dev"` which release builds overwrite via ldflags.
+- `cmd/desktop/main.go` is the Wails desktop entry point. It uses `internal/app/runtime.go` for shared startup wiring. The command declares `var Version = "dev"` which release builds overwrite via ldflags.
 - `internal/app/` initializes config, Ollama, required models, vector store, document processor, RAG chain, research mode, task/chat stores, updater, and the shared HTTP server.
 - `internal/config/` loads settings from environment variables. Key fields: `OllamaURL`, `OllamaKeepAlive`, `ChatModel`, `EmbeddingModel`, `VisionModel`, `GitHubRepo`, `GitHubToken`, `AppName`, `SupportEmail`, `SupportSubject`, and `SupportURL`.
 - `internal/gemma/` owns Gemma 4 model profiles, capability metadata, recommended sampling options, optional thinking prompts, and thought-block cleanup. Keep this package pure Go and dependency-free.
@@ -83,7 +78,7 @@ The GitHub updater only runs on proper semver builds. When creating a release, b
 ## Release Pipeline
 
 - `.github/workflows/ci.yml` builds/tests/vets on push and pull request, runs GoReleaser on semver tags with `.goreleaser.github.yaml`, and uploads the Windows NSIS installer to the GitHub Release.
-- The workflow also builds `cmd/desktop` on `windows-latest` to catch Wails regressions on the free GitHub-hosted runner tier. Tagged Windows installers package the desktop binary as `jarvis.exe`; `cmd/server` remains a development and fallback target.
+- The workflow also builds `cmd/desktop` on `windows-latest` to catch Wails regressions on the free GitHub-hosted runner tier. Tagged Windows installers package the desktop binary as `jarvis.exe`.
 - GitHub Actions jobs must use standard GitHub-hosted runners such as `ubuntu-latest` and `windows-latest` so public repositories stay on the free runner tier.
 
 ## Key Design Decisions

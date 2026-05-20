@@ -61,27 +61,18 @@ Gemma 4 is treated as the primary model family. Jarvis uses Gemma 4 defaults for
 # Clone and enter the project
 cd Pdf_Chatbot
 
-# Build
-go build -o server.exe ./cmd/server/
+# Build the desktop app
+go build -tags "desktop,production" -o jarvis.exe ./cmd/desktop/
 
-# Run
-./server.exe
+# Run the app
+./jarvis.exe
 ```
 
-Open [http://localhost:8080](http://localhost:8080) in your browser.
-
-To build the desktop shell:
-
-```bash
-go build -tags "desktop,production" -o jarvis-desktop.exe ./cmd/desktop/
-```
-
-The desktop app uses Wails with the same embedded frontend and Go backend. It is the primary end-user app. The browser server remains available for development and fallback use.
+The desktop app uses Wails with the embedded frontend and Go backend. It starts a secure loopback API server internally on `127.0.0.1` at runtime to serve assets and API routes seamlessly.
 
 ## Release Versioning
 
 Jarvis uses semantic versioning for release tags: `vMAJOR.MINOR.PATCH`, for example `v1.4.2`. The GitHub updater only runs on proper semver builds, so release tags should always use this format.
-
 - **Major**: increment for breaking changes. Examples: incompatible config changes, vector store format changes without migration, removed APIs, changed install locations, or behavior that requires users to manually reconfigure Jarvis.
 - **Minor**: increment for backward-compatible features. Examples: new document loaders, new UI features, new API endpoints, new installer targets, new model options, or safe storage migrations.
 - **Patch**: increment for backward-compatible fixes. Examples: bug fixes, security fixes, log noise cleanup, small UI polish, CI fixes, packaging fixes, and documentation corrections.
@@ -140,16 +131,15 @@ All settings are configurable through environment variables:
 Example with custom settings:
 
 ```bash
-CHAT_MODEL=gemma4:31b PORT=3000 ./server.exe
+CHAT_MODEL=gemma4:31b PORT=3000 ./jarvis.exe
 ```
 
 ## Project Structure
 
 ```
-cmd/server/main.go            Browser/server entry point
 cmd/desktop/main.go           Wails desktop entry point
 internal/
-  app/runtime.go               Shared application bootstrap for server and desktop modes
+  app/runtime.go               Application bootstrap for desktop mode
   config/config.go             Environment-based configuration
   ollama/client.go             Ollama API wrapper (chat, embeddings, vision)
   gemma/                       Gemma 4 profiles, capabilities, options, thinking cleanup

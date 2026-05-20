@@ -1,21 +1,17 @@
 project_name: jarvis
 
 builds:
-  - id: jarvis-server
-    main: ./cmd/server
-    binary: jarvis-server
+  - id: jarvis-desktop
+    main: ./cmd/desktop
+    binary: jarvis
     env:
       - CGO_ENABLED=0
     goos:
       - windows
-      - linux
-      - darwin
     goarch:
       - amd64
-      - arm64
-    ignore:
-      - goos: windows
-        goarch: arm64
+    flags:
+      - -tags=desktop,production
     ldflags:
       - -s -w -X main.Version={{.Version}} -X go-chatbot/internal/updater.builtinRepo={{.Env.GITHUB_REPOSITORY}}
 
@@ -32,22 +28,6 @@ archives:
 checksum:
   name_template: "checksums.txt"
   algorithm: sha256
-
-nfpms:
-  - id: jarvis
-    package_name: jarvis
-    vendor: Jarvis
-    homepage: https://github.com
-    maintainer: Jarvis Maintainers
-    description: Local privacy-first document and web research chatbot powered by Ollama.
-    license: MIT
-    formats:
-      - deb
-      - rpm
-    bindir: /usr/bin
-    contents:
-      - src: packaging/linux/jarvis.desktop
-        dst: /usr/share/applications/jarvis.desktop
 
 release:
   draft: false

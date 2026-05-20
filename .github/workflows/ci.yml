@@ -29,13 +29,19 @@ jobs:
           cache: true
 
       - name: Build
-        run: go build ./cmd/server
+        env:
+          GOOS: windows
+          CGO_ENABLED: 0
+        run: go build -tags "desktop,production" ./cmd/desktop
 
       - name: Test
-        run: go test ./cmd/server ./internal/... ./web
+        run: go test ./internal/... ./web
 
       - name: Vet
-        run: go vet ./cmd/server ./internal/... ./web
+        env:
+          GOOS: windows
+          CGO_ENABLED: 0
+        run: go vet -tags "desktop,production" ./cmd/desktop ./internal/... ./web
 
   desktop:
     name: Desktop build
