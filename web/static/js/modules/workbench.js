@@ -221,6 +221,59 @@ window.jarvisWorkbench = {
             return Boolean(this.expandedDiffs?.[path]);
         },
 
+        toggleToolTrace(trace) {
+            const key = this.toolTraceKey(trace);
+            this.expandedToolTraces = {
+                ...this.expandedToolTraces,
+                [key]: !this.expandedToolTraces[key]
+            };
+        },
+
+        isToolTraceExpanded(trace) {
+            return Boolean(this.expandedToolTraces?.[this.toolTraceKey(trace)]);
+        },
+
+        toolTraceKey(trace) {
+            return [
+                trace?.type || 'tool',
+                trace?.summary || '',
+                trace?.created_at || ''
+            ].join('|');
+        },
+
+        agentToolTraces(limit = 12) {
+            const task = this.taskState || {};
+            return (task.traces || [])
+                .filter(trace => this.isAgentToolTrace(trace))
+                .sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0))
+                .slice(0, limit);
+        },
+
+        isAgentToolTrace(trace) {
+            const type = (trace?.type || '').toLowerCase();
+            return type === 'tool_plan' ||
+                type === 'tool_call' ||
+                type === 'tool_read' ||
+                type === 'tool_command';
+        },
+
+        toolTraceLabel(trace) {
+            const type = (trace?.type || '').toLowerCase();
+            const labels = {
+                tool_plan: 'Plan',
+                tool_call: 'Tool',
+                tool_read: 'Read',
+                tool_command: 'Command'
+            };
+            return labels[type] || 'Tool';
+        },
+
+        toolTraceDetailEntries(trace) {
+            return Object.entries(trace?.metadata || {})
+                .filter(([key, value]) => key && value)
+                .map(([key, value]) => ({ key, value }));
+        },
+
         diffLines(file, limit = 500) {
             const patch = file?.patch || 'No text patch available.';
             return patch.split('\n').slice(0, limit);

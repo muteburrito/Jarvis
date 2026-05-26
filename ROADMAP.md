@@ -55,7 +55,7 @@ graph TD
 | :--- | :--- | :---: |
 | **Multimodal Tool Planning** | Let the model call tools mid-task: search files, read, summarize, fetch URLs, and request approvals. | 📅 Planned |
 | **Command Tool Bindings** | Connect allowlisted commands directly to the agent loop with shell-free validation. | 📅 Planned |
-| **Trace Inspector UI** | Visually step through LLM-selected tool execution logs inside the active Workbench panel. | 📅 Planned |
+| **Trace Inspector UI** | Visually step through LLM-selected tool execution logs inside the active Workbench panel. | ✅ Done |
 
 ### Phase 2: Visual Patch Application
 | Feature | Description | Status |

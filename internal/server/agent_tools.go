@@ -65,7 +65,13 @@ func (s *Server) planReadOnlyToolCalls(ctx context.Context, repoMap *workbench.R
 	calls := parseToolCalls(result)
 	if len(calls) == 0 {
 		slog.Debug("read-only tool planner returned no usable calls", "response", result)
+		s.recordTaskTrace("tool_plan", "No read-only project tools selected", nil)
+		return nil
 	}
+	s.recordTaskTrace("tool_plan", "Planned read-only project tools", map[string]string{
+		"calls": fmt.Sprintf("%d", len(calls)),
+		"plan":  summarizePlannedToolCalls(calls),
+	})
 	return calls
 }
 
@@ -140,6 +146,19 @@ func (s *Server) gatherDeterministicToolContext(root string, repoMap *workbench.
 		"files": fmt.Sprintf("%d", count),
 	})
 	return b.String()
+}
+
+func summarizePlannedToolCalls(calls []plannedToolCall) string {
+	var parts []string
+	for _, call := range calls {
+		switch call.Tool {
+		case "search_files":
+			parts = append(parts, fmt.Sprintf("search_files:%s", call.Query))
+		case "summarize_file", "read_file":
+			parts = append(parts, fmt.Sprintf("%s:%s", call.Tool, call.Path))
+		}
+	}
+	return strings.Join(parts, " | ")
 }
 
 func appendSearchFilesResult(b *strings.Builder, repoMap *workbench.RepoMap, call plannedToolCall) bool {

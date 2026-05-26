@@ -244,6 +244,7 @@ The Workbench panel surfaces local task and workspace state:
 - selected model, message count, trace count, and edit count
 - workspace map root, file count, symbol count, package count, test count, folder groups, and file type breakdown
 - local git change summary with per-file additions, deletions, status, and expandable text patches
+- expandable agent tool traces for planned project searches, file summaries, file reads, and approved commands
 - recent task activity
 
 Jarvis hides its own app-state JSON, such as chat history, task state, project metadata, and workspace-map files, from user-facing sources. Those files remain available to the app internally but should not appear as evidence for normal answers.

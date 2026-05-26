@@ -19,6 +19,7 @@ function chatApp() {
         projectActivity: null,
         diffSummary: null,
         expandedDiffs: {},
+        expandedToolTraces: {},
         toolSearch: '',
         toolResults: [],
         toolPreview: null,

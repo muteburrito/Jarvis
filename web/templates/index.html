@@ -1227,6 +1227,53 @@
                 <template x-if="!taskState">
                     <div class="workbench-empty-state">No workbench state loaded yet</div>
                 </template>
+                <div x-show="agentToolTraces().length > 0" x-cloak class="workbench-map-panel">
+                    <div class="mb-3 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                        <div class="min-w-0">
+                            <div class="flex flex-wrap items-center gap-2">
+                                <h3 class="text-sm font-semibold text-slate-100">Agent tool trace</h3>
+                                <span class="workspace-count-pill">
+                                    <span x-text="agentToolTraces().length"></span>
+                                    <span>recent</span>
+                                </span>
+                            </div>
+                            <p class="mt-1 text-xs text-slate-500">Inspect project tools Jarvis planned, searched, read, or ran while answering.</p>
+                        </div>
+                    </div>
+                    <div class="agent-tool-trace-list">
+                        <template x-for="trace in agentToolTraces()" :key="toolTraceKey(trace)">
+                            <div class="agent-tool-trace">
+                                <button @click="toggleToolTrace(trace)" type="button" class="agent-tool-trace-row">
+                                    <div class="min-w-0">
+                                        <div class="flex flex-wrap items-center gap-2">
+                                            <span class="workbench-event-type" x-text="toolTraceLabel(trace)"></span>
+                                            <p class="truncate text-sm font-medium text-slate-100" x-text="trace.summary || 'Tool trace'"></p>
+                                        </div>
+                                        <p class="mt-1 truncate text-xs text-slate-500" x-text="metadataSummary(trace.metadata) || eventTime(trace.created_at)"></p>
+                                    </div>
+                                    <svg class="h-4 w-4 shrink-0 text-slate-500 transition-transform"
+                                         :class="isToolTraceExpanded(trace) ? 'rotate-180' : ''"
+                                         fill="none"
+                                         stroke="currentColor"
+                                         viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                                    </svg>
+                                </button>
+                                <div x-show="isToolTraceExpanded(trace)" class="agent-tool-trace-detail">
+                                    <template x-if="toolTraceDetailEntries(trace).length === 0">
+                                        <div class="workspace-empty-row">No metadata recorded for this trace.</div>
+                                    </template>
+                                    <template x-for="entry in toolTraceDetailEntries(trace)" :key="toolTraceKey(trace) + entry.key">
+                                        <div class="agent-tool-trace-meta">
+                                            <span x-text="entry.key"></span>
+                                            <code x-text="entry.value"></code>
+                                        </div>
+                                    </template>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+                </div>
                 <template x-if="taskState && recentWorkbenchEvents().length === 0">
                     <div class="workbench-empty-state">No activity recorded yet</div>
                 </template>
