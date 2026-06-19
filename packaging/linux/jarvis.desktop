@@ -1,9 +1,0 @@
-[Desktop Entry]
-Name=Jarvis
-Comment=Local privacy-first document chatbot
-Exec=jarvis
-Icon=jarvis
-Type=Application
-Categories=Utility;Office;
-Terminal=false
-StartupNotify=true
