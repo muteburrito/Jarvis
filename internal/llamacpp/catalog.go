@@ -55,7 +55,7 @@ func DefaultCatalog() []ModelSpec {
 		{
 			Name:        "qwen2.5:7b",
 			Filename:    "Qwen2.5-7B-Instruct-Q4_K_M.gguf",
-			URL:         envOr("GGUF_URL_QWEN25_7B", "https://huggingface.co/Qwen/Qwen2.5-7B-Instruct-GGUF/resolve/main/qwen2.5-7b-instruct-q4_k_m.gguf"),
+			URL:         envOr("GGUF_URL_QWEN25_7B", "https://huggingface.co/bartowski/Qwen2.5-7B-Instruct-GGUF/resolve/main/Qwen2.5-7B-Instruct-Q4_K_M.gguf"),
 			SizeMB:      4680,
 			ContextSize: 8192,
 		},
@@ -67,11 +67,13 @@ func DefaultCatalog() []ModelSpec {
 			ContextSize: 8192,
 		},
 		{
-			Name:        "gemma4:26b",
-			Filename:    "gemma-4-26B-A4B-it-Q4_K_M.gguf",
-			URL:         envOr("GGUF_URL_GEMMA4_26B", "https://huggingface.co/unsloth/gemma-4-26B-A4B-it-GGUF/resolve/main/gemma-4-26B-A4B-it-Q4_K_M.gguf"),
-			SizeMB:      15800,
-			ContextSize: 8192,
+			Name:           "gemma4:26b",
+			Filename:       "gemma-4-26B-A4B-it-UD-Q4_K_M.gguf",
+			URL:            envOr("GGUF_URL_GEMMA4_26B", "https://huggingface.co/unsloth/gemma-4-26B-A4B-it-GGUF/resolve/main/gemma-4-26B-A4B-it-UD-Q4_K_M.gguf"),
+			MMProjFilename: "mmproj-gemma-4-26B-A4B-it-F16.gguf",
+			MMProjURL:      envOr("GGUF_URL_GEMMA4_26B_MMPROJ", "https://huggingface.co/unsloth/gemma-4-26B-A4B-it-GGUF/resolve/main/mmproj-F16.gguf"),
+			SizeMB:         15800,
+			ContextSize:    8192,
 		},
 	}
 }

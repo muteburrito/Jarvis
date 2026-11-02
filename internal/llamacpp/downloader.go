@@ -200,33 +200,34 @@ func resolveLlamaCppAssetURL(ctx context.Context) (string, error) {
 	reqCtx, cancel := context.WithTimeout(ctx, 20*time.Second)
 	defer cancel()
 
-	req, err := http.NewRequestWithContext(reqCtx, http.MethodGet, "https://api.github.com/repos/ggml-org/llama.cpp/releases/latest", nil)
+	req, err := http.NewRequestWithContext(reqCtx, http.MethodGet, "https://api.github.com/repos/ggml-org/llama.cpp/releases?per_page=8", nil)
 	if err != nil {
 		return "", err
 	}
 	req.Header.Set("Accept", "application/vnd.github+json")
-	req.Header.Set("User-Agent", "Jarvis-Local-AI/2.1")
+	req.Header.Set("User-Agent", "Jarvis-Local-AI/3.0")
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
-		return "", fmt.Errorf("query llama.cpp release: %w", err)
+		return "", fmt.Errorf("query llama.cpp releases: %w", err)
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return "", fmt.Errorf("query llama.cpp release returned HTTP %d", resp.StatusCode)
+		return "", fmt.Errorf("query llama.cpp releases returned HTTP %d", resp.StatusCode)
 	}
 
-	var rel githubRelease
-	if err := json.NewDecoder(resp.Body).Decode(&rel); err != nil {
-		return "", fmt.Errorf("parse llama.cpp release: %w", err)
+	var releases []githubRelease
+	if err := json.NewDecoder(resp.Body).Decode(&releases); err != nil {
+		return "", fmt.Errorf("parse llama.cpp releases: %w", err)
 	}
 
-	url := pickReleaseAsset(rel, runtime.GOOS, runtime.GOARCH)
-	if url == "" {
-		return "", fmt.Errorf("no matching llama.cpp release asset for %s/%s", runtime.GOOS, runtime.GOARCH)
+	for _, rel := range releases {
+		if url := pickReleaseAsset(rel, runtime.GOOS, runtime.GOARCH); url != "" {
+			return url, nil
+		}
 	}
-	return url, nil
+	return "", fmt.Errorf("no matching llama.cpp release asset for %s/%s", runtime.GOOS, runtime.GOARCH)
 }
 
 func pickReleaseAsset(rel githubRelease, goos, goarch string) string {
