@@ -12,8 +12,11 @@ import (
 )
 
 func (s *Server) handleHealth(w http.ResponseWriter, r *http.Request) {
+	eng := s.chain.EngineStatus()
 	resp := map[string]interface{}{
 		"status":           "ok",
+		"backend":          eng.Backend,
+		"engine":           eng,
 		"chat_model":       s.cfg.ChatModel,
 		"embedding_model":  s.cfg.EmbeddingModel,
 		"documents":        s.store.DocumentCount(),
@@ -26,6 +29,10 @@ func (s *Server) handleHealth(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, resp)
 }
 
+func (s *Server) handleEngineStatus(w http.ResponseWriter, r *http.Request) {
+	writeJSON(w, http.StatusOK, s.chain.EngineStatus())
+}
+
 func (s *Server) handleAppConfig(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, map[string]string{
 		"app_name":        s.cfg.AppName,
@@ -34,6 +41,7 @@ func (s *Server) handleAppConfig(w http.ResponseWriter, r *http.Request) {
 		"support_url":     s.cfg.SupportURL,
 	})
 }
+
 func (s *Server) handleSystem(w http.ResponseWriter, r *http.Request) {
 	status := system.GetSystemStatus(s.cfg.ChatModel, s.cfg.EmbeddingModel, s.cfg.VisionModel)
 	writeJSON(w, http.StatusOK, status)
@@ -48,6 +56,7 @@ func (s *Server) handleListModels(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, map[string]interface{}{
 		"default": s.chain.DefaultChatModel(),
 		"models":  s.chatModels(models),
+		"engine":  s.chain.EngineStatus(),
 	})
 }
 
@@ -110,7 +119,7 @@ func (s *Server) ensureChatModel(ctx context.Context, model string, onProgress f
 
 func isAutoPullChatModel(model string) bool {
 	switch normalizeModelName(strings.ToLower(strings.TrimSpace(model))) {
-	case "gemma4:e2b", "gemma4:e4b", "gemma4:26b":
+	case "gemma4:e2b", "gemma4:e4b", "gemma4:26b", "qwen2.5:3b", "qwen2.5:7b", "llama3.2:3b":
 		return true
 	default:
 		return false

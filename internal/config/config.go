@@ -2,18 +2,23 @@ package config
 
 import (
 	"os"
+	"path/filepath"
 	"strconv"
 	"time"
 )
 
 type Config struct {
 	Port            int
+	LLMBackend      string
 	OllamaURL       string
 	OllamaKeepAlive time.Duration
 	ChatModel       string
 	EmbeddingModel  string
 	VisionModel     string
 	DataDir         string
+	ModelsDir       string
+	EngineDir       string
+	LlamaServerPath string
 	VectorStoreDir  string
 	ChunkSize       int
 	ChunkOverlap    int
@@ -28,14 +33,19 @@ type Config struct {
 }
 
 func Load() *Config {
+	dataDir := envStr("DATA_DIR", "./data")
 	return &Config{
 		Port:            envInt("PORT", 8080),
+		LLMBackend:      envStr("LLM_BACKEND", "auto"),
 		OllamaURL:       envStr("OLLAMA_URL", "http://localhost:11434"),
 		OllamaKeepAlive: envDuration("OLLAMA_KEEP_ALIVE", 120*time.Second),
 		ChatModel:       envStr("CHAT_MODEL", "gemma4:e4b"),
 		EmbeddingModel:  envStr("EMBEDDING_MODEL", "nomic-embed-text"),
 		VisionModel:     envStr("VISION_MODEL", "llava"),
-		DataDir:         envStr("DATA_DIR", "./data"),
+		DataDir:         dataDir,
+		ModelsDir:       envStr("MODELS_DIR", filepath.Join(dataDir, "models")),
+		EngineDir:       envStr("ENGINE_DIR", filepath.Join(dataDir, "engine")),
+		LlamaServerPath: envStr("LLAMA_SERVER_PATH", ""),
 		VectorStoreDir:  envStr("VECTORSTORE_DIR", "./vectorstore"),
 		ChunkSize:       envInt("CHUNK_SIZE", 1000),
 		ChunkOverlap:    envInt("CHUNK_OVERLAP", 200),

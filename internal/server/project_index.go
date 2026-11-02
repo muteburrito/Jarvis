@@ -52,6 +52,14 @@ func (s *Server) activeProjectID() string {
 	return project.ID
 }
 
+func (s *Server) activeProjectPath() (string, bool) {
+	project, ok := s.activeProject()
+	if !ok || project.Path == "" {
+		return "", false
+	}
+	return project.Path, true
+}
+
 func (s *Server) activeProject() (workbench.Project, bool) {
 	state, err := workbench.LoadProjectState(s.cfg.DataDir)
 	if err != nil {

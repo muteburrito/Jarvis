@@ -34,19 +34,22 @@ func NewRuntime(ctx context.Context, version string) (*Runtime, error) {
 
 	ollamaClient, err := ollama.New(cfg)
 	if err != nil {
-		return nil, fmt.Errorf("connect to Ollama at %s: %w", cfg.OllamaURL, err)
+		return nil, fmt.Errorf("initialize AI engine: %w", err)
 	}
-	slog.Info("connected to Ollama", "url", cfg.OllamaURL)
+	slog.Info("AI engine initialized", "backend", ollamaClient.Backend())
 
-	if err := ensureRequiredModels(ctx, ollamaClient, cfg); err != nil {
-		return nil, err
-	}
+	go func() {
+		<-ctx.Done()
+		ollamaClient.Close()
+	}()
+
+	ollamaClient.WarmupAsync(ctx)
 
 	dim, err := ollamaClient.EmbeddingDimension(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("embedding model %q returned invalid response: %w", cfg.EmbeddingModel, err)
 	}
-	slog.Info("embedding model ready", "model", cfg.EmbeddingModel, "dimension", dim)
+	slog.Info("embedding dimension configured", "model", cfg.EmbeddingModel, "dimension", dim)
 
 	store, err := vectorstore.LoadFromDisk(cfg.VectorStoreDir)
 	if err != nil {
@@ -61,16 +64,16 @@ func NewRuntime(ctx context.Context, version string) (*Runtime, error) {
 			"documents", store.DocumentCount())
 	}
 
-	visionReady := ollamaClient.HasModel(ctx, cfg.VisionModel)
+	visionReady := ollamaClient.Backend() == "llamacpp" || ollamaClient.HasModel(ctx, cfg.VisionModel)
 	if visionReady {
-		slog.Info("vision model available, image support enabled", "model", cfg.VisionModel)
+		slog.Info("vision support enabled", "backend", ollamaClient.Backend())
 	} else {
 		slog.Warn("vision model is not installed, image support disabled", "model", cfg.VisionModel)
 	}
 
 	processor := newProcessor(ollamaClient, store, cfg, visionReady)
 	chain := rag.NewChain(ollamaClient, store, cfg)
-	autoIndexDataDir(ctx, processor, cfg.DataDir)
+	go autoIndexDataDir(ctx, processor, cfg.DataDir)
 
 	researcher := websearch.NewResearcher(ollamaClient, processor, store, cfg)
 	slog.Info("web research mode available")
@@ -185,7 +188,7 @@ func selectChatModel(hw system.HardwareInfo) string {
 }
 
 func pullModel(ctx context.Context, client *ollama.Client, model string) error {
-	slog.Info("downloading required Ollama model", "model", model)
+	slog.Info("downloading required model", "model", model)
 	if err := client.PullModel(ctx, model, func(string, int64, int64) {}); err != nil {
 		return err
 	}

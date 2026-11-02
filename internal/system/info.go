@@ -73,7 +73,7 @@ func EvaluateStatus(hw HardwareInfo, models ModelEstimate) (string, string) {
 		return "good", "Running on CPU, enough RAM available"
 	}
 	if hw.TotalRAMMB >= ramNeededMB {
-		return "warning", "Running on CPU, RAM is sufficient but responses will be slow"
+		return "warning", "Running on CPU, RAM is sufficient"
 	}
 	if hw.TotalRAMMB > 0 {
 		return "low", "RAM may not be enough for the configured models"
@@ -177,32 +177,6 @@ func detectRAM() (totalMB, availMB int) {
 	return 0, 0
 }
 
-func detectRAMWindows() (totalMB, availMB int) {
-	out, err := exec.Command("wmic", "OS", "get",
-		"TotalVisibleMemorySize,FreePhysicalMemory",
-		"/format:list").Output()
-	if err != nil {
-		return 0, 0
-	}
-	lines := strings.Split(string(out), "\n")
-	for _, line := range lines {
-		line = strings.TrimSpace(line)
-		if strings.HasPrefix(line, "TotalVisibleMemorySize=") {
-			val := strings.TrimPrefix(line, "TotalVisibleMemorySize=")
-			if n, err := strconv.ParseInt(strings.TrimSpace(val), 10, 64); err == nil {
-				totalMB = int(n / 1024)
-			}
-		}
-		if strings.HasPrefix(line, "FreePhysicalMemory=") {
-			val := strings.TrimPrefix(line, "FreePhysicalMemory=")
-			if n, err := strconv.ParseInt(strings.TrimSpace(val), 10, 64); err == nil {
-				availMB = int(n / 1024)
-			}
-		}
-	}
-	return
-}
-
 func detectRAMLinux() (totalMB, availMB int) {
 	data, err := os.ReadFile("/proc/meminfo")
 	if err != nil {
@@ -228,7 +202,9 @@ func detectRAMLinux() (totalMB, availMB int) {
 }
 
 func detectRAMDarwin() (totalMB, availMB int) {
-	out, err := exec.Command("sysctl", "-n", "hw.memsize").Output()
+	cmd := exec.Command("sysctl", "-n", "hw.memsize")
+	configureHiddenCommand(cmd)
+	out, err := cmd.Output()
 	if err != nil {
 		return 0, 0
 	}
@@ -239,9 +215,11 @@ func detectRAMDarwin() (totalMB, availMB int) {
 }
 
 func detectGPU() (name string, totalMB, freeMB int) {
-	out, err := exec.Command("nvidia-smi",
+	cmd := exec.Command("nvidia-smi",
 		"--query-gpu=name,memory.total,memory.free",
-		"--format=csv,noheader,nounits").Output()
+		"--format=csv,noheader,nounits")
+	configureHiddenCommand(cmd)
+	out, err := cmd.Output()
 	if err != nil {
 		return "", 0, 0
 	}

@@ -49,18 +49,6 @@
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
                 </svg>
             </a>
-            <button @click="showRoadmap = true" class="p-2 rounded-lg hover:bg-slate-700 text-slate-400 hover:text-slate-200 transition-colors" title="Upcoming features">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"/>
-                </svg>
-            </button>
-            <button @click="openWorkbenchPanel()"
-                    class="p-2 rounded-lg hover:bg-slate-700 text-slate-400 hover:text-slate-200 transition-colors"
-                    title="Workbench activity">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 5h16M4 12h16M4 19h16M8 5v14"/>
-                </svg>
-            </button>
             <button @click="showHelp = true" class="p-2 rounded-lg hover:bg-slate-700 text-slate-400 hover:text-slate-200 transition-colors" title="Help">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
@@ -85,6 +73,25 @@
             <button @click="openNotesModal(updateInfo?.latest, updateInfo?.latest_notes)"
                     class="underline hover:no-underline opacity-80 hover:opacity-100">What's new</button>
             <button @click="updateDismissed = true" class="opacity-70 hover:opacity-100 text-lg leading-none">&times;</button>
+        </div>
+    </div>
+
+    <!-- On-Device AI Engine setup / download banner -->
+    <div x-show="isEngineBusy()" x-cloak
+         class="bg-zinc-900/95 border-b border-zinc-800 text-zinc-200 px-4 py-2 flex flex-col gap-1.5 text-xs shrink-0">
+        <div class="flex items-center justify-between gap-3">
+            <div class="flex items-center gap-2">
+                <span class="inline-block w-2 h-2 rounded-full bg-zinc-300 animate-pulse"></span>
+                <span class="font-medium" x-text="engineStatus?.active_task || 'Preparing on-device AI engine'"></span>
+            </div>
+            <div class="flex items-center gap-3 text-zinc-400">
+                <span x-text="formatEngineProgress()"></span>
+                <span class="px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-300" x-text="engineBackendLabel()"></span>
+            </div>
+        </div>
+        <div x-show="engineStatus?.progress_pct > 0" class="w-full h-1 bg-zinc-800 rounded-full overflow-hidden">
+            <div class="h-full bg-zinc-200 transition-all duration-300"
+                 :style="`width: ${Math.min(100, Math.max(2, engineStatus?.progress_pct || 0))}%`"></div>
         </div>
     </div>
 
@@ -192,12 +199,31 @@
 
                 <!-- Welcome message -->
                 <template x-if="messages.length === 0">
-                    <div class="mx-auto flex h-full max-w-3xl flex-col items-center justify-center text-center">
-                        <svg class="w-12 h-12 text-slate-600 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/>
-                        </svg>
-                        <h2 class="text-xl font-semibold text-slate-200 mb-2">What are we working on?</h2>
-                        <p class="text-slate-500 max-w-md text-sm">Attach files or folders, ask about indexed code, or start a local research thread.</p>
+                    <div class="mx-auto flex h-full max-w-2xl flex-col items-center justify-center text-center px-4">
+                        <h2 class="text-2xl font-semibold text-slate-100 mb-2">How can I help you today?</h2>
+                        <p class="text-slate-400 max-w-lg text-sm mb-8">Your private, 100% on-device AI assistant. Attach PDFs, Word docs, spreadsheets, or images, connect a folder, or ask anything.</p>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full text-left">
+                            <button type="button" @click="$refs.fileInput.click()"
+                                    class="rounded-xl border border-zinc-800 bg-zinc-900/60 hover:bg-zinc-800/80 p-3.5 transition-colors">
+                                <p class="text-sm font-medium text-slate-200">Summarize a document or sheet</p>
+                                <p class="text-xs text-slate-500 mt-1">Upload PDF, Word, Excel, PowerPoint, or images</p>
+                            </button>
+                            <button type="button" @click="$refs.folderInput.click()"
+                                    class="rounded-xl border border-zinc-800 bg-zinc-900/60 hover:bg-zinc-800/80 p-3.5 transition-colors">
+                                <p class="text-sm font-medium text-slate-200">Chat with a local folder</p>
+                                <p class="text-xs text-slate-500 mt-1">Search across an entire folder of files privately</p>
+                            </button>
+                            <button type="button" @click="researchMode = true; $refs.chatInput.focus()"
+                                    class="rounded-xl border border-zinc-800 bg-zinc-900/60 hover:bg-zinc-800/80 p-3.5 transition-colors">
+                                <p class="text-sm font-medium text-slate-200">Research a topic on the web</p>
+                                <p class="text-xs text-slate-500 mt-1">Search live web pages and answer with cited links</p>
+                            </button>
+                            <button type="button" @click="researchMode = false; $refs.chatInput.focus()"
+                                    class="rounded-xl border border-zinc-800 bg-zinc-900/60 hover:bg-zinc-800/80 p-3.5 transition-colors">
+                                <p class="text-sm font-medium text-slate-200">Write, brainstorm, or analyze</p>
+                                <p class="text-xs text-slate-500 mt-1">Draft emails, rewrite text, or solve problems offline</p>
+                            </button>
+                        </div>
                     </div>
                 </template>
 
@@ -383,38 +409,6 @@
                         </div>
                     </div>
 
-                    <div x-show="codePanelOpen" x-cloak class="mb-2 rounded-xl border border-slate-700 bg-slate-900/95 p-3 shadow-lg">
-                        <div class="mb-2 flex items-center justify-between gap-3">
-                            <div class="min-w-0">
-                                <div class="flex items-center gap-2">
-                                    <span class="text-xs font-medium text-slate-200">Code snippet</span>
-                                    <span x-show="codeSnippet.trim()"
-                                          class="rounded-full border border-slate-700 bg-slate-800 px-2 py-0.5 text-[11px] text-slate-400">
-                                        <span x-text="detectedCodeLanguage()"></span>
-                                        <span x-text="', ' + codeSnippetLineCount() + ' lines'"></span>
-                                    </span>
-                                </div>
-                                <p class="mt-1 text-[11px] text-slate-500">URLs here stay as code and are not fetched.</p>
-                            </div>
-                            <div class="flex items-center gap-2 shrink-0">
-                                <button x-show="codeSnippet.trim()"
-                                        @click="codeSnippet = ''"
-                                        class="text-xs text-slate-500 hover:text-slate-300">Clear</button>
-                                <button @click="codePanelOpen = false"
-                                        class="rounded-lg p-1.5 text-slate-500 hover:bg-slate-800 hover:text-slate-200"
-                                        title="Collapse code snippet">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14"/>
-                                    </svg>
-                                </button>
-                            </div>
-                        </div>
-                        <textarea x-model="codeSnippet"
-                                  rows="4"
-                                  placeholder="Paste code here"
-                                  class="code-snippet-editor w-full resize-none rounded-lg border border-slate-700 bg-slate-950 text-slate-100 px-3 py-2 font-mono text-xs leading-5 focus:outline-none placeholder-slate-600"></textarea>
-                    </div>
-
                     <div x-show="imageAttachments.length > 0" x-cloak class="image-preview-tray mb-2">
                         <template x-for="attachment in imageAttachments" :key="attachment.id">
                             <div class="image-preview-chip">
@@ -533,18 +527,10 @@
                         <button @click="$refs.fileInput.click()"
                                 :disabled="isStreaming || isUploading"
                                 class="composer-icon-button disabled:opacity-50 disabled:cursor-not-allowed"
-                                title="Attach files">
+                                title="Attach files (PDF, Word, Excel, PowerPoint, images)">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21.44 11.05l-8.49 8.49a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/>
                             </svg>
-                        </button>
-                        <button @click="codePanelOpen = !codePanelOpen"
-                                class="composer-icon-button relative font-medium"
-                                :class="codePanelOpen || codeSnippet.trim() ? 'is-active' : ''"
-                                title="Add code snippet">
-                            <span class="block w-5 h-5 text-center font-mono text-sm leading-5">{}</span>
-                            <span x-show="codeSnippet.trim()"
-                                  class="absolute -right-1 -top-1 h-3 w-3 rounded-full border-2 border-slate-800 bg-zinc-300"></span>
                         </button>
                         <div class="flex-1 relative">
                             <div x-show="mentionOpen && mentionSuggestions().length > 0" x-cloak class="mention-popover">
@@ -568,7 +554,7 @@
                                 @dragover.prevent
                                 @drop="handleChatDrop($event)"
                                 rows="1"
-                                :placeholder="researchMode ? 'Ask a research question...' : 'Ask a question about your documents...'"
+                                :placeholder="researchMode ? 'Ask a web research question...' : 'Message Jarvis, or drop files and images here...'"
                                 class="composer-input w-full resize-none text-sm disabled:opacity-50"
                                 @input="autoResize($el); updateMentionState()"
                                 style="max-height: 120px; overflow-y: auto;">
@@ -579,7 +565,7 @@
                                     type="button"
                                     class="composer-model-button"
                                     :class="researchMode || thinkingMode ? 'is-active' : ''"
-                                    title="Model and mode options">
+                                    title="Choose AI model and mode">
                                 <span class="truncate" x-text="selectedModelLabel()"></span>
                                 <svg class="h-4 w-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
@@ -590,7 +576,7 @@
                                  @click.outside="modelMenuOpen = false"
                                  class="composer-model-menu">
                                 <div class="composer-menu-section">
-                                    <p class="composer-menu-label">Gemma 4 model</p>
+                                    <p class="composer-menu-label">On-device AI model</p>
                                     <template x-for="option in gemmaModelOptions()" :key="option.value">
                                         <button type="button"
                                                 class="composer-menu-option"
@@ -598,7 +584,7 @@
                                                 @click="selectChatModel(option.value)">
                                             <span>
                                                 <span class="block" x-text="option.label"></span>
-                                                <span class="block text-[11px] text-zinc-500" x-text="isModelInstalled(option.value) ? option.hint : option.hint + ', auto-downloads'"></span>
+                                                <span class="block text-[11px] text-zinc-500" x-text="isModelInstalled(option.value) ? option.hint : option.hint + ' (auto-downloads)'"></span>
                                             </span>
                                             <svg x-show="sameModelName(selectedChatModel, option.value)" class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
@@ -613,8 +599,8 @@
                                             :class="researchMode ? 'is-selected' : ''"
                                             @click="researchMode = !researchMode">
                                         <span>
-                                            <span class="block">Research mode</span>
-                                            <span class="block text-[11px] text-zinc-500">shows web search progress and sources</span>
+                                            <span class="block">Web research</span>
+                                            <span class="block text-[11px] text-zinc-500">searches the web and cites sources</span>
                                         </span>
                                         <span class="composer-toggle-dot" :class="researchMode ? 'is-on' : ''"></span>
                                     </button>
@@ -623,8 +609,8 @@
                                             :class="thinkingMode ? 'is-selected' : ''"
                                             @click="thinkingMode = !thinkingMode">
                                         <span>
-                                            <span class="block">Thinking mode</span>
-                                            <span class="block text-[11px] text-zinc-500">uses Gemma 4 hidden reasoning prompt</span>
+                                            <span class="block">Deep thinking</span>
+                                            <span class="block text-[11px] text-zinc-500">reasons step-by-step before answering</span>
                                         </span>
                                         <span class="composer-toggle-dot" :class="thinkingMode ? 'is-on' : ''"></span>
                                     </button>
@@ -645,14 +631,11 @@
                         </button>
                     </div>
                     <p class="text-xs mt-2 text-center" :class="researchMode || thinkingMode ? 'text-zinc-300' : 'text-slate-500'">
-                        <span x-show="researchMode">Research mode uses local time, locale, web search progress, and cited sources.</span>
-                        <span x-show="!researchMode && thinkingMode">Thinking mode: Gemma reasons privately before answering.</span>
+                        <span x-show="researchMode">Web research is on. Jarvis will search the web and cite sources.</span>
+                        <span x-show="!researchMode && thinkingMode">Deep thinking is on. Jarvis reasons privately before answering.</span>
                         <span x-show="!researchMode && !thinkingMode && isStreaming">Press Enter to queue a follow-up while the current answer streams.</span>
-                        <span x-show="!researchMode && !thinkingMode && !isStreaming && !codeSnippet.trim() && imageAttachments.length === 0">Press Enter to send, Shift+Enter for new line. Paste an image to attach it.</span>
-                        <span x-show="!researchMode && !thinkingMode && !isStreaming && codeSnippet.trim()">
-                            Code snippet attached as <span x-text="detectedCodeLanguage()"></span>. Press Enter to send.
-                        </span>
-                        <span x-show="!researchMode && !thinkingMode && !isStreaming && !codeSnippet.trim() && imageAttachments.length > 0">
+                        <span x-show="!researchMode && !thinkingMode && !isStreaming && imageAttachments.length === 0">100% private on-device AI. Attach files, paste screenshots, or type @ to focus on a document.</span>
+                        <span x-show="!researchMode && !thinkingMode && !isStreaming && imageAttachments.length > 0">
                             Image attached. Press Enter to send.
                         </span>
                     </p>
@@ -849,556 +832,6 @@
         </div>
     </div>
 
-    <!-- Workbench activity panel -->
-    <div x-show="showWorkbenchPanel" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0"
-         x-transition:enter-end="opacity-100" x-transition:leave="transition ease-in duration-150"
-         x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0"
-         class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60" @click.self="showWorkbenchPanel = false">
-        <div class="workbench-shell"
-             @keydown.escape.window="showWorkbenchPanel = false">
-            <div class="workbench-header">
-                <div>
-                    <div class="flex items-center gap-2">
-                        <span class="workbench-header-icon">
-                            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 5h16M4 12h16M4 19h16M8 5v14"/>
-                            </svg>
-                        </span>
-                        <h2 class="text-lg font-semibold text-slate-100">Workbench</h2>
-                    </div>
-                    <p class="text-xs text-slate-400 mt-1">Project summary, local changes, and recent activity.</p>
-                </div>
-                <div class="flex items-center gap-2">
-                    <button @click="loadTaskState()"
-                            class="workbench-secondary-button">
-                        Refresh
-                    </button>
-                    <button @click="clearTaskState()"
-                            class="workbench-danger-button">
-                        Clear
-                    </button>
-                    <button @click="showWorkbenchPanel = false" class="workbench-close-button">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-                        </svg>
-                    </button>
-                </div>
-            </div>
-
-            <div class="workbench-stats-grid">
-                <div class="workbench-stat">
-                    <span>Traces</span>
-                    <strong x-text="workbenchSummary().traces"></strong>
-                </div>
-                <div class="workbench-stat">
-                    <span>Messages</span>
-                    <strong x-text="workbenchSummary().messages"></strong>
-                </div>
-                <div class="workbench-stat">
-                    <span>Edits</span>
-                    <strong x-text="workbenchSummary().edits"></strong>
-                </div>
-                <div class="workbench-stat">
-                    <span>Projects</span>
-                    <strong x-text="projectSummary().count"></strong>
-                </div>
-            </div>
-
-            <div class="workbench-body">
-                <div class="workbench-map-panel">
-                    <div class="mb-3 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                        <div class="min-w-0">
-                            <div class="flex items-center gap-2">
-                                <h3 class="text-sm font-semibold text-slate-100">Active project</h3>
-                                <span x-show="projectSummary().active" class="workspace-count-pill">
-                                    <span>agent foundation</span>
-                                </span>
-                            </div>
-                            <template x-if="projectSummary().active">
-                                <div>
-                                    <p class="mt-1 truncate text-sm font-medium text-slate-200" x-text="projectSummary().active.name"></p>
-                                    <p class="mt-1 truncate text-xs text-slate-500" x-text="projectSummary().active.path"></p>
-                                    <div class="mt-2 flex flex-wrap items-center gap-2 text-xs text-slate-500">
-                                        <span class="workspace-count-pill">
-                                            <span x-text="projectSummary().activeDocumentCount"></span>
-                                            <span>project docs</span>
-                                        </span>
-                                        <span class="workspace-count-pill">
-                                            <span x-text="projectSummary().commandCount"></span>
-                                            <span>commands</span>
-                                        </span>
-                                        <span class="workspace-count-pill">
-                                            <span x-text="projectSummary().approvedCommandCount"></span>
-                                            <span>approvals</span>
-                                        </span>
-                                        <span class="workspace-count-pill">
-                                            <span x-text="projectSummary().editCount"></span>
-                                            <span>edits</span>
-                                        </span>
-                                        <span class="workspace-count-pill">
-                                            <span x-text="projectSummary().patchCount"></span>
-                                            <span>patches</span>
-                                        </span>
-                                        <span x-text="projectSummary().retrievalScope"></span>
-                                    </div>
-                                </div>
-                            </template>
-                            <p x-show="!projectSummary().active" class="mt-1 text-xs text-slate-500">Index or open a folder to make it the active project.</p>
-                        </div>
-                        <button @click="loadProjects()"
-                                class="workbench-secondary-button shrink-0">
-                            Refresh projects
-                        </button>
-                    </div>
-                </div>
-
-                <div class="workbench-map-panel">
-                    <div class="mb-3 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                        <div class="min-w-0">
-                            <div class="flex items-center gap-2">
-                                <h3 class="text-sm font-semibold text-slate-100">Workspace map</h3>
-                                <span x-show="repoMap" class="workspace-count-pill is-files">
-                                    <span x-text="repoSummary().files"></span>
-                                    <span> files</span>
-                                </span>
-                                <span x-show="repoMap" class="workspace-count-pill is-symbols">
-                                    <span x-text="repoSummary().symbols"></span>
-                                    <span> symbols</span>
-                                </span>
-                                <span x-show="repoMap" class="workspace-count-pill">
-                                    <span x-text="repoSummary().packages"></span>
-                                    <span> packages</span>
-                                </span>
-                                <span x-show="repoMap" class="workspace-count-pill">
-                                    <span x-text="repoSummary().tests"></span>
-                                    <span> tests</span>
-                                </span>
-                            </div>
-                            <p x-show="repoMap" class="mt-1 truncate text-xs text-slate-500" x-text="repoSummary().root"></p>
-                            <p x-show="!repoMap" class="mt-1 text-xs text-slate-500">Index a local folder path to map documents, media, data, and code.</p>
-                        </div>
-                        <button @click="loadRepoMap()"
-                                class="workbench-secondary-button shrink-0">
-                            Refresh map
-                        </button>
-                    </div>
-
-                    <template x-if="repoMap">
-                        <div class="space-y-3">
-                            <div class="flex flex-wrap gap-2">
-                                <template x-for="item in workspaceTypeBreakdown(6)" :key="item.type">
-                                    <span class="repo-language-chip">
-                                        <span x-text="item.type"></span>
-                                        <strong x-text="item.count"></strong>
-                                    </span>
-                                </template>
-                            </div>
-                            <div class="grid gap-2 lg:grid-cols-2">
-                                <div>
-                                    <p class="mb-1 text-xs font-medium text-slate-400">Top folders</p>
-                                    <div class="space-y-1">
-                                        <template x-for="group in topWorkspaceGroups(4)" :key="group.path">
-                                            <div class="workspace-map-row">
-                                                <span class="truncate" x-text="group.path"></span>
-                                                <span class="text-slate-500">
-                                                    <span x-text="group.file_count || 0"></span> files
-                                                    <span x-show="group.test_count">, <span x-text="group.test_count"></span> tests</span>
-                                                </span>
-                                            </div>
-                                        </template>
-                                    </div>
-                                </div>
-                                <div>
-                                    <p class="mb-1 text-xs font-medium text-slate-400">Packages</p>
-                                    <div class="space-y-1">
-                                        <template x-if="topWorkspacePackages(4).length === 0">
-                                            <div class="workspace-map-row text-slate-500">No code packages detected</div>
-                                        </template>
-                                        <template x-for="pkg in topWorkspacePackages(4)" :key="pkg.language + pkg.path + pkg.name">
-                                            <div class="workspace-map-row">
-                                                <span class="truncate">
-                                                    <span x-text="pkg.name"></span>
-                                                    <span class="text-slate-500" x-show="pkg.path"> in <span x-text="pkg.path"></span></span>
-                                                </span>
-                                                <span class="text-slate-500">
-                                                    <span x-text="pkg.language"></span>,
-                                                    <span x-text="pkg.file_count || 0"></span> files
-                                                </span>
-                                            </div>
-                                        </template>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </template>
-                </div>
-
-                <div class="workbench-map-panel">
-                    <div class="mb-3 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                        <div class="min-w-0">
-                            <div class="flex flex-wrap items-center gap-2">
-                                <h3 class="text-sm font-semibold text-slate-100">Local changes</h3>
-                                <span x-show="diffSummary" class="workspace-count-pill is-files">
-                                    <span x-text="diffSummaryStats().files"></span>
-                                    <span> files</span>
-                                </span>
-                                <span x-show="diffSummary && diffSummaryStats().additions > 0" class="diff-count is-add">
-                                    +<span x-text="diffSummaryStats().additions"></span>
-                                </span>
-                                <span x-show="diffSummary && diffSummaryStats().deletions > 0" class="diff-count is-delete">
-                                    -<span x-text="diffSummaryStats().deletions"></span>
-                                </span>
-                            </div>
-                            <p x-show="diffSummary" class="mt-1 truncate text-xs text-slate-500" x-text="diffSummaryStats().root"></p>
-                            <p x-show="!diffSummary" class="mt-1 text-xs text-slate-500">Open a git-backed project to review changed files and patches.</p>
-                        </div>
-                        <button @click="loadDiffSummary()"
-                                class="workbench-secondary-button shrink-0">
-                            Refresh changes
-                        </button>
-                    </div>
-
-                    <template x-if="diffSummary && diffSummaryStats().files === 0">
-                        <div class="workspace-empty-row">No local changes</div>
-                    </template>
-                    <template x-if="diffSummary && diffSummaryStats().files > 0">
-                        <div class="diff-file-list">
-                            <template x-for="file in diffSummary.files" :key="file.path">
-                                <div class="diff-file-item">
-                                    <button type="button"
-                                            class="diff-file-row"
-                                            @click="toggleDiff(file.path)">
-                                        <div class="min-w-0">
-                                            <div class="flex items-center gap-2">
-                                                <span class="truncate text-sm font-medium text-slate-100" x-text="file.path"></span>
-                                                <span class="diff-status" x-text="diffStatusLabel(file)"></span>
-                                            </div>
-                                        </div>
-                                        <div class="flex shrink-0 items-center gap-3">
-                                            <span class="diff-count is-add">+<span x-text="file.additions || 0"></span></span>
-                                            <span class="diff-count is-delete">-<span x-text="file.deletions || 0"></span></span>
-                                            <svg class="h-4 w-4 text-slate-400 transition-transform"
-                                                 :class="{ 'rotate-180': isDiffExpanded(file.path) }"
-                                                 fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                      d="M19 9l-7 7-7-7"></path>
-                                            </svg>
-                                        </div>
-                                    </button>
-                                    <div x-show="isDiffExpanded(file.path)" class="diff-patch">
-                                        <template x-for="(line, lineIndex) in diffLines(file)" :key="file.path + lineIndex">
-                                            <div class="diff-line" :class="diffLineClass(line)">
-                                                <span x-text="line || ' '"></span>
-                                            </div>
-                                        </template>
-                                        <p x-show="file.truncated" class="diff-truncated">Patch truncated for performance.</p>
-                                    </div>
-                                </div>
-                            </template>
-                        </div>
-                    </template>
-                </div>
-
-                <div class="workbench-map-panel hidden">
-                    <div class="mb-3 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                        <div class="min-w-0">
-                            <div class="flex flex-wrap items-center gap-2">
-                                <h3 class="text-sm font-semibold text-slate-100">Read-only project tools</h3>
-                                <span class="workspace-count-pill is-symbols">
-                                    <span x-text="toolResults.length"></span>
-                                    <span> results</span>
-                                </span>
-                            </div>
-                            <p class="mt-1 text-xs text-slate-500">Search and inspect active-project files without modifying anything.</p>
-                        </div>
-                    </div>
-                    <div class="mb-3 flex flex-col gap-2 sm:flex-row">
-                        <input x-model="toolSearch"
-                               @keydown.enter.prevent="searchProjectTools()"
-                               type="search"
-                               placeholder="Search project files"
-                               class="workspace-search-input">
-                        <button @click="searchProjectTools()"
-                                class="workbench-secondary-button shrink-0">
-                            Search
-                        </button>
-                    </div>
-                    <div class="project-tools-layout">
-                        <div class="project-tool-results">
-                            <template x-if="toolResults.length === 0">
-                                <div class="workspace-empty-row" x-text="toolLoading ? 'Searching...' : 'No file results yet'"></div>
-                            </template>
-                            <template x-for="file in toolResults" :key="file.path">
-                                <button type="button"
-                                        class="project-tool-row"
-                                        @click="previewProjectFile(file.path)">
-                                    <div class="min-w-0">
-                                        <p class="truncate text-sm font-medium text-slate-100" x-text="file.path"></p>
-                                        <p class="truncate text-xs text-slate-500">
-                                            <span x-text="file.kind"></span>
-                                            <span x-text="' , ' + (file.language || 'unknown')"></span>
-                                            <span x-text="' , ' + formatBytes(file.size_bytes)"></span>
-                                        </p>
-                                    </div>
-                                </button>
-                            </template>
-                        </div>
-                        <div class="project-tool-preview">
-                            <template x-if="!toolPreview">
-                                <div class="workspace-empty-row">Select a file to preview its summary.</div>
-                            </template>
-                            <template x-if="toolPreview">
-                                <div>
-                                    <div class="mb-2 flex min-w-0 items-start justify-between gap-3">
-                                        <div class="min-w-0">
-                                            <p class="truncate text-sm font-semibold text-slate-100" x-text="toolPreview.path"></p>
-                                            <p class="truncate text-xs text-slate-500" x-text="toolPreview.description"></p>
-                                        </div>
-                                        <span class="diff-status" x-text="toolPreview.kind"></span>
-                                    </div>
-                                    <div x-show="toolPreview.symbols && toolPreview.symbols.length" class="mb-2 flex flex-wrap gap-2">
-                                        <template x-for="symbol in (toolPreview.symbols || []).slice(0, 8)" :key="symbol.file_path + symbol.line + symbol.name">
-                                            <span class="repo-language-chip">
-                                                <span x-text="symbol.kind"></span>
-                                                <strong x-text="symbol.name"></strong>
-                                            </span>
-                                        </template>
-                                    </div>
-                                    <div class="diff-patch is-preview">
-                                        <template x-for="(line, lineIndex) in toolPreviewLines()" :key="lineIndex">
-                                            <div class="diff-line">
-                                                <span x-text="line || ' '"></span>
-                                            </div>
-                                        </template>
-                                    </div>
-                                </div>
-                            </template>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="workbench-map-panel hidden">
-                    <div class="mb-3 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                        <div class="min-w-0">
-                            <div class="flex flex-wrap items-center gap-2">
-                                <h3 class="text-sm font-semibold text-slate-100">Approved command runner</h3>
-                                <span class="workspace-count-pill">
-                                    <span>allowlisted</span>
-                                </span>
-                            </div>
-                            <p class="mt-1 text-xs text-slate-500">Run safe project checks with captured output and task traces.</p>
-                        </div>
-                    </div>
-                    <div class="mb-3 flex flex-col gap-2 sm:flex-row">
-                        <select x-model="commandPreset" class="workspace-search-input">
-                            <option value="git status --short">git status --short</option>
-                            <option value="git diff --stat">git diff --stat</option>
-                            <option value="git diff --name-only">git diff --name-only</option>
-                            <option value="go test ./...">go test ./...</option>
-                        </select>
-                        <button @click="runProjectCommand()"
-                                :disabled="commandRunning"
-                                class="workbench-secondary-button shrink-0">
-                            <span x-text="commandRunning ? 'Running...' : 'Run command'"></span>
-                        </button>
-                    </div>
-                    <template x-if="!commandResult">
-                        <div class="workspace-empty-row">Command output will appear here.</div>
-                    </template>
-                    <template x-if="commandResult">
-                        <div>
-                            <div class="mb-2 flex flex-wrap items-center gap-2 text-xs text-slate-500">
-                                <span>Exit</span>
-                                <span class="diff-status" x-text="commandResult.exit_code"></span>
-                                <span x-text="commandResult.duration_ms + ' ms'"></span>
-                                <span x-show="commandResult.timed_out">timed out</span>
-                            </div>
-                            <div class="diff-patch is-preview">
-                                <template x-for="(line, lineIndex) in commandOutputLines()" :key="lineIndex">
-                                    <div class="diff-line">
-                                        <span x-text="line || ' '"></span>
-                                    </div>
-                                </template>
-                            </div>
-                        </div>
-                    </template>
-                </div>
-
-                <template x-if="!taskState">
-                    <div class="workbench-empty-state">No workbench state loaded yet</div>
-                </template>
-                <div x-show="agentToolTraces().length > 0" x-cloak class="workbench-map-panel">
-                    <div class="mb-3 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                        <div class="min-w-0">
-                            <div class="flex flex-wrap items-center gap-2">
-                                <h3 class="text-sm font-semibold text-slate-100">Agent tool trace</h3>
-                                <span class="workspace-count-pill">
-                                    <span x-text="agentToolTraces().length"></span>
-                                    <span>recent</span>
-                                </span>
-                            </div>
-                            <p class="mt-1 text-xs text-slate-500">Inspect project tools Jarvis planned, searched, read, or ran while answering.</p>
-                        </div>
-                    </div>
-                    <div class="agent-tool-trace-list">
-                        <template x-for="trace in agentToolTraces()" :key="toolTraceKey(trace)">
-                            <div class="agent-tool-trace">
-                                <button @click="toggleToolTrace(trace)" type="button" class="agent-tool-trace-row">
-                                    <div class="min-w-0">
-                                        <div class="flex flex-wrap items-center gap-2">
-                                            <span class="workbench-event-type" x-text="toolTraceLabel(trace)"></span>
-                                            <p class="truncate text-sm font-medium text-slate-100" x-text="trace.summary || 'Tool trace'"></p>
-                                        </div>
-                                        <p class="mt-1 truncate text-xs text-slate-500" x-text="metadataSummary(trace.metadata) || eventTime(trace.created_at)"></p>
-                                    </div>
-                                    <svg class="h-4 w-4 shrink-0 text-slate-500 transition-transform"
-                                         :class="isToolTraceExpanded(trace) ? 'rotate-180' : ''"
-                                         fill="none"
-                                         stroke="currentColor"
-                                         viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
-                                    </svg>
-                                </button>
-                                <div x-show="isToolTraceExpanded(trace)" class="agent-tool-trace-detail">
-                                    <template x-if="toolTraceDetailEntries(trace).length === 0">
-                                        <div class="workspace-empty-row">No metadata recorded for this trace.</div>
-                                    </template>
-                                    <template x-for="entry in toolTraceDetailEntries(trace)" :key="toolTraceKey(trace) + entry.key">
-                                        <div class="agent-tool-trace-meta">
-                                            <span x-text="entry.key"></span>
-                                            <code x-text="entry.value"></code>
-                                        </div>
-                                    </template>
-                                </div>
-                            </div>
-                        </template>
-                    </div>
-                </div>
-                <template x-if="taskState && recentWorkbenchEvents().length === 0">
-                    <div class="workbench-empty-state">No activity recorded yet</div>
-                </template>
-                <div class="space-y-2">
-                    <template x-for="event in recentWorkbenchEvents()" :key="event.kind + event.type + event.title + event.created_at">
-                        <div class="workbench-event" :class="eventTone(event.type)">
-                            <div class="flex min-w-0 items-start justify-between gap-3">
-                                <div class="min-w-0">
-                                    <div class="flex flex-wrap items-center gap-2">
-                                        <span class="workbench-event-type" x-text="event.type"></span>
-                                        <p class="truncate text-sm font-medium text-slate-100" x-text="event.title"></p>
-                                    </div>
-                                    <p x-show="event.detail" class="mt-1 text-xs text-slate-400" x-text="event.detail"></p>
-                                </div>
-                                <span class="shrink-0 text-[11px] text-slate-500" x-text="eventTime(event.created_at)"></span>
-                            </div>
-                        </div>
-                    </template>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Roadmap modal -->
-    <div x-show="showRoadmap" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0"
-         x-transition:enter-end="opacity-100" x-transition:leave="transition ease-in duration-150"
-         x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0"
-         class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60" @click.self="showRoadmap = false">
-        <div class="bg-slate-800 border border-slate-700 rounded-2xl shadow-2xl w-full max-w-2xl max-h-[80vh] overflow-y-auto"
-             @keydown.escape.window="showRoadmap = false">
-            <div class="flex items-center justify-between p-5 border-b border-slate-700 sticky top-0 bg-slate-800 rounded-t-2xl">
-                <div>
-                    <h2 class="text-lg font-semibold text-slate-100">Upcoming Features</h2>
-                    <p class="text-xs text-slate-400 mt-0.5">What's being built next for <span x-text="appConfig.app_name || 'Jarvis'">Jarvis</span></p>
-                </div>
-                <button @click="showRoadmap = false" class="p-1.5 rounded-lg hover:bg-slate-700 text-slate-400 hover:text-slate-200">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-                    </svg>
-                </button>
-            </div>
-            <div class="p-5 space-y-6 text-sm">
-                <div>
-                    <h3 class="mb-3 text-sm font-semibold text-zinc-300">Phase 3 - Power Features</h3>
-                    <div class="space-y-2">
-                        <div class="rounded-lg bg-slate-700/40 p-3">
-                            <p class="font-medium text-slate-200">Multiple named workspaces</p>
-                            <p class="mt-0.5 text-xs text-slate-400">Save and switch between document sets, each with its own index and chat history.</p>
-                        </div>
-                        <div class="rounded-lg bg-slate-700/40 p-3">
-                            <p class="font-medium text-slate-200">Workspace map depth</p>
-                            <p class="mt-0.5 text-xs text-slate-400">Add richer Office document summaries and document metadata for workspace context.</p>
-                        </div>
-                        <div class="rounded-lg bg-slate-700/40 p-3">
-                            <p class="font-medium text-slate-200">Vector compression research</p>
-                            <p class="mt-0.5 text-xs text-slate-400">Evaluate TurboQuant-style vector compression to reduce local vector-store memory use.</p>
-                        </div>
-                        <div class="rounded-lg bg-slate-700/40 p-3">
-                            <p class="font-medium text-slate-200">Context picker</p>
-                            <p class="mt-0.5 text-xs text-slate-400">Pin files, folders, symbols, diffs, terminal output, URLs, and documents into the next task.</p>
-                        </div>
-                        <div class="rounded-lg bg-slate-700/40 p-3">
-                            <p class="font-medium text-slate-200">Code-aware retrieval</p>
-                            <p class="mt-0.5 text-xs text-slate-400">Add code chunking, symbol metadata, exact identifier search, dependency boosting, and reranking.</p>
-                        </div>
-                        <div class="rounded-lg bg-slate-700/40 p-3">
-                            <p class="font-medium text-slate-200">Model role profiles</p>
-                            <p class="mt-0.5 text-xs text-slate-400">Split model config by role: edit, apply, autocomplete, embedding, reranker, and vision.</p>
-                        </div>
-                        <div class="rounded-lg bg-slate-700/40 p-3">
-                            <p class="font-medium text-slate-200">Gemma capability matrix</p>
-                            <p class="mt-0.5 text-xs text-slate-400">Track Gemma 4 capabilities, context limits, thinking support, and non-generation boundaries in the app.</p>
-                        </div>
-                        <div class="rounded-lg bg-slate-700/40 p-3">
-                            <p class="font-medium text-slate-200">Frontend modularization</p>
-                            <p class="mt-0.5 text-xs text-slate-400">Split the large Alpine app and template into smaller maintainable modules or partials.</p>
-                        </div>
-                    </div>
-                </div>
-
-                <div>
-                    <h3 class="mb-3 text-sm font-semibold text-orange-300">Phase 4 - Local Coding Agent</h3>
-                    <div class="space-y-2">
-                        <div class="rounded-lg bg-slate-700/40 p-3">
-                            <p class="font-medium text-slate-200">Agent tool loop</p>
-                            <p class="mt-0.5 text-xs text-slate-400">Let the model search files, inspect symbols, summarize files, fetch URLs, and ask for approval mid-task.</p>
-                        </div>
-                        <div class="rounded-lg bg-slate-700/40 p-3">
-                            <p class="font-medium text-slate-200">Command runner in model loop</p>
-                            <p class="mt-0.5 text-xs text-slate-400">Let the agent request approved commands with timeouts, output caps, and summarized results.</p>
-                        </div>
-                        <div class="rounded-lg bg-slate-700/40 p-3">
-                            <p class="font-medium text-slate-200">Patch generation and apply flow</p>
-                            <p class="mt-0.5 text-xs text-slate-400">Generate diffs, preview changes, apply approved patches, and discard per file.</p>
-                        </div>
-                        <div class="rounded-lg bg-slate-700/40 p-3">
-                            <p class="font-medium text-slate-200">Test and fix loop</p>
-                            <p class="mt-0.5 text-xs text-slate-400">Run tests, parse failures, update patches, and repeat within bounded iterations.</p>
-                        </div>
-                        <div class="rounded-lg bg-slate-700/40 p-3">
-                            <p class="font-medium text-slate-200">Git worktree and branch support</p>
-                            <p class="mt-0.5 text-xs text-slate-400">Use isolated branches or worktrees per task so multiple sessions do not overwrite each other.</p>
-                        </div>
-                        <div class="rounded-lg bg-slate-700/40 p-3">
-                            <p class="font-medium text-slate-200">Code review mode</p>
-                            <p class="mt-0.5 text-xs text-slate-400">Review a diff or branch and produce findings with severity, file, line, risk, and test gaps.</p>
-                        </div>
-                        <div class="rounded-lg bg-slate-700/40 p-3">
-                            <p class="font-medium text-slate-200">GitHub issue and pull request flow</p>
-                            <p class="mt-0.5 text-xs text-slate-400">Create tasks from issues, push branches, and draft pull requests with summaries and tests.</p>
-                        </div>
-                        <div class="rounded-lg bg-slate-700/40 p-3">
-                            <p class="font-medium text-slate-200">Skills and project rules</p>
-                            <p class="mt-0.5 text-xs text-slate-400">Load reusable local skills and repo instructions only when they are relevant.</p>
-                        </div>
-                        <div class="rounded-lg bg-slate-700/40 p-3">
-                            <p class="font-medium text-slate-200">Direct llama.cpp adapter</p>
-                            <p class="mt-0.5 text-xs text-slate-400">Add a Go-managed local runtime path for GGUF models while keeping Ollama as fallback.</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
     <!-- Help modal -->
     <div x-show="showHelp" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0"
          x-transition:enter-end="opacity-100" x-transition:leave="transition ease-in duration-150"
@@ -1418,120 +851,35 @@
 
                 <div>
                     <h3 class="text-base font-semibold text-slate-100 mb-2">Getting started</h3>
-                    <p class="mb-2"><span x-text="appConfig.app_name || 'Jarvis'">Jarvis</span> is a local AI workbench for documents, folders, images, code, web research, and day-to-day questions. It runs on your machine with Ollama, keeps chat history locally, and can work even when no files are indexed.</p>
-                    <p>Your usual flow is simple: add context, ask a question, focus the next prompt when needed, then use the response tools to copy, rate, fork, or continue the conversation.</p>
+                    <p class="mb-2"><span x-text="appConfig.app_name || 'Jarvis'">Jarvis</span> is your private, 100% on-device AI assistant for documents, spreadsheets, folders, images, web research, and everyday work. Everything runs locally on your computer and works offline.</p>
                 </div>
 
                 <div>
-                    <h3 class="help-section-title">1. Add context</h3>
-                    <p class="mb-1">Use the composer buttons beside the chat input:</p>
+                    <h3 class="help-section-title">1. Add files or folders</h3>
                     <ul class="list-disc list-inside space-y-1 text-slate-400 ml-2">
-                        <li><strong class="text-slate-300">Paper clip</strong> uploads files such as PDF, DOCX, XLSX, PPTX, images, markdown, text, logs, data files, config files, and source code</li>
-                        <li><strong class="text-slate-300">Folder</strong> indexes a local folder recursively. Jarvis skips build output such as node_modules, bin, obj, vendor, and .git</li>
-                        <li><strong class="text-slate-300">Braces</strong> opens the code snippet box for code that should stay inline with your question</li>
-                        <li><strong class="text-slate-300">Paste images</strong> directly into chat to attach them to the next question</li>
-                        <li><strong class="text-slate-300">Paste URLs</strong> in normal chat to fetch and index web pages quietly</li>
-                    </ul>
-                    <p class="mt-2 text-slate-500">Folders you index are remembered. Jarvis checks watched folders in the background and refreshes new or changed files.</p>
-                </div>
-
-                <div>
-                    <h3 class="help-section-title">2. Ask questions</h3>
-                    <p class="mb-1">Type a question and press <strong class="text-slate-300">Enter</strong>. Use <strong class="text-slate-300">Shift+Enter</strong> for a new line. Jarvis will:</p>
-                    <ul class="list-disc list-inside space-y-1 text-slate-400 ml-2">
-                        <li>Search indexed files with hybrid retrieval, semantic search plus keyword matching</li>
-                        <li>Keep generic questions in general chat even when files are indexed</li>
-                        <li>Request safe read-only project tools when a folder is active, such as file search, summaries, and text previews</li>
-                        <li>Answer based on what it finds, with source citations</li>
-                        <li>Fall back to general chat when no relevant files are indexed</li>
-                        <li>Use your browser locale, timezone, and quiet live web context for current questions when available</li>
+                        <li><strong class="text-slate-300">Paperclip button</strong> attaches PDFs, Word docs (.docx), Excel sheets (.xlsx), PowerPoint slides (.pptx), images, text, and code files</li>
+                        <li><strong class="text-slate-300">Index folder</strong> in the sidebar connects a local folder of files so you can ask questions across all of them</li>
+                        <li><strong class="text-slate-300">Paste or drop images</strong> directly into the message box to analyze screenshots, photos, or charts</li>
+                        <li><strong class="text-slate-300">Paste web links</strong> in a message to automatically read and summarize web pages</li>
                     </ul>
                 </div>
 
                 <div>
-                    <h3 class="help-section-title">3. Focus the conversation</h3>
+                    <h3 class="help-section-title">2. Choose the best AI model for the job</h3>
+                    <p class="mb-1">Use the model menu in the message bar to switch between open-weight models at any time (models download automatically on first use):</p>
                     <ul class="list-disc list-inside space-y-1 text-slate-400 ml-2">
-                        <li><strong class="text-slate-300">Reply to a message</strong> by using the reply button near a chat bubble. Jarvis includes that exact message as context</li>
-                        <li><strong class="text-slate-300">@file or #file</strong> mentions focus retrieval on specific indexed files. Start typing @ or # and choose from suggestions</li>
-                        <li><strong class="text-slate-300">Queued follow-ups</strong> let you type the next message while an answer is still streaming. Jarvis runs it automatically afterward</li>
+                        <li><strong class="text-slate-300">Gemma 4 (2B / 4B)</strong>: Great all-rounder with built-in image and vision understanding</li>
+                        <li><strong class="text-slate-300">Qwen 2.5 (3B / 7B)</strong>: Best for Excel spreadsheets, data extraction, structured analysis, and coding</li>
+                        <li><strong class="text-slate-300">Llama 3.2 (3B)</strong>: Fast, natural writing, emails, and document summaries</li>
                     </ul>
                 </div>
 
                 <div>
-                    <h3 class="help-section-title">4. Research mode</h3>
-                    <p class="mb-2">Open the model and mode dropdown next to the chat input, then enable <strong class="text-slate-200">Research mode</strong> when you want to see the web search process.</p>
-                    <p class="mb-1">In research mode, <span x-text="appConfig.app_name || 'Jarvis'">Jarvis</span> will:</p>
+                    <h3 class="help-section-title">3. Web research and Deep thinking</h3>
                     <ul class="list-disc list-inside space-y-1 text-slate-400 ml-2">
-                        <li>Generate search queries from your question using local date, local time, locale, and timezone</li>
-                        <li>Search the web using DuckDuckGo</li>
-                        <li>Fetch and read the top articles</li>
-                        <li>Index useful pages locally, then answer with citations and links</li>
-                    </ul>
-                    <p class="mt-2 text-slate-500">Normal chat can quietly refresh live context too. Research mode is for transparent source-heavy work where you want progress and citations visible.</p>
-                </div>
-
-                <div>
-                    <h3 class="help-section-title">5. Use response tools</h3>
-                    <ul class="list-disc list-inside space-y-1 text-slate-400 ml-2">
-                        <li><strong class="text-slate-300">Copy response</strong> copies the assistant answer as markdown text</li>
-                        <li><strong class="text-slate-300">Thumbs up or down</strong> saves your rating on that response</li>
-                        <li><strong class="text-slate-300">Fork</strong> creates a new chat from the conversation up to that response, useful when you want to explore another direction</li>
-                        <li><strong class="text-slate-300">Working time</strong> shows how long Jarvis has been generating, then keeps the final response duration</li>
-                    </ul>
-                </div>
-
-                <div>
-                    <h3 class="help-section-title">6. Manage indexed files</h3>
-                    <ul class="list-disc list-inside space-y-1 text-slate-400 ml-2">
-                        <li>Click the indexed count in the chat header to view indexed documents</li>
-                        <li>Delete a single indexed file when you no longer want it in retrieval</li>
-                        <li>Use <strong class="text-slate-300">Clear all</strong> to clear the active project index, the global index, and Jarvis-owned upload copies</li>
-                        <li>External files indexed from folders are preserved on disk when you delete or clear the index</li>
-                        <li>Images are described by the vision model when available, then stored as searchable text</li>
-                    </ul>
-                </div>
-
-                <div>
-                    <h3 class="help-section-title">7. Workbench</h3>
-                    <p class="mb-1">Open the Workbench button in the top bar to inspect local activity:</p>
-                    <ul class="list-disc list-inside space-y-1 text-slate-400 ml-2">
-                        <li>Task traces from chat, retrieval, research, folder indexing, and workspace map updates</li>
-                        <li>Read-only tool traces when chat searches, summarizes, or previews active-project files</li>
-                        <li>Workspace map root, file counts, package counts, tests, type breakdown, folder groups, files, and code symbols</li>
-                        <li>Useful context for codebases and regular folders with Office files, PDFs, images, logs, and data</li>
-                    </ul>
-                </div>
-
-                <div>
-                    <h3 class="help-section-title">Models and setup</h3>
-                    <p class="mb-1">Jarvis uses Ollama locally for chat, embeddings, and optional image understanding. On Windows, the installer can bootstrap Ollama and pull required models during manual install.</p>
-                    <ul class="list-disc list-inside space-y-1 text-slate-400 ml-2">
-                        <li><strong class="text-slate-300">nomic-embed-text</strong> creates embeddings for retrieval</li>
-                        <li><strong class="text-slate-300">gemma4:e2b</strong> is selected automatically for very low-end machines</li>
-                        <li><strong class="text-slate-300">gemma4:e4b</strong> is the default for most machines</li>
-                        <li><strong class="text-slate-300">llava</strong> is optional and enables image descriptions</li>
-                    </ul>
-                    <p class="mt-2 text-slate-500">Use the composer dropdown to choose Gemma 4 2B, 4B, or 26B for a request. Missing dropdown models are downloaded automatically through Ollama. Thinking mode adds Gemma 4 private reasoning prompting and keeps hidden thought text out of saved chat history.</p>
-                </div>
-
-                <div>
-                    <h3 class="help-section-title">Updates and desktop use</h3>
-                    <ul class="list-disc list-inside space-y-1 text-slate-400 ml-2">
-                        <li>The desktop app is the primary installed experience</li>
-                        <li>Release builds can check GitHub Releases for updates</li>
-                        <li>Silent auto-updates keep installs fast and skip the Ollama bootstrap step</li>
-                        <li>The browser server remains useful for development and fallback testing</li>
-                    </ul>
-                </div>
-
-                <div>
-                    <h3 class="help-section-title">Helpful habits</h3>
-                    <ul class="list-disc list-inside space-y-1 text-slate-400 ml-2">
-                        <li>Use @file mentions when a question must stay grounded in a specific indexed file</li>
-                        <li>Use the code snippet box for code that should not trigger URL fetching</li>
-                        <li>Use forks when a response is useful but you want to try a different next step</li>
-                        <li>Use research mode when you want visible search progress and cited web sources</li>
-                        <li>Jarvis adapts answers to your browser locale and timezone when possible</li>
+                        <li><strong class="text-slate-300">Web research</strong> searches live web results via DuckDuckGo, reads the top pages, and answers with clickable source citations</li>
+                        <li><strong class="text-slate-300">Deep thinking</strong> lets the model reason step-by-step privately before giving you a final answer</li>
+                        <li><strong class="text-slate-300">@file mentions</strong> let you type <code class="text-slate-200">@</code> in the message box to pin specific uploaded documents to your question</li>
                     </ul>
                 </div>
 
@@ -1556,7 +904,6 @@
     <script src="/static/js/modules/system.js"></script>
     <script src="/static/js/modules/documents.js"></script>
     <script src="/static/js/modules/updates.js"></script>
-    <script src="/static/js/modules/workbench.js"></script>
     <script src="/static/js/app.js"></script>
 </body>
 </html>

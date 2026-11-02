@@ -13,7 +13,7 @@ builds:
     flags:
       - -tags=desktop,production
     ldflags:
-      - -s -w -X main.Version={{.Version}} -X go-chatbot/internal/updater.builtinRepo={{.Env.GITHUB_REPOSITORY}}
+      - -s -w -H=windowsgui -X main.Version={{.Version}} -X go-chatbot/internal/updater.builtinRepo={{.Env.GITHUB_REPOSITORY}}
 
 archives:
   - id: standalone

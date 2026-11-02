@@ -19,7 +19,7 @@ SetCompressor /SOLID lzma
 !define MUI_ICON "${NSISDIR}\Contrib\Graphics\Icons\modern-install.ico"
 !define MUI_UNICON "${NSISDIR}\Contrib\Graphics\Icons\modern-uninstall.ico"
 !define MUI_WELCOMEPAGE_TITLE "Welcome to Jarvis ${VERSION}"
-!define MUI_WELCOMEPAGE_TEXT "Jarvis is a local, privacy-first document chatbot. This will install Jarvis to $LOCALAPPDATA\Programs\Jarvis.$\n$\nNo data ever leaves your machine."
+!define MUI_WELCOMEPAGE_TEXT "Jarvis is a private, 100% on-device AI assistant. This will install Jarvis to $LOCALAPPDATA\Programs\Jarvis.$\n$\nModels download automatically inside the app on first launch."
 !define MUI_FINISHPAGE_RUN "$INSTDIR\jarvis.exe"
 !define MUI_FINISHPAGE_RUN_TEXT "Launch Jarvis after install"
 
@@ -34,19 +34,19 @@ SetCompressor /SOLID lzma
 !insertmacro MUI_LANGUAGE "English"
 
 Section "Install"
-  ; Kill any running instance so we can replace the exe
+  ; Stop any running instance or background AI server so we can replace the binary
   nsExec::ExecToLog 'taskkill /IM jarvis.exe /F'
+  nsExec::ExecToLog 'taskkill /IM llama-server.exe /F'
 
   SetOutPath "$INSTDIR"
   File "jarvis.exe"
-  File "bootstrap-ollama.ps1"
 
   ; Start Menu shortcut
   CreateDirectory "$SMPROGRAMS\Jarvis"
   CreateShortcut "$SMPROGRAMS\Jarvis\Jarvis.lnk" "$INSTDIR\jarvis.exe"
   CreateShortcut "$SMPROGRAMS\Jarvis\Uninstall Jarvis.lnk" "$INSTDIR\Uninstall.exe"
 
-  ; Desktop shortcut (optional - comment out if unwanted)
+  ; Desktop shortcut
   CreateShortcut "$DESKTOP\Jarvis.lnk" "$INSTDIR\jarvis.exe"
 
   ; Write uninstaller
@@ -64,20 +64,16 @@ Section "Install"
   ; Save install dir for future reference
   WriteRegStr HKCU "Software\Jarvis" "InstallDir" "$INSTDIR"
 
-  ; Manual installs bootstrap Ollama and Jarvis models. Silent auto-updates skip this.
-  IfSilent skip_ollama_bootstrap 0
-    DetailPrint "Checking Ollama and required Jarvis models..."
-    nsExec::ExecToLog 'powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$INSTDIR\bootstrap-ollama.ps1"'
-  skip_ollama_bootstrap:
-
   ; If this was a silent auto-update (launched by the running app), restart Jarvis automatically.
-  ; The /S flag is intended for automated installs, not manual installs.
   IfSilent 0 done
     Exec '"$INSTDIR\jarvis.exe"'
   done:
 SectionEnd
 
 Section "Uninstall"
+  nsExec::ExecToLog 'taskkill /IM jarvis.exe /F'
+  nsExec::ExecToLog 'taskkill /IM llama-server.exe /F'
+
   Delete "$INSTDIR\jarvis.exe"
   Delete "$INSTDIR\bootstrap-ollama.ps1"
   Delete "$INSTDIR\Uninstall.exe"

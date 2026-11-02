@@ -32,7 +32,7 @@ jobs:
         env:
           GOOS: windows
           CGO_ENABLED: 0
-        run: go build -tags "desktop,production" ./cmd/desktop
+        run: go build -tags "desktop,production" -ldflags="-s -w -H=windowsgui" ./cmd/desktop
 
       - name: Test
         run: go test ./internal/... ./web
@@ -60,7 +60,9 @@ jobs:
           cache: true
 
       - name: Build desktop app
-        run: go build -tags "desktop,production" ./cmd/desktop
+        env:
+          CGO_ENABLED: 0
+        run: go build -tags "desktop,production" -ldflags="-s -w -H=windowsgui" ./cmd/desktop
 
   goreleaser:
     name: GoReleaser
@@ -126,12 +128,14 @@ jobs:
 
       - name: Build installer
         shell: pwsh
+        env:
+          CGO_ENABLED: 0
         run: |
           $ErrorActionPreference = "Stop"
           $version = "${{ github.ref_name }}".TrimStart("v")
           New-Item -ItemType Directory -Force -Path dist\installer | Out-Null
           go build -tags "desktop,production" `
-            -ldflags "-s -w -X main.Version=${{ github.ref_name }} -X go-chatbot/internal/updater.builtinRepo=${{ github.repository }}" `
+            -ldflags "-s -w -H=windowsgui -X main.Version=${{ github.ref_name }} -X go-chatbot/internal/updater.builtinRepo=${{ github.repository }}" `
             -o packaging\windows\jarvis.exe `
             ./cmd/desktop
           makensis "-DVERSION=$version" packaging\windows\jarvis.nsi

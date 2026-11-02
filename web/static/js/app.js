@@ -12,22 +12,6 @@ function chatApp() {
         chatSessions: [],
         activeChatID: '',
         showDocumentsPanel: false,
-        showWorkbenchPanel: false,
-        taskState: null,
-        repoMap: null,
-        projectState: null,
-        projectActivity: null,
-        diffSummary: null,
-        expandedDiffs: {},
-        expandedToolTraces: {},
-        toolSearch: '',
-        toolResults: [],
-        toolPreview: null,
-        toolLoading: false,
-        commandPreset: 'git status --short',
-        commandResult: null,
-        commandRunning: false,
-        repoSearch: '',
         uploadProgress: 0,
         isUploading: false,
         uploadingName: '',
@@ -47,6 +31,7 @@ function chatApp() {
         mentionQuery: '',
         mentionOpen: false,
         systemInfo: null,
+        engineStatus: null,
         hwStatus: null,
         appConfig: {
             app_name: 'Jarvis',
@@ -61,18 +46,18 @@ function chatApp() {
         notesModal: { show: false, tag: '', content: '' },
         sourceModal: { show: false, source: null },
         webSourceModal: { show: false, url: '', title: '' },
-        showRoadmap: false,
 
         init() {
             this.loadChats();
             this.loadAppConfig();
             this.loadDocuments();
-            this.loadTaskState();
             this.loadSystemInfo();
+            this.loadEngineStatus();
             this.loadModelOptions();
             this.loadHardwareStatus();
             this.loadUpdateStatus();
             setInterval(() => this.loadUpdateStatus(), 60 * 60 * 1000);
+            setInterval(() => this.pollEngineIfBusy(), 2000);
             setInterval(() => { this.clockTick = Date.now(); }, 1000);
 
             marked.setOptions({
@@ -139,6 +124,5 @@ function chatApp() {
         window.jarvisSystem,
         window.jarvisDocuments,
         window.jarvisUpdates,
-        window.jarvisWorkbench,
     );
 }

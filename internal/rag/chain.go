@@ -9,6 +9,7 @@ import (
 
 	"go-chatbot/internal/config"
 	"go-chatbot/internal/gemma"
+	"go-chatbot/internal/llamacpp"
 	"go-chatbot/internal/ollama"
 	"go-chatbot/internal/vectorstore"
 	"go-chatbot/internal/workbench"
@@ -385,6 +386,18 @@ func (c *Chain) PullModel(ctx context.Context, model string, onProgress func(sta
 
 func (c *Chain) DefaultChatModel() string {
 	return c.cfg.ChatModel
+}
+
+func (c *Chain) EngineStatus() llamacpp.Status {
+	if c == nil || c.ollama == nil {
+		return llamacpp.Status{
+			Backend:    "llamacpp",
+			State:      "ready",
+			ActiveTask: "On-device AI ready",
+			Ready:      true,
+		}
+	}
+	return c.ollama.EngineStatus()
 }
 
 func (c *Chain) repoContext(question string) string {

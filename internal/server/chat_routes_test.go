@@ -31,8 +31,8 @@ func TestShouldGatherLiveContextSkipsCodeSnippet(t *testing.T) {
 	}
 }
 
-func TestIsAutoPullChatModelOnlyAllowsGemmaDropdownModels(t *testing.T) {
-	for _, model := range []string{"gemma4:e2b", "gemma4:e4b", "gemma4:26b", "gemma4:e4b:latest"} {
+func TestIsAutoPullChatModelOnlyAllowsCuratedDropdownModels(t *testing.T) {
+	for _, model := range []string{"gemma4:e2b", "gemma4:e4b", "gemma4:26b", "qwen2.5:3b", "qwen2.5:7b", "llama3.2:3b", "gemma4:e4b:latest"} {
 		if !isAutoPullChatModel(model) {
 			t.Fatalf("expected %s to be auto-pullable", model)
 		}

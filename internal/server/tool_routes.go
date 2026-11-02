@@ -83,36 +83,6 @@ func (s *Server) handleSummarizeProjectFile(w http.ResponseWriter, r *http.Reque
 	writeJSON(w, http.StatusOK, summary)
 }
 
-func (s *Server) handleRunProjectCommand(w http.ResponseWriter, r *http.Request) {
-	project, ok := s.activeProject()
-	if !ok {
-		writeError(w, http.StatusNotFound, "open a project before running commands")
-		return
-	}
-	root := project.Path
-
-	var req workbench.CommandRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		writeError(w, http.StatusBadRequest, "invalid request body")
-		return
-	}
-	result, err := workbench.RunApprovedCommand(root, req)
-	if err != nil {
-		writeError(w, http.StatusBadRequest, err.Error())
-		return
-	}
-	if err := workbench.RecordProjectCommand(s.cfg.DataDir, project, result); err != nil {
-		writeError(w, http.StatusInternalServerError, "failed to record project command")
-		return
-	}
-	s.recordTaskTrace("tool_command", "Ran approved project command", map[string]string{
-		"command":   strings.TrimSpace(req.Command + " " + strings.Join(req.Args, " ")),
-		"exit_code": strconv.Itoa(result.ExitCode),
-		"timed_out": strconv.FormatBool(result.TimedOut),
-	})
-	writeJSON(w, http.StatusOK, result)
-}
-
 func (s *Server) activeProjectWorkspace(w http.ResponseWriter) (string, *workbench.RepoMap, bool) {
 	root, ok := s.activeProjectPath()
 	if !ok {
